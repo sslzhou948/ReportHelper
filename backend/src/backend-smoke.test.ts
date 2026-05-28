@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { buildApp } from './app.js';
-import type { Env } from './config/env.js';
+import { loadEnv, parseDotEnv, type Env } from './config/env.js';
 import { resolveWxLoginSession } from './routes/auth.js';
 import { MemoryPrisma } from './testing/memory-prisma.js';
 
@@ -11,6 +11,28 @@ function offsetDateOnly(days: number) {
   date.setUTCDate(date.getUTCDate() + days);
   return date.toISOString().slice(0, 10);
 }
+
+assert.deepEqual(parseDotEnv(`
+# local backend config
+DATABASE_URL="postgresql://user:pass@localhost:5432/healthhelper?schema=public"
+JWT_SECRET='local-secret-1234567890'
+PORT=8788
+`), {
+  DATABASE_URL: 'postgresql://user:pass@localhost:5432/healthhelper?schema=public',
+  JWT_SECRET: 'local-secret-1234567890',
+  PORT: '8788'
+});
+
+const parsedEnv = loadEnv({
+  DATABASE_URL: 'postgresql://test:test@localhost:5432/test',
+  JWT_SECRET: 'test-secret-1234567890',
+  WECHAT_APP_ID: 'test-app-id',
+  WECHAT_APP_SECRET: 'test-app-secret',
+  NODE_ENV: 'test',
+  PORT: '8789'
+});
+assert.equal(parsedEnv.PORT, 8789);
+assert.equal(parsedEnv.NODE_ENV, 'test');
 
 const env: Env = {
   DATABASE_URL: 'postgresql://test:test@localhost:5432/test',
