@@ -31,6 +31,34 @@ function toTaskPhotos(photos) {
   }));
 }
 
+function createSmokeProfile(label) {
+  return api.createProfile({
+    relation: '测试',
+    realName: `${label}${Date.now()}`,
+    gender: '',
+    diseaseType: '',
+    primaryHospital: ''
+  }).then((profile) => profile.id);
+}
+
+function saveTaskForSmoke(task) {
+  return api.batchCreateReports({
+    ocrTaskId: task.id,
+    reports: task.drafts
+  }).catch((error) => {
+    if (!error || error.code !== 'DUPLICATE_REPORT_REQUIRES_DECISION') throw error;
+    return api.batchCreateReports({
+      ocrTaskId: task.id,
+      reports: task.drafts,
+      duplicateDecisions: (error.details.candidates || []).map((candidate) => ({
+        draftId: candidate.draftId,
+        decision: 'keep_both',
+        existingReportId: candidate.existingReportId
+      }))
+    });
+  });
+}
+
 Page({
   data: {
     photos: decoratePhotos(initialPhotos, []),
@@ -170,15 +198,10 @@ Page({
     });
   },
   runFixtureDuplicateSmokeForTest() {
-    const app = getApp();
-    const profileId = app.getCurrentProfileId();
-    return api.createOcrTask({
+    return createSmokeProfile('查重').then((profileId) => api.createOcrTask({
       profileId,
       fixtureCaseIds: realcaseFixtureCaseIds
-    }).then((firstTask) => api.batchCreateReports({
-      ocrTaskId: firstTask.id,
-      reports: firstTask.drafts
-    })).then(() => {
+    }).then((firstTask) => saveTaskForSmoke(firstTask)).then(() => {
       const firstCount = (wx.getStorageSync('mockReports') || [])
         .filter((report) => report.profileId === profileId && !report.deletedAt).length;
       return api.createOcrTask({
@@ -206,6 +229,65 @@ Page({
           secondCount
         };
       })));
+    }));
+  },
+  runFixtureReportEditSmokeForTest() {
+    return createSmokeProfile('编辑').then((profileId) => api.createOcrTask({
+      profileId,
+      fixtureCaseIds: ['acth', 'chest_ct_plain']
+    }).then((task) => saveTaskForSmoke(task).then(() => ({ task }))).then(({ task }) => api.listReports(profileId).then((reports) => {
+      const report = reports.find((item) => item.ocrTaskId === task.id && item.analysisPolicy !== 'view_only');
+      if (!report) throw new Error('missing saved editable fixture report');
+      return api.getReportDetail(report.id);
+    })).then(({ report }) => {
+      const metric = (report.metrics || []).find((item) => item.valueType === 'quantitative');
+      if (!metric) throw new Error('missing editable metric');
+      const nextValue = Number(metric.refRangeHigh || metric.valueNumeric || 1) + 8;
+      const editedMetrics = report.metrics.map((item) => (
+        item.id === metric.id
+          ? { ...item, valueNumeric: nextValue, isManuallyEdited: true }
+          : item
+      ));
+      return api.updateReport(report.id, {
+        basicInfo: {
+          note: 'devtools edit smoke'
+        },
+        metrics: editedMetrics,
+        findings: report.findings || [],
+        warnings: report.warnings || []
+      }).then(() => api.getReportDetail(report.id).then(({ report: updated }) => ({
+        reportId: updated.id,
+        metricKey: metric.metricKey,
+        note: updated.note,
+        abnormalCount: updated.abnormalCount,
+        editedValue: nextValue,
+        isManuallyEdited: (updated.metrics || []).some((item) => item.id === metric.id && item.isManuallyEdited)
+      })));
+    }).then((result) => api.getMetricHistory(profileId, result.metricKey).then(({ history }) => {
+      const next = {
+        ...result,
+        historyHasEditedValue: history.some((item) => item.reportId === result.reportId && item.valueNumeric === result.editedValue)
+      };
+      wx.setStorageSync('lastEditSmokeReportId', next.reportId);
+      return next;
+    })));
+  },
+  openLastEditSmokeReportForTest() {
+    const reportId = wx.getStorageSync('lastEditSmokeReportId');
+    if (!reportId) return false;
+    const url = `/pages/health/report-detail?id=${reportId}`;
+    return new Promise((resolve) => {
+      wx.navigateTo({
+        url,
+        success: () => resolve(true),
+        fail: () => {
+          wx.redirectTo({
+            url,
+            success: () => resolve(true),
+            fail: (error) => resolve(error && error.errMsg ? error.errMsg : false)
+          });
+        }
+      });
     });
   }
 });

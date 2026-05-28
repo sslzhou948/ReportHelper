@@ -77,6 +77,27 @@ async function waitForPath(miniProgram, expectedPath, timeout = 5000) {
     assert.strictEqual(duplicateResult.secondCount, duplicateResult.firstCount, 'skipping repeated fixture reports should not create redundant reports');
     console.log('fixture duplicate smoke passed');
 
+    const editResult = await page.callMethod('runFixtureReportEditSmokeForTest');
+    assert.strictEqual(editResult.note, 'devtools edit smoke', 'report edit should persist note');
+    assert.ok(editResult.abnormalCount >= 1, 'report edit should recalculate abnormal count');
+    assert.strictEqual(editResult.isManuallyEdited, true, 'edited metric should be marked manually edited');
+    assert.strictEqual(editResult.historyHasEditedValue, true, 'metric history should include edited value');
+    console.log('fixture report edit smoke passed');
+
+    const openedReportDetail = await page.callMethod('openLastEditSmokeReportForTest');
+    assert.strictEqual(openedReportDetail, true, 'fixture edit smoke should expose a report detail target');
+    page = await waitForPath(miniProgram, 'pages/health/report-detail', 6000);
+    assert.strictEqual(page.path, 'pages/health/report-detail', 'fixture edit smoke should open report detail page');
+    await page.waitFor(800);
+    await page.callMethod('showEdit');
+    page = await waitForPath(miniProgram, 'pages/upload/edit-detail', 6000);
+    assert.strictEqual(page.path, 'pages/upload/edit-detail', 'report detail edit should open edit-detail page');
+    await page.waitFor(800);
+    data = await page.data();
+    assert.strictEqual(data.editing, true, 'report detail edit entry should open in edit mode');
+    assert.strictEqual(data.basicInfo.reportDate.length, 10, 'edit page should expose report date');
+    console.log('report detail edit navigation passed');
+
     console.log('DevTools smoke passed.');
   } catch (error) {
     console.error(error);
