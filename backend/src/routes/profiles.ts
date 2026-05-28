@@ -231,6 +231,23 @@ export async function registerProfileRoutes(app: FastifyInstance) {
       });
     }
 
+    const activeReports = await app.prisma.report.findMany({
+      where: {
+        profileId: profile.id,
+        deletedAt: null
+      },
+      take: 1
+    });
+    if (activeReports.length) {
+      return reply.status(409).send({
+        error: {
+          code: 'CONFLICT',
+          message: 'Profile has active reports and cannot be deleted'
+        },
+        requestId
+      });
+    }
+
     await app.prisma.profile.update({
       where: { id: profile.id },
       data: { deletedAt: new Date() }

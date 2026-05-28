@@ -957,6 +957,13 @@ const savePayload = saveResponse.json();
 assert.equal(savePayload.data.reports.length, 7);
 assert.equal(prisma.reports.filter((report) => !report.deletedAt).length, 7);
 
+const deleteProfileWithReportsResponse = await app.inject({
+  method: 'DELETE',
+  url: `/api/profiles/${profileId}`
+});
+assert.equal(deleteProfileWithReportsResponse.statusCode, 409);
+assert.equal(deleteProfileWithReportsResponse.json().error.code, 'CONFLICT');
+
 const repeatSaveResponse = await app.inject({
   method: 'POST',
   url: '/api/reports/batch-create',
