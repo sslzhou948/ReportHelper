@@ -1,0 +1,292 @@
+import type { FastifyInstance } from 'fastify';
+import { Prisma } from '@prisma/client';
+import { z } from 'zod';
+import { ensureDevSession } from '../services/dev-user.js';
+import { getRequestId } from '../utils/request-id.js';
+
+const createRecheckPlanSchema = z.object({
+  type: z.string().trim().min(1).max(128),
+  date: z.string().trim().min(1),
+  timeOfDay: z.string().trim().max(32).optional().nullable(),
+  hospital: z.string().trim().min(1).max(128),
+  department: z.string().trim().max(128).optional().nullable(),
+  doctor: z.string().trim().max(64).optional().nullable(),
+  reminderConfig: z.unknown().optional(),
+  todos: z.array(z.object({
+    text: z.string().trim().min(1).max(256),
+    sortOrder: z.number().int().positive().optional(),
+    isDone: z.boolean().optional(),
+    isTemplate: z.boolean().optional()
+  })).optional()
+});
+
+const updateTodoSchema = z.object({
+  isDone: z.boolean()
+});
+
+type RecheckPlanShape = {
+  id: string;
+  profileId: string;
+  type: string;
+  date: Date;
+  timeOfDay: string | null;
+  hospital: string;
+  department: string | null;
+  doctor: string | null;
+  status: string;
+  reminderConfig: Prisma.JsonValue;
+  todos?: RecheckTodoShape[];
+};
+
+type RecheckTodoShape = {
+  id: string;
+  text: string;
+  sortOrder: number;
+  isDone: boolean;
+  isTemplate: boolean;
+};
+
+function toDateOnly(value: Date | string) {
+  if (value instanceof Date) return value.toISOString().slice(0, 10);
+  return String(value).slice(0, 10);
+}
+
+function toInputJson(value: unknown): Prisma.InputJsonValue {
+  return JSON.parse(JSON.stringify(value ?? { advanceDays: [3, 1, 0], subscribeAccepted: false })) as Prisma.InputJsonValue;
+}
+
+function serializePlan(plan: RecheckPlanShape) {
+  return {
+    id: plan.id,
+    profileId: plan.profileId,
+    type: plan.type,
+    date: toDateOnly(plan.date),
+    timeOfDay: plan.timeOfDay || '',
+    hospital: plan.hospital,
+    department: plan.department || '',
+    doctor: plan.doctor || '',
+    status: plan.status,
+    reminderConfig: plan.reminderConfig,
+    todos: (plan.todos || [])
+      .slice()
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+      .map((todo) => ({
+        id: todo.id,
+        text: todo.text,
+        isDone: todo.isDone,
+        isTemplate: todo.isTemplate,
+        sortOrder: todo.sortOrder
+      }))
+  };
+}
+
+async function ensureProfile(app: FastifyInstance, profileId: string, userId: string) {
+  return app.prisma.profile.findFirst({
+    where: {
+      id: profileId,
+      userId,
+      deletedAt: null
+    }
+  });
+}
+
+async function findPlanForUser(app: FastifyInstance, planId: string, userId: string) {
+  return app.prisma.recheckPlan.findFirst({
+    where: {
+      id: planId,
+      deletedAt: null,
+      profile: {
+        userId,
+        deletedAt: null
+      }
+    },
+    include: {
+      todos: {
+        orderBy: { sortOrder: 'asc' }
+      }
+    }
+  });
+}
+
+export async function registerRecheckRoutes(app: FastifyInstance) {
+  app.get<{ Params: { profileId: string } }>('/api/profiles/:profileId/recheck-plans', async (request, reply) => {
+    const requestId = getRequestId(request);
+    const { user } = await ensureDevSession(app.prisma);
+    const profile = await ensureProfile(app, request.params.profileId, user.id);
+    if (!profile) {
+      return reply.status(404).send({
+        error: { code: 'NOT_FOUND', message: '档案不存在' },
+        requestId
+      });
+    }
+
+    const plans = await app.prisma.recheckPlan.findMany({
+      where: {
+        profileId: profile.id,
+        deletedAt: null
+      },
+      include: {
+        todos: {
+          orderBy: { sortOrder: 'asc' }
+        }
+      },
+      orderBy: { date: 'asc' }
+    });
+    const serialized = (plans as unknown as RecheckPlanShape[]).map(serializePlan);
+    const pending = serialized.filter((plan) => plan.status === 'pending');
+
+    return {
+      data: {
+        nextPlan: pending[0] || null,
+        otherPlans: pending.slice(1),
+        doneCount: serialized.filter((plan) => plan.status === 'done').length
+      },
+      requestId
+    };
+  });
+
+  app.post<{ Params: { profileId: string } }>('/api/profiles/:profileId/recheck-plans', async (request, reply) => {
+    const requestId = getRequestId(request);
+    const parsed = createRecheckPlanSchema.safeParse(request.body || {});
+    if (!parsed.success) {
+      return reply.status(400).send({
+        error: {
+          code: 'VALIDATION_FAILED',
+          message: '复查计划参数无效',
+          details: parsed.error.flatten()
+        },
+        requestId
+      });
+    }
+
+    const { user } = await ensureDevSession(app.prisma);
+    const profile = await ensureProfile(app, request.params.profileId, user.id);
+    if (!profile) {
+      return reply.status(404).send({
+        error: { code: 'NOT_FOUND', message: '档案不存在' },
+        requestId
+      });
+    }
+
+    const plan = await app.prisma.recheckPlan.create({
+      data: {
+        profileId: profile.id,
+        type: parsed.data.type,
+        date: new Date(parsed.data.date),
+        timeOfDay: parsed.data.timeOfDay || '',
+        hospital: parsed.data.hospital,
+        department: parsed.data.department || '',
+        doctor: parsed.data.doctor || '',
+        status: 'pending',
+        reminderConfig: toInputJson(parsed.data.reminderConfig),
+        todos: {
+          create: (parsed.data.todos || []).map((todo, index) => ({
+            text: todo.text,
+            sortOrder: todo.sortOrder || index + 1,
+            isDone: !!todo.isDone,
+            isTemplate: todo.isTemplate !== false
+          }))
+        }
+      },
+      include: {
+        todos: {
+          orderBy: { sortOrder: 'asc' }
+        }
+      }
+    });
+
+    return {
+      data: serializePlan(plan as unknown as RecheckPlanShape),
+      requestId
+    };
+  });
+
+  app.patch<{ Params: { planId: string; todoId: string } }>('/api/recheck-plans/:planId/todos/:todoId', async (request, reply) => {
+    const requestId = getRequestId(request);
+    const parsed = updateTodoSchema.safeParse(request.body || {});
+    if (!parsed.success) {
+      return reply.status(400).send({
+        error: {
+          code: 'VALIDATION_FAILED',
+          message: '复查待办参数无效',
+          details: parsed.error.flatten()
+        },
+        requestId
+      });
+    }
+
+    const { user } = await ensureDevSession(app.prisma);
+    const plan = await findPlanForUser(app, request.params.planId, user.id);
+    if (!plan || !(plan.todos || []).some((todo) => todo.id === request.params.todoId)) {
+      return reply.status(404).send({
+        error: { code: 'NOT_FOUND', message: '复查计划不存在' },
+        requestId
+      });
+    }
+
+    await app.prisma.recheckTodo.update({
+      where: { id: request.params.todoId },
+      data: { isDone: parsed.data.isDone }
+    });
+
+    const updated = await findPlanForUser(app, request.params.planId, user.id);
+    return {
+      data: serializePlan(updated as unknown as RecheckPlanShape),
+      requestId
+    };
+  });
+
+  app.post<{ Params: { planId: string } }>('/api/recheck-plans/:planId/complete', async (request, reply) => {
+    const requestId = getRequestId(request);
+    const { user } = await ensureDevSession(app.prisma);
+    const plan = await findPlanForUser(app, request.params.planId, user.id);
+    if (!plan) {
+      return reply.status(404).send({
+        error: { code: 'NOT_FOUND', message: '复查计划不存在' },
+        requestId
+      });
+    }
+
+    const updated = await app.prisma.recheckPlan.update({
+      where: { id: plan.id },
+      data: { status: 'done' },
+      include: {
+        todos: {
+          orderBy: { sortOrder: 'asc' }
+        }
+      }
+    });
+
+    return {
+      data: serializePlan(updated as unknown as RecheckPlanShape),
+      requestId
+    };
+  });
+
+  app.post<{ Params: { planId: string } }>('/api/recheck-plans/:planId/cancel', async (request, reply) => {
+    const requestId = getRequestId(request);
+    const { user } = await ensureDevSession(app.prisma);
+    const plan = await findPlanForUser(app, request.params.planId, user.id);
+    if (!plan) {
+      return reply.status(404).send({
+        error: { code: 'NOT_FOUND', message: '复查计划不存在' },
+        requestId
+      });
+    }
+
+    const updated = await app.prisma.recheckPlan.update({
+      where: { id: plan.id },
+      data: { status: 'cancelled' },
+      include: {
+        todos: {
+          orderBy: { sortOrder: 'asc' }
+        }
+      }
+    });
+
+    return {
+      data: serializePlan(updated as unknown as RecheckPlanShape),
+      requestId
+    };
+  });
+}

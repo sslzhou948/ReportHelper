@@ -5,6 +5,7 @@ import type { PrismaClient } from '@prisma/client';
 import type { Env } from './config/env.js';
 import { registerOcrRoutes } from './routes/ocr.js';
 import { registerProfileRoutes } from './routes/profiles.js';
+import { registerRecheckRoutes } from './routes/recheck.js';
 import { registerReportRoutes } from './routes/reports.js';
 import { getRequestId } from './utils/request-id.js';
 
@@ -51,6 +52,7 @@ export function buildApp({ env, prisma }: BuildAppOptions) {
   app.register(registerProfileRoutes);
   app.register(registerOcrRoutes);
   app.register(registerReportRoutes);
+  app.register(registerRecheckRoutes);
 
   return app;
 }

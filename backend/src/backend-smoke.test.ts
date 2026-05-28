@@ -17,6 +17,8 @@ class MemoryPrisma {
   reports: Row[] = [];
   reportMetricValues: Row[] = [];
   userMetricSnapshots: Row[] = [];
+  recheckPlans: Row[] = [];
+  recheckTodos: Row[] = [];
 
   user = {
     upsert: async ({ where, create }: any) => {
@@ -248,6 +250,99 @@ class MemoryPrisma {
     }
   };
 
+  recheckPlan = {
+    findMany: async ({ where, include, orderBy }: any) => {
+      const rows = this.recheckPlans.filter((plan) => {
+        if (where.profileId && plan.profileId !== where.profileId) return false;
+        if (where.deletedAt === null && plan.deletedAt) return false;
+        return true;
+      });
+      if (orderBy?.date === 'asc') rows.sort((a, b) => a.date.getTime() - b.date.getTime());
+      if (!include?.todos) return rows;
+      return rows.map((plan) => ({
+        ...plan,
+        todos: this.recheckTodos
+          .filter((todo) => todo.planId === plan.id)
+          .sort((a, b) => a.sortOrder - b.sortOrder)
+      }));
+    },
+    findFirst: async ({ where, include }: any) => {
+      const plan = this.recheckPlans.find((item) => {
+        if (where.id && item.id !== where.id) return false;
+        if (where.deletedAt === null && item.deletedAt) return false;
+        if (where.profile) {
+          const profile = this.profiles.find((profileRow) => profileRow.id === item.profileId);
+          if (!profile || profile.userId !== where.profile.userId) return false;
+          if (where.profile.deletedAt === null && profile.deletedAt) return false;
+        }
+        return true;
+      });
+      if (!plan) return null;
+      if (!include?.todos) return plan;
+      return {
+        ...plan,
+        todos: this.recheckTodos
+          .filter((todo) => todo.planId === plan.id)
+          .sort((a, b) => a.sortOrder - b.sortOrder)
+      };
+    },
+    create: async ({ data, include }: any) => {
+      const plan = {
+        id: randomUUID(),
+        profileId: data.profileId,
+        type: data.type,
+        date: data.date,
+        timeOfDay: data.timeOfDay,
+        hospital: data.hospital,
+        department: data.department,
+        doctor: data.doctor,
+        status: data.status || 'pending',
+        reminderConfig: data.reminderConfig,
+        createdAt: now(),
+        updatedAt: now(),
+        deletedAt: null
+      };
+      this.recheckPlans.push(plan);
+      for (const todoData of data.todos?.create || []) {
+        this.recheckTodos.push({
+          id: randomUUID(),
+          planId: plan.id,
+          ...todoData,
+          createdAt: now(),
+          updatedAt: now()
+        });
+      }
+      if (!include?.todos) return plan;
+      return {
+        ...plan,
+        todos: this.recheckTodos
+          .filter((todo) => todo.planId === plan.id)
+          .sort((a, b) => a.sortOrder - b.sortOrder)
+      };
+    },
+    update: async ({ where, data, include }: any) => {
+      const plan = this.recheckPlans.find((item) => item.id === where.id);
+      if (!plan) throw new Error('recheck plan not found');
+      Object.assign(plan, data, { updatedAt: now() });
+      if (!include?.todos) return plan;
+      return {
+        ...plan,
+        todos: this.recheckTodos
+          .filter((todo) => todo.planId === plan.id)
+          .sort((a, b) => a.sortOrder - b.sortOrder)
+      };
+    }
+  };
+
+  recheckTodo = {
+    update: async ({ where, data }: any) => {
+      const todo = this.recheckTodos.find((item) => item.id === where.id);
+      if (!todo) throw new Error('recheck todo not found');
+      Object.assign(todo, data, { updatedAt: now() });
+      return todo;
+    }
+  };
+
   async $transaction<T>(fn: (tx: this) => Promise<T>): Promise<T> {
     return fn(this);
   }
@@ -324,6 +419,75 @@ const afterDeleteProfilesResponse = await app.inject({
 });
 assert.equal(afterDeleteProfilesResponse.statusCode, 200);
 assert.ok(!afterDeleteProfilesResponse.json().data.some((profile: Row) => profile.id === createdProfile.id));
+
+const createRecheckResponse = await app.inject({
+  method: 'POST',
+  url: `/api/profiles/${profileId}/recheck-plans`,
+  payload: {
+    type: '常规复查',
+    date: '2026-06-01',
+    hospital: '协和医院',
+    department: '肿瘤科',
+    todos: [
+      { text: '预约挂号', sortOrder: 1, isDone: false, isTemplate: true },
+      { text: '带病历本', sortOrder: 2, isDone: true, isTemplate: true }
+    ],
+    reminderConfig: {
+      advanceDays: [3, 1, 0],
+      subscribeAccepted: false
+    }
+  }
+});
+assert.equal(createRecheckResponse.statusCode, 200);
+const recheckPlan = createRecheckResponse.json().data;
+assert.equal(recheckPlan.date, '2026-06-01');
+assert.equal(recheckPlan.todos.length, 2);
+
+const listRecheckResponse = await app.inject({
+  method: 'GET',
+  url: `/api/profiles/${profileId}/recheck-plans`
+});
+assert.equal(listRecheckResponse.statusCode, 200);
+assert.equal(listRecheckResponse.json().data.nextPlan.id, recheckPlan.id);
+
+const updateTodoResponse = await app.inject({
+  method: 'PATCH',
+  url: `/api/recheck-plans/${recheckPlan.id}/todos/${recheckPlan.todos[0].id}`,
+  payload: { isDone: true }
+});
+assert.equal(updateTodoResponse.statusCode, 200);
+assert.equal(updateTodoResponse.json().data.todos[0].isDone, true);
+
+const completeRecheckResponse = await app.inject({
+  method: 'POST',
+  url: `/api/recheck-plans/${recheckPlan.id}/complete`
+});
+assert.equal(completeRecheckResponse.statusCode, 200);
+assert.equal(completeRecheckResponse.json().data.status, 'done');
+const doneRecheckResponse = await app.inject({
+  method: 'GET',
+  url: `/api/profiles/${profileId}/recheck-plans`
+});
+assert.equal(doneRecheckResponse.statusCode, 200);
+assert.equal(doneRecheckResponse.json().data.doneCount, 1);
+
+const cancelSeedResponse = await app.inject({
+  method: 'POST',
+  url: `/api/profiles/${profileId}/recheck-plans`,
+  payload: {
+    type: 'CT 检查',
+    date: '2026-06-22',
+    hospital: '肿瘤医院',
+    todos: [{ text: '取号', sortOrder: 1 }]
+  }
+});
+assert.equal(cancelSeedResponse.statusCode, 200);
+const cancelRecheckResponse = await app.inject({
+  method: 'POST',
+  url: `/api/recheck-plans/${cancelSeedResponse.json().data.id}/cancel`
+});
+assert.equal(cancelRecheckResponse.statusCode, 200);
+assert.equal(cancelRecheckResponse.json().data.status, 'cancelled');
 
 const createTaskResponse = await app.inject({
   method: 'POST',
@@ -510,4 +674,4 @@ assert.ok(!afterDeleteListResponse.json().data.some((report: Row) => report.id =
 
 await app.close();
 
-console.log('Backend smoke passed: profile CRUD, fixture OCR, report save/read/edit/delete, and duplicate check routes');
+console.log('Backend smoke passed: profile CRUD, recheck plans, fixture OCR, report save/read/edit/delete, and duplicate check routes');

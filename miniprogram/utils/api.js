@@ -128,6 +128,7 @@ function createHybridUploadApi(options = {}) {
   const storage = createHybridStorage(options);
   const backendApi = createBackendApi(createApiClient(options));
   const backendProfileId = (profileId) => storage.get('healthhelperBackendProfileId') || profileId;
+  const hasBackendProfile = () => !!storage.get('healthhelperBackendProfileId');
   const rememberProfile = (result) => {
     if (result && result.profileId) storage.set('healthhelperBackendProfileId', result.profileId);
     return result;
@@ -160,6 +161,26 @@ function createHybridUploadApi(options = {}) {
     },
     setMetricPinned(profileId, metricKey, isPinned) {
       return backendApi.setMetricPinned(backendProfileId(profileId), metricKey, isPinned);
+    },
+    listRecheckPlans(profileId) {
+      if (!hasBackendProfile()) return mockApi.listRecheckPlans(profileId);
+      return backendApi.listRecheckPlans(backendProfileId(profileId));
+    },
+    createRecheckPlan(profileId, payload, config) {
+      if (!hasBackendProfile()) return mockApi.createRecheckPlan(profileId, payload, config);
+      return backendApi.createRecheckPlan(backendProfileId(profileId), payload, config);
+    },
+    updateRecheckTodo(planId, todoId, payload) {
+      if (!hasBackendProfile()) return mockApi.updateRecheckTodo(planId, todoId, payload);
+      return backendApi.updateRecheckTodo(planId, todoId, payload);
+    },
+    completeRecheckPlan(planId, config) {
+      if (!hasBackendProfile()) return mockApi.completeRecheckPlan(planId, config);
+      return backendApi.completeRecheckPlan(planId, config);
+    },
+    cancelRecheckPlan(planId, config) {
+      if (!hasBackendProfile()) return mockApi.cancelRecheckPlan(planId, config);
+      return backendApi.cancelRecheckPlan(planId, config);
     },
     checkDuplicateReports(payload, config) {
       return backendApi.checkDuplicateReports(toBackendDuplicatePayload(payload), config);

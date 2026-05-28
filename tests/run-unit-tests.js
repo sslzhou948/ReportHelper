@@ -152,7 +152,12 @@ asyncChecks.push(hybridApi.createOcrTask({
   ocrTaskId: '22222222-2222-4222-8222-222222222222',
   reports: [{ draftId: 'draft_mock' }],
   duplicateDecisions: [{ draftId: 'draft_mock', decision: 'skip' }]
-})).then(() => hybridApi.listReports('profile_mock')).then(() => hybridApi.listMetricSnapshots('profile_mock')).then(() => {
+})).then(() => hybridApi.listReports('profile_mock')).then(() => hybridApi.listMetricSnapshots('profile_mock')).then(() => hybridApi.createRecheckPlan('profile_mock', {
+  type: '常规复查',
+  date: '2026-06-01',
+  hospital: '协和医院',
+  todos: [{ text: '预约挂号', sortOrder: 1 }]
+})).then(() => hybridApi.listRecheckPlans('profile_mock')).then(() => hybridApi.updateRecheckTodo('plan_1', 'todo_1', { isDone: true })).then(() => {
   assert.strictEqual(hybridRequests[0].url, 'http://127.0.0.1:8787/api/ocr/tasks');
   assert.deepStrictEqual(hybridRequests[0].data, { fixtureCaseIds: ['acth'] });
   assert.strictEqual(hybridRequests[1].url, 'http://127.0.0.1:8787/api/reports/duplicate-check');
@@ -169,6 +174,9 @@ asyncChecks.push(hybridApi.createOcrTask({
   assert.strictEqual(hybridStorage.get('healthhelperBackendProfileId'), '33333333-3333-4333-8333-333333333333');
   assert.strictEqual(hybridRequests[3].url, 'http://127.0.0.1:8787/api/profiles/33333333-3333-4333-8333-333333333333/reports');
   assert.strictEqual(hybridRequests[4].url, 'http://127.0.0.1:8787/api/profiles/33333333-3333-4333-8333-333333333333/metrics/snapshots');
+  assert.strictEqual(hybridRequests[5].url, 'http://127.0.0.1:8787/api/profiles/33333333-3333-4333-8333-333333333333/recheck-plans');
+  assert.strictEqual(hybridRequests[6].url, 'http://127.0.0.1:8787/api/profiles/33333333-3333-4333-8333-333333333333/recheck-plans');
+  assert.strictEqual(hybridRequests[7].url, 'http://127.0.0.1:8787/api/recheck-plans/plan_1/todos/todo_1');
 }));
 
 const errorClient = createApiClient({
