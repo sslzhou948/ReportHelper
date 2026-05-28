@@ -935,6 +935,18 @@ const updatedDraftResponse = await app.inject({
 assert.equal(updatedDraftResponse.statusCode, 200);
 assert.equal(updatedDraftResponse.json().data.basicInfo.hospital, '用户校准医院');
 
+const unresolvedSaveResponse = await app.inject({
+  method: 'POST',
+  url: '/api/reports/batch-create',
+  payload: {
+    profileId,
+    ocrTaskId: createTaskPayload.data.id
+  }
+});
+assert.equal(unresolvedSaveResponse.statusCode, 409);
+assert.equal(unresolvedSaveResponse.json().error.code, 'UNRESOLVED_REPORT_CONFLICTS');
+assert.equal(unresolvedSaveResponse.json().error.details.conflicts[0].draftId, editableDraft.draftId);
+
 const resolveConflictResponse = await app.inject({
   method: 'PATCH',
   url: `/api/ocr/tasks/${createTaskPayload.data.id}/drafts/${editableDraft.draftId}/conflicts/acth`,

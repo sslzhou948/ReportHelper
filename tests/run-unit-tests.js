@@ -503,6 +503,15 @@ asyncChecks.push(mockApi.createOcrTask({
   assert.strictEqual(task.drafts.length, 3);
   const conflictedDraft = task.drafts.find((draft) => draft.conflicts.length > 0);
   assert.ok(conflictedDraft, 'mock OCR task should include one conflict for confirmation flow');
+  return mockApi.batchCreateReports({ ocrTaskId: task.id, reports: task.drafts }).then(
+    () => assert.fail('unresolved OCR conflicts should block mock report save'),
+    (error) => {
+      assert.strictEqual(error.code, 'UNRESOLVED_REPORT_CONFLICTS');
+      return task;
+    }
+  );
+}).then((task) => {
+  const conflictedDraft = task.drafts.find((draft) => draft.conflicts.length > 0);
   return mockApi.resolveOcrConflict({
     taskId: task.id,
     draftId: conflictedDraft.draftId,

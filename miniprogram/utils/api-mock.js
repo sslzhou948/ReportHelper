@@ -704,6 +704,21 @@ function createMockApi() {
       const task = ocrTaskId && ocrTasks[ocrTaskId];
       const drafts = draftReports || (task && task.drafts) || [];
       const profileId = (task && task.profileId) || (reports[0] && reports[0].profileId) || store.getProfiles()[0].id;
+      const unresolvedConflicts = drafts
+        .map((draft) => ({
+          draftId: draft.draftId,
+          conflicts: draft.conflicts || []
+        }))
+        .filter((item) => item.conflicts.length > 0);
+      if (unresolvedConflicts.length) {
+        return Promise.reject({
+          code: 'UNRESOLVED_REPORT_CONFLICTS',
+          message: '请先处理冲突后再保存',
+          details: {
+            conflicts: unresolvedConflicts
+          }
+        });
+      }
       const candidates = detectDuplicateCandidates({ profileId, ocrTaskId, reports: drafts });
       const decisionByDraft = duplicateDecisions.reduce((acc, item) => {
         if (item && item.draftId) acc[item.draftId] = item;

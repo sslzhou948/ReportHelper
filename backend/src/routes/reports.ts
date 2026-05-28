@@ -1,6 +1,12 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { batchCreateReports, checkDuplicateReports, DuplicateReportRequiresDecisionError, getDraftsForTask } from '../services/report-service.js';
+import {
+  batchCreateReports,
+  checkDuplicateReports,
+  DuplicateReportRequiresDecisionError,
+  getDraftsForTask,
+  UnresolvedDraftConflictsError
+} from '../services/report-service.js';
 import {
   deleteReportForUser,
   getMetricHistory,
@@ -321,6 +327,18 @@ export async function registerReportRoutes(app: FastifyInstance) {
             message: error.message,
             details: {
               candidates: error.candidates
+            }
+          },
+          requestId
+        });
+      }
+      if (error instanceof UnresolvedDraftConflictsError) {
+        return reply.status(error.statusCode).send({
+          error: {
+            code: error.code,
+            message: error.message,
+            details: {
+              conflicts: error.conflicts
             }
           },
           requestId

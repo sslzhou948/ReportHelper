@@ -59,6 +59,15 @@ export class DuplicateReportRequiresDecisionError extends Error {
   }
 }
 
+export class UnresolvedDraftConflictsError extends Error {
+  code = 'UNRESOLVED_REPORT_CONFLICTS';
+  statusCode = 409;
+
+  constructor(public conflicts: Array<{ draftId: string; conflicts: JsonObject[] }>) {
+    super('OCR 结果仍有未处理冲突，请先完成校准后再保存');
+  }
+}
+
 function toPlainObject(value: Prisma.JsonValue): JsonObject {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
   return value as JsonObject;
@@ -305,6 +314,14 @@ export async function batchCreateReports(prisma: PrismaClient, input: BatchCreat
     }
 
     const drafts = await getDraftsForTask(tx as PrismaClient, input.profileId, input.ocrTaskId);
+    const unresolvedConflicts = drafts
+      .map((draft) => ({
+        draftId: draft.id,
+        conflicts: toArray<JsonObject>(draft.conflicts)
+      }))
+      .filter((item) => item.conflicts.length > 0);
+    if (unresolvedConflicts.length) throw new UnresolvedDraftConflictsError(unresolvedConflicts);
+
     const candidates = await checkDuplicateReports(tx as PrismaClient, input.profileId, drafts);
     const unresolved = candidates.filter((candidate) => !candidate.draftId || !decisionByDraft.has(candidate.draftId));
     if (unresolved.length) throw new DuplicateReportRequiresDecisionError(unresolved);
