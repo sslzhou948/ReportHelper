@@ -6,7 +6,7 @@
   <view class="pad mt-16">
     <view class="intro-card">
       <view class="body strong">创建第一份档案</view>
-      <view class="sub mt-8">请先选择这份档案是为自己还是为亲属创建。后续可以继续新增多份档案，分别管理报告、指标和复查计划。</view>
+      <view class="sub mt-8">已有档案可直接微信登录继续使用。首次使用时，请先选择这份档案是为自己还是为亲属创建。</view>
     </view>
     <view class="choice card card-pad mt-12 {{selfSelectedClass}}" data-relation="我自己" bindtap="selectRelation">
       <view class="choice-icon">我</view>

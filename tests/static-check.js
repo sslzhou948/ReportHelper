@@ -168,6 +168,8 @@ assert.ok(profileOnboardJs.includes('openAgreement()') && profileOnboardJs.inclu
 assert.ok(profileOnboardJs.includes('openPrivacy()') && profileOnboardJs.includes('/pages/profile/privacy'), 'onboard must expose a privacy policy entry');
 assert.ok(profileOnboardJs.includes('selectRelation(event)') && profileOnboardJs.includes('continueCreate()'), 'onboard must separate relation selection from login continuation');
 assert.ok(profileOnboardJs.includes('selectionState(relation, agreed)'), 'onboard selected and disabled states must be precomputed in page JS');
+assert.ok(profileOnboardJs.includes('api.getProfiles()'), 'onboard login must check existing profiles before forcing first-profile creation');
+assert.ok(profileOnboardJs.includes("wx.switchTab({ url: '/pages/home/index' })"), 'onboard must let returning users log in without choosing a new archive type');
 assert.ok(profileOnboardWxml.includes('微信登录并继续'), 'onboard must show an explicit WeChat login continuation CTA');
 assert.ok(profileOnboardWxml.includes('创建第一份档案') && profileOnboardWxml.includes('为我自己') && profileOnboardWxml.includes('为我的亲属'), 'onboard must clearly frame first archive creation and relation choice');
 assert.ok(profileOnboardWxml.includes('catchtap="openAgreement"') && profileOnboardWxml.includes('catchtap="openPrivacy"'), 'onboard agreement and privacy text must be tappable without toggling the checkbox');

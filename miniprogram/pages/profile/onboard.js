@@ -7,7 +7,7 @@ function selectionState(relation, agreed) {
     selectedRelation: relation,
     selfSelectedClass: relation === '\u6211\u81ea\u5df1' ? 'selected' : '',
     familySelectedClass: relation === '\u5988\u5988' ? 'selected' : '',
-    continueDisabledClass: agreed && relation ? '' : 'disabled'
+    continueDisabledClass: agreed ? '' : 'disabled'
   };
 }
 
@@ -64,14 +64,25 @@ Page({
   },
 
   continueCreate() {
-    if (!this.data.selectedRelation) {
-      wx.showToast({ title: '\u8bf7\u5148\u9009\u62e9\u4e3a\u8c01\u521b\u5efa\u6863\u6848', icon: 'none' });
-      return;
-    }
-
     this.login().then((ok) => {
       if (!ok) return;
-      wx.navigateTo({ url: `/pages/profile/add?relation=${this.data.selectedRelation}` });
+      return api.getProfiles().then((profiles) => {
+        if (profiles && profiles.length) {
+          const app = getApp();
+          const current = app.getCurrentProfileId && app.getCurrentProfileId();
+          const matched = profiles.find((profile) => profile.id === current) || profiles[0];
+          if (matched && app.setCurrentProfileId) app.setCurrentProfileId(matched.id);
+          wx.switchTab({ url: '/pages/home/index' });
+          return;
+        }
+        if (!this.data.selectedRelation) {
+          wx.showToast({ title: '\u8bf7\u5148\u9009\u62e9\u4e3a\u8c01\u521b\u5efa\u6863\u6848', icon: 'none' });
+          return;
+        }
+        wx.navigateTo({ url: `/pages/profile/add?relation=${this.data.selectedRelation}` });
+      }).catch((error) => {
+        showApiErrorToast(error, '\u83b7\u53d6\u6863\u6848\u5931\u8d25\uff0c\u8bf7\u91cd\u8bd5');
+      });
     });
   }
 });
