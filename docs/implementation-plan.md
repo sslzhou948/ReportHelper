@@ -12,6 +12,7 @@ Before implementing feature logic, use these local contracts as the source of tr
 - `docs/edge-case-matrix.md`: P0/P1/P2 boundary scenarios, expected UI behavior, API constraints, and test expectations.
 - `docs/api-contract.md`: frontend/backend request and response shapes, error format, idempotency, and endpoint list.
 - `docs/database-schema.md`: backend data model, stable IDs/keys, OCR draft/report persistence, duplicate-save decisions, and backfill safety rules.
+- `docs/backend-technical-plan.md`: backend architecture, implementation slices, duplicate detection rules, and minimum production loop.
 
 If code behavior and these contracts diverge, update the contract first, then update code and tests.
 
