@@ -705,7 +705,13 @@ asyncChecks.push(mockApi.createRecheckPlan('profile_mom', {
   const created = [recheck.nextPlan].concat(recheck.otherPlans).filter(Boolean).find((plan) => plan.date === '2026-06-20');
   assert.ok(created, 'created recheck plan should be listed');
   assert.strictEqual(created.todos[0].isDone, false);
-  return mockApi.completeRecheckPlan(created.id).then(() => mockApi.listRecheckPlans('profile_mom'));
+  return mockApi.completeRecheckPlan(created.id).then(
+    () => assert.fail('incomplete recheck todos should block completion'),
+    (error) => {
+      assert.strictEqual(error.code, 'RECHECK_TODOS_NOT_READY');
+      return mockApi.updateRecheckTodo(created.id, created.todos[0].id, { isDone: true });
+    }
+  ).then(() => mockApi.completeRecheckPlan(created.id)).then(() => mockApi.listRecheckPlans('profile_mom'));
 }).then((recheck) => {
   assert.ok(recheck.doneCount >= 1, 'completed plan should increase done count');
   return mockApi.createRecheckPlan('profile_mom', {
@@ -718,6 +724,12 @@ asyncChecks.push(mockApi.createRecheckPlan('profile_mom', {
   const visible = [recheck.nextPlan].concat(recheck.otherPlans).filter(Boolean);
   assert.ok(!visible.some((plan) => plan.date === '2026-06-22'), 'cancelled plan should be hidden from pending list');
 }));
+asyncChecks.push(mockApi.setMetricPinned('profile_mom', 'unknown_metric', true).then(
+  () => assert.fail('unknown metric should not be pinned'),
+  (error) => {
+    assert.strictEqual(error.code, 'NOT_FOUND');
+  }
+));
 asyncChecks.push(mockApi.setMetricPinned('profile_mom', 'wbc', false).then((snapshot) => {
   assert.strictEqual(snapshot.metricKey, 'wbc');
   assert.strictEqual(snapshot.isPinned, false);

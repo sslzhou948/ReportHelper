@@ -1079,6 +1079,16 @@ const historyPayload = historyResponse.json();
 assert.equal(historyPayload.data.metricKey, 'acth');
 assert.ok(historyPayload.data.history.length >= 1);
 
+const unknownPinResponse = await app.inject({
+  method: 'PATCH',
+  url: `/api/profiles/${profileId}/metrics/unknown_metric/pin`,
+  payload: {
+    isPinned: true
+  }
+});
+assert.equal(unknownPinResponse.statusCode, 404);
+assert.equal(unknownPinResponse.json().error.code, 'NOT_FOUND');
+
 const pinResponse = await app.inject({
   method: 'PATCH',
   url: `/api/profiles/${profileId}/metrics/acth/pin`,

@@ -443,11 +443,7 @@ export async function setMetricPinned(prisma: PrismaClient, profileId: string, u
   if (!snapshots) return null;
   const snapshot = snapshots.find((item) => item.metricKey === metricKey);
   if (!snapshot) {
-    return {
-      profileId,
-      metricKey,
-      isPinned
-    };
+    return null;
   }
 
   await prisma.userMetricSnapshot.upsert({

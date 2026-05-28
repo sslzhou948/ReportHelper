@@ -474,10 +474,17 @@ function createMockApi() {
     },
 
     setMetricPinned(profileId, metricKey, isPinned) {
-      pinnedOverrides[`${profileId}:${metricKey}`] = !!isPinned;
-      return this.listMetricSnapshots(profileId).then((rows) => (
-        rows.find((item) => item.metricKey === metricKey) || { profileId, metricKey, isPinned: !!isPinned }
-      ));
+      return this.listMetricSnapshots(profileId).then((rows) => {
+        const snapshot = rows.find((item) => item.metricKey === metricKey);
+        if (!snapshot) {
+          return Promise.reject({
+            code: 'NOT_FOUND',
+            message: '指标不存在'
+          });
+        }
+        pinnedOverrides[`${profileId}:${metricKey}`] = !!isPinned;
+        return { ...snapshot, isPinned: !!isPinned };
+      });
     },
 
     listRecheckPlans(profileId) {
@@ -519,6 +526,16 @@ function createMockApi() {
     completeRecheckPlan(planId) {
       const plan = findRecheckPlan(planId);
       if (!plan) return ok(null);
+      const unfinished = (plan.todos || []).filter((todo) => !todo.isDone);
+      if (unfinished.length) {
+        return Promise.reject({
+          code: 'RECHECK_TODOS_NOT_READY',
+          message: '请先完成全部复查待办',
+          details: {
+            unfinishedTodoIds: unfinished.map((todo) => todo.id)
+          }
+        });
+      }
       plan.status = 'done';
       return ok(plan);
     },
