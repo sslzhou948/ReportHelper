@@ -66,6 +66,7 @@ X-Request-Id: <uuid>
 | 403 | `FORBIDDEN` | 无权访问 |
 | 404 | `NOT_FOUND` | 资源不存在或已删除 |
 | 409 | `CONFLICT` | 版本冲突或重复提交 |
+| 409 | `DUPLICATE_REPORT_REQUIRES_DECISION` | 疑似重复报告，需要用户选择覆盖或另存 |
 | 413 | `PAYLOAD_TOO_LARGE` | 文件过大 |
 | 415 | `UNSUPPORTED_MEDIA_TYPE` | 文件格式不支持 |
 | 429 | `RATE_LIMITED` | 请求过于频繁 |
@@ -83,6 +84,7 @@ Idempotency-Key: <uuid>
 
 - 创建 OCR 任务。
 - 批量保存报告。
+- 检测重复报告。
 - 创建复查计划。
 - 删除报告。
 
@@ -130,8 +132,12 @@ Idempotency-Key: <uuid>
   "thumbnailUrls": ["https://..."],
   "imageUrls": ["https://signed-url..."],
   "ocrTaskId": "ocr_1",
+  "draftId": "draft_1",
   "note": "",
   "abnormalCount": 2,
+  "analysisPolicy": "metric_analysis",
+  "duplicateGroupId": null,
+  "replacedByReportId": null,
   "createdAt": "2026-05-27T00:00:00+08:00",
   "updatedAt": "2026-05-27T00:00:00+08:00"
 }
@@ -177,6 +183,7 @@ Idempotency-Key: <uuid>
   "refRangeLow": 3.5,
   "refRangeHigh": 10.0,
   "refQualitative": null,
+  "refText": null,
   "tone": "low",
   "ocrConfidence": 0.92,
   "isManuallyEdited": false
@@ -241,6 +248,9 @@ Idempotency-Key: <uuid>
     "hospitalSource": "ocr",
     "reportDate": "2026-04-28",
     "reportDateSource": "ocr",
+    "modality": "laboratory",
+    "examPart": "",
+    "examMethod": "",
     "confidence": 0.88
   },
   "metrics": [],
@@ -532,6 +542,45 @@ Idempotency-Key: <uuid>
 }
 ```
 
+### PATCH `/api/ocr/tasks/{taskId}/drafts/{draftId}`
+
+确认页编辑 OCR 草稿。后端只更新草稿，不创建正式报告。
+
+请求：
+
+```json
+{
+  "basicInfo": {
+    "type": "甲功1",
+    "hospital": "北京协和医院",
+    "hospitalSource": "user_edited",
+    "reportDate": "2025-12-22",
+    "reportDateSource": "user_edited",
+    "examPart": "",
+    "examMethod": ""
+  },
+  "metrics": [
+    {
+      "metricKey": "ft3",
+      "valueType": "quantitative",
+      "valueNumeric": 3.65,
+      "unit": "pg/ml",
+      "refRangeLow": 1.8,
+      "refRangeHigh": 4.1,
+      "isManuallyEdited": true
+    }
+  ],
+  "findings": [],
+  "version": 3
+}
+```
+
+响应：`RecognizedReportDraft`。
+
+错误：
+
+- `409 CONFLICT`: draft version 已变化，前端应重新加载。
+
 ## 6. Reports
 
 ### GET `/api/profiles/{profileId}/reports`
@@ -564,7 +613,9 @@ Idempotency-Key: <uuid>
 }
 ```
 
-### POST `/api/reports/batch-create`
+### POST `/api/reports/duplicate-check`
+
+保存前检测 OCR 草稿是否与已有报告重复。前端在调用批量保存前应先调用本接口；若返回候选项，需要弹窗让用户选择覆盖或另存。
 
 请求：
 
@@ -576,24 +627,17 @@ Idempotency-Key: <uuid>
     {
       "draftId": "draft_1",
       "basicInfo": {
-        "type": "血常规",
-        "typeKey": "blood_routine",
-        "hospital": "协和医院",
-        "reportDate": "2026-04-28",
-        "note": ""
+        "type": "甲功1",
+        "typeKey": "thyroid_function",
+        "hospital": "北京协和医院",
+        "reportDate": "2025-12-22",
+        "modality": "laboratory",
+        "examPart": "",
+        "examMethod": ""
       },
-      "sourcePhotoIds": ["photo_1", "photo_2"],
+      "sourcePhotoIds": ["photo_1"],
       "metrics": [
-        {
-          "metricKey": "wbc",
-          "metricName": "白细胞",
-          "valueType": "quantitative",
-          "valueNumeric": 3.2,
-          "unit": "×10⁹/L",
-          "refRangeLow": 3.5,
-          "refRangeHigh": 10.0,
-          "isManuallyEdited": false
-        }
+        { "metricKey": "ft3", "valueNumeric": 3.65, "unit": "pg/ml" }
       ]
     }
   ]
@@ -605,9 +649,128 @@ Idempotency-Key: <uuid>
 ```json
 {
   "data": {
-    "reports": [
-      { "draftId": "draft_1", "reportId": "report_1" }
+    "hasDuplicates": true,
+    "candidates": [
+      {
+        "draftId": "draft_1",
+        "existingReportId": "report_old_1",
+        "matchLevel": "strong",
+        "matchReason": {
+          "sameProfile": true,
+          "sameReportDate": true,
+          "sameHospital": true,
+          "sameTypeKey": true,
+          "metricOverlapRatio": 0.9
+        },
+        "suggestedDecision": "replace"
+      }
     ]
+  },
+  "requestId": "req_123"
+}
+```
+
+重复判断规则：
+
+- `strong`: 同档案、同日期、同医院、同 `typeKey/examPart/examMethod`，且旧报告未删除。
+- `possible`: 日期和类型相同但医院缺失/推测，或图片 hash/指标集合高度重叠。
+- 影像报告使用 `typeKey + examPart + examMethod + reportDate + hospital` 判断；不同部位不视为重复。
+
+### POST `/api/reports/batch-create`
+
+请求：
+
+```json
+{
+  "profileId": "profile_mom",
+  "ocrTaskId": "ocr_1",
+  "duplicateDecisions": [
+    {
+      "draftId": "draft_1",
+      "decision": "replace",
+      "existingReportId": "report_old_1"
+    }
+  ],
+  "reports": [
+    {
+      "draftId": "draft_1",
+      "basicInfo": {
+        "type": "血常规",
+        "originalType": "血常规",
+        "typeKey": "blood_routine",
+        "canonicalTypeName": "血常规",
+        "modality": "laboratory",
+        "examPart": "",
+        "examMethod": "",
+        "analysisPolicy": "metric_analysis",
+        "hospital": "协和医院",
+        "hospitalSource": "ocr",
+        "reportDate": "2026-04-28",
+        "reportDateSource": "ocr",
+        "note": ""
+      },
+      "sourcePhotoIds": ["photo_1", "photo_2"],
+      "metrics": [
+        {
+          "metricKey": "wbc",
+          "metricName": "白细胞",
+          "originalMetricName": "白细胞",
+          "category": "blood_routine",
+          "categoryCn": "血常规",
+          "mappingStatus": "confirmed",
+          "valueType": "quantitative",
+          "valueNumeric": 3.2,
+          "valueQualitative": null,
+          "unit": "×10⁹/L",
+          "refRangeLow": 3.5,
+          "refRangeHigh": 10.0,
+          "refQualitative": null,
+          "refText": null,
+          "ocrConfidence": 0.92,
+          "isManuallyEdited": false
+        }
+      ],
+      "findings": [],
+      "warnings": []
+    }
+  ]
+}
+```
+
+响应：
+
+```json
+{
+  "data": {
+    "reports": [
+      {
+        "draftId": "draft_1",
+        "reportId": "report_1",
+        "action": "created",
+        "replacedReportId": null
+      }
+    ]
+  },
+  "requestId": "req_123"
+}
+```
+
+`duplicateDecisions.decision`:
+
+- `replace`: 覆盖旧报告。后端软删除旧报告或设置 `replacedByReportId`，创建新报告并重算快照。
+- `keep_both`: 另存一份。后端保留两份报告，并记录重复候选为 ignored。
+- `skip`: 不保存该 draft。
+
+如果后端检测到重复但请求未提供对应决策，返回：
+
+```json
+{
+  "error": {
+    "code": "DUPLICATE_REPORT_REQUIRES_DECISION",
+    "message": "发现相似报告，请选择覆盖旧报告或另存一份",
+    "details": {
+      "candidates": []
+    }
   },
   "requestId": "req_123"
 }

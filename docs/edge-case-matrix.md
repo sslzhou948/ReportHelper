@@ -58,6 +58,9 @@
 | 管理员未及时处理未知指标 | P1 | review item 长期 pending | 用户报告正常可查，指标标记“待系统确认” | 不阻塞报告归档；不进入趋势/汇总 | API 测试 |
 | 管理员发布新映射后回填 | P1 | pending 指标被确认 | 用户无感更新或详情状态变为已归类 | 只更新标准化字段和快照，不覆盖原始 OCR/用户编辑 | 后台任务测试 |
 | 手动编辑数值 | P0 | 用户修改 OCR 值 | 标记 manuallyEdited | 后端保存 `isManuallyEdited` | 表单测试 |
+| 保存时命中重复报告 | P0 | 同档案下日期/医院/标准类型/部位等匹配已有报告 | 弹窗让用户选择覆盖旧报告、仍保存为新报告或跳过 | 未带 `duplicateDecisions` 时返回 `409 DUPLICATE_REPORT_REQUIRES_DECISION` | API/页面测试 |
+| 保存为覆盖旧报告 | P0 | 用户选择覆盖 | 提示将替换旧报告，确认后保存 | 旧报告软删除或写入 `replacedByReportId`，重算 snapshot | API 测试 |
+| 疑似重复但用户保留 | P1 | 命中 possible duplicate | 允许保存为新报告，但记录用户选择 | 写入 duplicate candidate ignored，避免持续重复提示 | API 测试 |
 | 用户取消保存 | P0 | 确认页返回/取消 | 弹“识别数据将丢失” | 确认后取消 task/draft | 交互测试 |
 
 ## 5. 报告与指标
@@ -73,6 +76,7 @@
 | 医院参考范围不同 | P0 | history ref 不同 | 点颜色按各自 ref，参考线按最新 ref | 保留每次 ref | 单元测试 |
 | 影像报告无量化指标 | P0 | CT/MRI/超声等报告 | 只展示报告详情和影像所见，不进入趋势分析 | `modality=imaging`, `analysisPolicy=view_only` | fixture 测试 |
 | 同名影像检查不同部位 | P1 | 两份“胸腹盆CT平扫”分别对应胸部/腹盆 | 确认页显示部位，可人工校准 | 保存 `examPart/examMethod`，同 typeKey 下按部位区分 | fixture 测试 |
+| 同名影像报告重复判断 | P0 | 两份影像报告原始名称相同但 `examPart` 不同 | 不提示覆盖；按不同部位分别归档 | duplicate check 必须比较 `examPart/examMethod` | fixture/API 测试 |
 | 长指标名/长医院名 | P1 | 文本过长 | 单行截断或换行不挤压 | 前端样式约束 | 视觉测试 |
 
 ## 6. 关注指标

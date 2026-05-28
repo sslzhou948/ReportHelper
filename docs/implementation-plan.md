@@ -11,6 +11,7 @@ Before implementing feature logic, use these local contracts as the source of tr
 - `docs/product-logic-contract.md`: product rules, state machines, upload/OCR behavior, metric/trend rules, profile ownership, and v1 decisions.
 - `docs/edge-case-matrix.md`: P0/P1/P2 boundary scenarios, expected UI behavior, API constraints, and test expectations.
 - `docs/api-contract.md`: frontend/backend request and response shapes, error format, idempotency, and endpoint list.
+- `docs/database-schema.md`: backend data model, stable IDs/keys, OCR draft/report persistence, duplicate-save decisions, and backfill safety rules.
 
 If code behavior and these contracts diverge, update the contract first, then update code and tests.
 
@@ -23,6 +24,7 @@ If code behavior and these contracts diverge, update the contract first, then up
 - Use WeChat DevTools CLI for compile/smoke checks after feature changes.
 - Use normal-mode visual proportions as the product baseline. Senior / large-text mode is a backlog item and should be implemented later through global style variables, not duplicate pages.
 - Start frontend feature development against an API adapter that matches `docs/api-contract.md`; keep the mock adapter and real backend adapter interchangeable.
+- Treat duplicate report detection as a save-time P0 rule. The backend must reject ambiguous duplicates until the frontend provides an explicit user decision.
 
 ## Test Layers
 
