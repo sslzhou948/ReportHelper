@@ -79,6 +79,9 @@ function createBackendApi(client) {
     signUploads(payload, config) {
       return client.post('/api/uploads/sign', payload, config);
     },
+    completeUploads(payload, config) {
+      return client.post('/api/uploads/complete', payload, config);
+    },
     listReports(profileId, params = {}) {
       const query = params.limit ? `?limit=${params.limit}` : '';
       return client.get(`/api/profiles/${profileId}/reports${query}`);
@@ -167,6 +170,12 @@ function createHybridUploadApi(options = {}) {
     },
     signUploads(payload, config) {
       return backendApi.signUploads({
+        ...payload,
+        profileId: backendProfileId(payload.profileId)
+      }, config);
+    },
+    completeUploads(payload, config) {
+      return backendApi.completeUploads({
         ...payload,
         profileId: backendProfileId(payload.profileId)
       }, config);

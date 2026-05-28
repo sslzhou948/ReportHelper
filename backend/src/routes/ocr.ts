@@ -196,7 +196,7 @@ export async function registerOcrRoutes(app: FastifyInstance) {
           id: { in: uniquePhotoIds },
           profileId: profile.id,
           userId: user.id,
-          status: { in: ['signed', 'uploaded'] }
+          status: { in: ['uploaded'] }
         }
       });
       if (signedPhotos.length !== uniquePhotoIds.length) {

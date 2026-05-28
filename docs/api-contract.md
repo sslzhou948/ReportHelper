@@ -454,6 +454,40 @@ Idempotency-Key: <uuid>
 }
 ```
 
+### POST `/api/uploads/complete`
+
+客户端直传图片成功后调用本接口，把图片状态从 `signed` 标记为 `uploaded`。后续创建 OCR 任务应使用已完成上传的 `photoId`。
+
+请求：
+```json
+{
+  "profileId": "profile_mom",
+  "uploads": [
+    {
+      "photoId": "photo_1",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  ]
+}
+```
+
+响应：
+```json
+{
+  "data": {
+    "photos": [
+      {
+        "photoId": "photo_1",
+        "objectKey": "profiles/profile_mom/reports/...",
+        "status": "uploaded",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    ]
+  },
+  "requestId": "req_123"
+}
+```
+
 ### POST `/api/ocr/tasks`
 
 请求：
@@ -469,6 +503,10 @@ Idempotency-Key: <uuid>
   ]
 }
 ```
+
+说明：
+- 正常上传链路使用 `profileId + photos`，其中 `photoId` 来自 `/api/uploads/sign`，并必须先通过 `/api/uploads/complete` 标记完成；仍处于 `signed` 状态的图片不能创建 OCR 任务。
+- Fixture 旁路可使用 `fixtureCaseIds` 创建结构化 OCR 草稿，用于本地回归和业务闭环测试；生产环境应关闭或限制该入口。
 
 响应：
 

@@ -24,6 +24,14 @@ const signUploadsSchema = z.object({
   })).min(1).max(MAX_FILE_COUNT)
 });
 
+const completeUploadsSchema = z.object({
+  profileId: z.string().uuid(),
+  uploads: z.array(z.object({
+    photoId: z.string().uuid(),
+    sha256: z.string().trim().regex(/^[a-fA-F0-9]{64}$/).optional()
+  })).min(1).max(MAX_FILE_COUNT)
+});
+
 function objectKey(profileId: string, fileName: string) {
   const safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_').slice(-120) || 'report-image';
   return `profiles/${profileId}/reports/${new Date().toISOString().slice(0, 10)}/${randomUUID()}-${safeName}`;
@@ -126,6 +134,94 @@ export async function registerUploadRoutes(app: FastifyInstance) {
 
     return {
       data: { uploads },
+      requestId
+    };
+  });
+
+  app.post('/api/uploads/complete', async (request, reply) => {
+    const requestId = getRequestId(request);
+    const parsed = completeUploadsSchema.safeParse(request.body || {});
+    if (!parsed.success) {
+      return reply.status(400).send({
+        error: {
+          code: 'VALIDATION_FAILED',
+          message: 'Upload complete payload is invalid',
+          details: parsed.error.flatten()
+        },
+        requestId
+      });
+    }
+
+    const session = await requireSession(app, request, reply);
+    if (!session) return;
+    const { user } = session;
+
+    const profile = await app.prisma.profile.findFirst({
+      where: {
+        id: parsed.data.profileId,
+        userId: user.id,
+        deletedAt: null
+      }
+    });
+
+    if (!profile) {
+      return reply.status(404).send({
+        error: {
+          code: 'NOT_FOUND',
+          message: 'Profile not found'
+        },
+        requestId
+      });
+    }
+
+    const uniquePhotoIds = Array.from(new Set(parsed.data.uploads.map((upload) => upload.photoId)));
+    const availablePhotos = await app.prisma.reportPhoto.findMany({
+      where: {
+        id: { in: uniquePhotoIds },
+        profileId: profile.id,
+        userId: user.id,
+        status: { in: ['signed', 'uploaded'] }
+      }
+    });
+
+    if (availablePhotos.length !== uniquePhotoIds.length) {
+      return reply.status(400).send({
+        error: {
+          code: 'VALIDATION_FAILED',
+          message: 'Some uploads are unavailable for completion'
+        },
+        requestId
+      });
+    }
+
+    const shaByPhotoId = parsed.data.uploads.reduce<Record<string, string | undefined>>((acc, upload) => {
+      acc[upload.photoId] = upload.sha256;
+      return acc;
+    }, {});
+
+    const photos = await app.prisma.$transaction(async (tx) => {
+      const updated = [];
+      for (const photoId of uniquePhotoIds) {
+        updated.push(await tx.reportPhoto.update({
+          where: { id: photoId },
+          data: {
+            status: 'uploaded',
+            ...(shaByPhotoId[photoId] ? { sha256: shaByPhotoId[photoId] } : {})
+          }
+        }));
+      }
+      return updated;
+    });
+
+    return {
+      data: {
+        photos: photos.map((photo) => ({
+          photoId: photo.id,
+          objectKey: photo.objectKey,
+          status: photo.status,
+          sha256: photo.sha256 || null
+        }))
+      },
       requestId
     };
   });

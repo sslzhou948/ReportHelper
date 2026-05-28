@@ -288,10 +288,19 @@ class MemoryPrisma {
     updateMany: async ({ where, data }: any) => {
       const rows = this.reportPhotos.filter((photo) => {
         if (where.id?.in && !where.id.in.includes(photo.id)) return false;
+        if (where.profileId && photo.profileId !== where.profileId) return false;
+        if (where.userId && photo.userId !== where.userId) return false;
+        if (where.status?.in && !where.status.in.includes(photo.status)) return false;
         return true;
       });
       rows.forEach((photo) => Object.assign(photo, data, { updatedAt: now() }));
       return { count: rows.length };
+    },
+    update: async ({ where, data }: any) => {
+      const photo = this.reportPhotos.find((item) => item.id === where.id);
+      if (!photo) throw new Error('report photo not found');
+      Object.assign(photo, data, { updatedAt: now() });
+      return photo;
     }
   };
 
@@ -606,6 +615,38 @@ const unsupportedUploadResponse = await app.inject({
 });
 assert.equal(unsupportedUploadResponse.statusCode, 415);
 assert.equal(unsupportedUploadResponse.json().error.code, 'UNSUPPORTED_MEDIA_TYPE');
+
+const incompletePhotoTaskResponse = await app.inject({
+  method: 'POST',
+  url: '/api/ocr/tasks',
+  payload: {
+    profileId,
+    photos: signUploadsPayload.data.uploads.map((upload: Row, index: number) => ({
+      photoId: upload.photoId,
+      groupId: 'group_1',
+      sortOrder: index + 1
+    }))
+  }
+});
+assert.equal(incompletePhotoTaskResponse.statusCode, 400);
+assert.equal(incompletePhotoTaskResponse.json().error.code, 'VALIDATION_FAILED');
+
+const completeUploadsResponse = await app.inject({
+  method: 'POST',
+  url: '/api/uploads/complete',
+  payload: {
+    profileId,
+    uploads: signUploadsPayload.data.uploads.map((upload: Row) => ({
+      photoId: upload.photoId,
+      sha256: 'a'.repeat(64)
+    }))
+  }
+});
+assert.equal(completeUploadsResponse.statusCode, 200);
+const completeUploadsPayload = completeUploadsResponse.json();
+assert.equal(completeUploadsPayload.data.photos.length, 2);
+assert.ok(completeUploadsPayload.data.photos.every((photo: Row) => photo.status === 'uploaded'));
+assert.ok(prisma.reportPhotos.every((photo) => photo.status === 'uploaded'));
 
 const signedPhotoTaskResponse = await app.inject({
   method: 'POST',
@@ -987,4 +1028,4 @@ assert.ok(!afterDeleteListResponse.json().data.some((report: Row) => report.id =
 
 await app.close();
 
-console.log('Backend smoke passed: auth, profile CRUD, upload sign, recheck plans, OCR task list/cancel, fixture OCR draft edit, report save/read/edit/delete, and duplicate check routes');
+console.log('Backend smoke passed: auth, profile CRUD, upload sign/complete, recheck plans, OCR task list/cancel, fixture OCR draft edit, report save/read/edit/delete, and duplicate check routes');

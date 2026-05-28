@@ -406,6 +406,17 @@ function createMockApi() {
       });
     },
 
+    completeUploads({ uploads } = {}) {
+      return ok({
+        photos: (uploads || []).map((upload) => ({
+          photoId: upload.photoId,
+          objectKey: upload.objectKey || '',
+          status: 'uploaded',
+          sha256: upload.sha256 || null
+        }))
+      });
+    },
+
     listReports(profileId) {
       return ok(getActiveReports(profileId));
     },
