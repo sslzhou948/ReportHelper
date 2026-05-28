@@ -144,6 +144,110 @@ assert.ok(uploadValidation.message.includes('JPG/PNG/HEIC'));
   }
 })();
 
+asyncChecks.push((async () => {
+  const pagePath = path.resolve(__dirname, '..', 'miniprogram', 'pages', 'upload', 'pick.js');
+  const apiPath = path.resolve(__dirname, '..', 'miniprogram', 'utils', 'api.js');
+  const pageModulePath = require.resolve(pagePath);
+  const apiModulePath = require.resolve(apiPath);
+  const savedWx = global.wx;
+  const savedPage = global.Page;
+  const savedGetApp = global.getApp;
+  const savedApiCache = require.cache[apiModulePath];
+  const calls = [];
+  let navigatedTo = '';
+  let pageConfig = null;
+  const stubApi = {
+    signUploads(payload) {
+      calls.push({ type: 'sign', payload });
+      return Promise.resolve({
+        uploads: payload.files.map((file, index) => ({
+          clientFileId: file.clientFileId,
+          photoId: `signed_photo_${index + 1}`,
+          uploadUrl: `local-upload://${file.clientFileId}`,
+          headers: {}
+        }))
+      });
+    },
+    completeUploads(payload) {
+      calls.push({ type: 'complete', payload });
+      return Promise.resolve({
+        photos: payload.uploads.map((upload) => ({
+          ...upload,
+          status: 'uploaded'
+        }))
+      });
+    },
+    createOcrTask(payload) {
+      calls.push({ type: 'ocr', payload });
+      return Promise.resolve({
+        id: 'task_uploaded',
+        status: 'queued',
+        photoCount: payload.photos.length,
+        reportCount: 1
+      });
+    }
+  };
+  try {
+    require.cache[apiModulePath] = {
+      id: apiModulePath,
+      filename: apiModulePath,
+      loaded: true,
+      exports: { api: stubApi }
+    };
+    global.wx = {
+      getStorageSync: (key) => (key === 'pendingOcrTasks' ? [] : undefined),
+      setStorageSync: () => {},
+      removeStorageSync: () => {},
+      navigateTo: ({ url }) => { navigatedTo = url; },
+      redirectTo: ({ url }) => { navigatedTo = url; },
+      showToast: () => {}
+    };
+    global.getApp = () => ({ getCurrentProfileId: () => 'profile_upload' });
+    global.Page = (config) => { pageConfig = config; };
+    delete require.cache[pageModulePath];
+    require(pagePath);
+    const page = {
+      ...pageConfig,
+      data: JSON.parse(JSON.stringify(pageConfig.data)),
+      setData(update) {
+        this.data = {
+          ...this.data,
+          ...update
+        };
+      }
+    };
+    page.data.photos = [{
+      id: 1,
+      group: 1,
+      tempFilePath: 'first.jpg',
+      fileName: 'first.jpg',
+      mimeType: 'image/jpeg',
+      size: 1024
+    }, {
+      id: 2,
+      group: 1,
+      tempFilePath: 'second.jpg',
+      fileName: 'second.jpg',
+      mimeType: 'image/jpeg',
+      size: 2048
+    }];
+    await page.startOcr();
+    assert.deepStrictEqual(calls.map((call) => call.type), ['sign', 'complete', 'ocr']);
+    assert.deepStrictEqual(calls[0].payload.files.map((file) => file.clientFileId), ['local_1', 'local_2']);
+    assert.deepStrictEqual(calls[1].payload.uploads.map((upload) => upload.photoId), ['signed_photo_1', 'signed_photo_2']);
+    assert.deepStrictEqual(calls[2].payload.photos.map((photo) => photo.photoId), ['signed_photo_1', 'signed_photo_2']);
+    assert.deepStrictEqual(calls[2].payload.photos.map((photo) => photo.groupId), ['group_1', 'group_1']);
+    assert.ok(navigatedTo.includes('/pages/upload/confirm?taskId=task_uploaded'));
+  } finally {
+    if (savedApiCache) require.cache[apiModulePath] = savedApiCache;
+    else delete require.cache[apiModulePath];
+    global.wx = savedWx;
+    global.Page = savedPage;
+    global.getApp = savedGetApp;
+    delete require.cache[pageModulePath];
+  }
+})());
+
 assert.strictEqual(realcaseOcrDrafts.length, 7, 'realcase OCR baseline should cover all provided images');
 assert.ok(realcaseOcrDrafts.some((draft) => (draft.metrics || []).some((metric) => metric.tone === 'high')), 'realcase baseline should include abnormal metrics');
 assert.ok(realcaseOcrDrafts.some((draft) => (draft.findings || []).length > 0), 'realcase baseline should include imaging findings');

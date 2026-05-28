@@ -100,10 +100,77 @@ function decoratePhotos(photos, selected) {
 
 function toTaskPhotos(photos) {
   return photos.map((photo) => ({
-    photoId: `photo_${photo.id}`,
+    photoId: photo.uploadedPhotoId || `photo_${photo.id}`,
     groupId: photo.group ? `group_${photo.group}` : `photo_${photo.id}`,
     sortOrder: photo.id
   }));
+}
+
+function toUploadFiles(photos) {
+  return photos.map((photo) => ({
+    clientFileId: `local_${photo.id}`,
+    fileName: photo.fileName || `report-${photo.id}.jpg`,
+    mimeType: photo.mimeType || inferMimeType(photo.fileName || photo.tempFilePath),
+    size: Number(photo.size) || 1
+  }));
+}
+
+function uploadSignedFile(photo, signedUpload) {
+  const uploadUrl = signedUpload && signedUpload.uploadUrl;
+  if (!uploadUrl || uploadUrl.startsWith('mock-upload://') || uploadUrl.startsWith('local-upload://')) {
+    return Promise.resolve();
+  }
+  if (!photo.tempFilePath || !wx.uploadFile) {
+    return Promise.reject(new Error('upload file is unavailable'));
+  }
+  return new Promise((resolve, reject) => {
+    wx.uploadFile({
+      url: uploadUrl,
+      filePath: photo.tempFilePath,
+      name: 'file',
+      header: signedUpload.headers || {},
+      success: (res) => {
+        if (res.statusCode >= 200 && res.statusCode < 300) resolve(res);
+        else reject(new Error(`upload failed: ${res.statusCode}`));
+      },
+      fail: reject
+    });
+  });
+}
+
+function preparePhotosForOcr(profileId, photos) {
+  const files = toUploadFiles(photos);
+  return api.signUploads({ profileId, files }, {
+    idempotencyKey: `sign_${profileId}_${Date.now()}`
+  }).then((result) => {
+    const uploads = result.uploads || [];
+    if (uploads.length !== photos.length) {
+      throw new Error('upload sign result does not match selected photos');
+    }
+    const uploadByClientId = uploads.reduce((acc, upload) => {
+      acc[upload.clientFileId] = upload;
+      return acc;
+    }, {});
+    const uploadedPhotos = photos.map((photo) => {
+      const signedUpload = uploadByClientId[`local_${photo.id}`];
+      if (!signedUpload || !signedUpload.photoId) {
+        throw new Error('missing signed upload');
+      }
+      return {
+        ...photo,
+        uploadedPhotoId: signedUpload.photoId
+      };
+    });
+
+    return Promise.all(uploadedPhotos.map((photo) => uploadSignedFile(photo, uploadByClientId[`local_${photo.id}`])))
+      .then(() => api.completeUploads({
+        profileId,
+        uploads: uploadedPhotos.map((photo) => ({
+          photoId: photo.uploadedPhotoId
+        }))
+      }))
+      .then(() => uploadedPhotos);
+  });
 }
 
 function createSmokeProfile(label) {
@@ -321,12 +388,12 @@ Page({
     wx.setStorageSync('uploadPhotos', photos);
     this.setData({ loading: true, uploadError: '' });
 
-    return api.createOcrTask({
+    return preparePhotosForOcr(profileId, photos).then((uploadedPhotos) => api.createOcrTask({
       profileId,
-      photos: toTaskPhotos(photos)
+      photos: toTaskPhotos(uploadedPhotos)
     }, {
       idempotencyKey: `ocr_${profileId}_${Date.now()}`
-    }).then((task) => {
+    })).then((task) => {
       const pending = wx.getStorageSync('pendingOcrTasks') || [];
       const url = `/pages/upload/confirm?taskId=${task.id}&recognizing=1`;
       wx.setStorageSync('pendingOcrTasks', [{
