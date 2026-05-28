@@ -50,10 +50,10 @@ function chooseDuplicateDecision(candidates) {
   return new Promise((resolve, reject) => {
     wx.showActionSheet({
       alertText: `已存在 ${dateText} ${typeText}${countText}，请选择保存方式`,
-      itemList: ['覆盖旧报告', '仍保存为新报告', '跳过重复报告'],
+      itemList: ['覆盖旧报告', '跳过重复报告'],
       success(res) {
-        const decisions = ['replace', 'keep_both', 'skip'];
-        resolve(decisions[res.tapIndex] || 'keep_both');
+        const decisions = ['replace', 'skip'];
+        resolve(decisions[res.tapIndex] || 'skip');
       },
       fail(error) {
         reject(error);

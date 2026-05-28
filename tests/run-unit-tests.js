@@ -290,6 +290,26 @@ asyncChecks.push(mockApi.createOcrTask({
   assert.ok(result.reports[0].replacedReportId);
   return mockApi.createOcrTask({
     profileId: 'profile_self',
+    fixtureCaseIds: ['acth']
+  });
+}).then((task) => {
+  const aliasDrafts = task.drafts.map((draft) => ({
+    ...draft,
+    basicInfo: {
+      ...draft.basicInfo,
+      hospital: '协和'
+    }
+  }));
+  return mockApi.checkDuplicateReports({
+    profileId: 'profile_self',
+    ocrTaskId: task.id,
+    reports: aliasDrafts
+  });
+}).then((result) => {
+  assert.strictEqual(result.hasDuplicates, true, 'hospital aliases should not prevent duplicate detection');
+  assert.ok(result.candidates.some((candidate) => candidate.matchLevel === 'strong'), 'same results and hospital alias should be a strong duplicate');
+  return mockApi.createOcrTask({
+    profileId: 'profile_self',
     fixtureCaseIds: ['abdomen_pelvis_ct_plain']
   });
 }).then((task) => mockApi.checkDuplicateReports({

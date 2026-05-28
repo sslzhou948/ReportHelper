@@ -66,7 +66,7 @@ X-Request-Id: <uuid>
 | 403 | `FORBIDDEN` | 无权访问 |
 | 404 | `NOT_FOUND` | 资源不存在或已删除 |
 | 409 | `CONFLICT` | 版本冲突或重复提交 |
-| 409 | `DUPLICATE_REPORT_REQUIRES_DECISION` | 疑似重复报告，需要用户选择覆盖或另存 |
+| 409 | `DUPLICATE_REPORT_REQUIRES_DECISION` | 疑似重复报告，需要用户选择覆盖或跳过 |
 | 413 | `PAYLOAD_TOO_LARGE` | 文件过大 |
 | 415 | `UNSUPPORTED_MEDIA_TYPE` | 文件格式不支持 |
 | 429 | `RATE_LIMITED` | 请求过于频繁 |
@@ -615,7 +615,7 @@ Idempotency-Key: <uuid>
 
 ### POST `/api/reports/duplicate-check`
 
-保存前检测 OCR 草稿是否与已有报告重复。前端在调用批量保存前应先调用本接口；若返回候选项，需要弹窗让用户选择覆盖或另存。
+保存前检测 OCR 草稿是否与已有报告重复。前端在调用批量保存前应先调用本接口；若返回候选项，需要弹窗让用户选择覆盖或跳过。
 
 请求：
 
@@ -672,8 +672,8 @@ Idempotency-Key: <uuid>
 
 重复判断规则：
 
-- `strong`: 同档案、同日期、同医院、同 `typeKey/examPart/examMethod`，且旧报告未删除。
-- `possible`: 日期和类型相同但医院缺失/推测，或图片 hash/指标集合高度重叠。
+- `strong`: 同档案、同日期、同 `typeKey/examPart/examMethod`，且检查结果相同或高度一致；医院名称归一化后相同可增强判断，但不能因为“协和/北京协和医院”这类别名漏判。
+- `possible`: 日期和类型相同但结果值不完全一致，或图片 hash/指标集合高度重叠。
 - 影像报告使用 `typeKey + examPart + examMethod + reportDate + hospital` 判断；不同部位不视为重复。
 
 ### POST `/api/reports/batch-create`
@@ -758,7 +758,7 @@ Idempotency-Key: <uuid>
 `duplicateDecisions.decision`:
 
 - `replace`: 覆盖旧报告。后端软删除旧报告或设置 `replacedByReportId`，创建新报告并重算快照。
-- `keep_both`: 另存一份。后端保留两份报告，并记录重复候选为 ignored。
+- `keep_both`: 另存一份。后端可保留该能力给管理员/高级纠错场景；普通用户 v1 不展示该选项。
 - `skip`: 不保存该 draft。
 
 如果后端检测到重复但请求未提供对应决策，返回：
@@ -767,7 +767,7 @@ Idempotency-Key: <uuid>
 {
   "error": {
     "code": "DUPLICATE_REPORT_REQUIRES_DECISION",
-    "message": "发现相似报告，请选择覆盖旧报告或另存一份",
+    "message": "发现相似报告，请选择覆盖旧报告或跳过重复报告",
     "details": {
       "candidates": []
     }

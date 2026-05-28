@@ -142,6 +142,54 @@ function sameText(a, b) {
   return String(a || '').trim() === String(b || '').trim();
 }
 
+function normalizeHospitalName(value) {
+  return String(value || '')
+    .replace(/[（）()]/g, '')
+    .replace(/北京|上海|广州|深圳/g, '')
+    .replace(/大学|医学院|附属|有限公司/g, '')
+    .replace(/医院|门诊部|院区|总院|分院/g, '')
+    .replace(/\s+/g, '')
+    .trim();
+}
+
+function sameHospitalName(a, b) {
+  const left = normalizeHospitalName(a);
+  const right = normalizeHospitalName(b);
+  if (!left || !right) return false;
+  return left === right || left.includes(right) || right.includes(left);
+}
+
+function metricValueSignature(metric) {
+  const valueType = metric.valueType || 'quantitative';
+  const value = valueType === 'qualitative' ? metric.valueQualitative : metric.valueNumeric;
+  return `${metric.metricKey || metric.metricName || ''}:${valueType}:${String(value ?? '').trim()}:${metric.unit || ''}`;
+}
+
+function compareMetricResults(incomingMetrics, existingMetrics) {
+  const incoming = (incomingMetrics || []).filter((metric) => metric.metricKey);
+  const existingByKey = (existingMetrics || []).reduce((acc, metric) => {
+    if (metric.metricKey) acc[metric.metricKey] = metric;
+    return acc;
+  }, {});
+  if (!incoming.length) return { metricOverlapRatio: 0, sameResultRatio: 0 };
+
+  let overlapCount = 0;
+  let sameResultCount = 0;
+  incoming.forEach((metric) => {
+    const existing = existingByKey[metric.metricKey];
+    if (!existing) return;
+    overlapCount += 1;
+    if (metricValueSignature(metric) === metricValueSignature(existing)) {
+      sameResultCount += 1;
+    }
+  });
+
+  return {
+    metricOverlapRatio: overlapCount / incoming.length,
+    sameResultRatio: sameResultCount / incoming.length
+  };
+}
+
 function normalizeReportIdentity(reportOrDraft) {
   const info = reportOrDraft.basicInfo || reportOrDraft;
   return {
@@ -223,11 +271,10 @@ function createMockApi() {
     drafts.forEach((draft) => {
       const incoming = normalizeReportIdentity(draft);
       if (!incoming.reportDate) return;
-      const draftMetricKeys = new Set((draft.metrics || []).map((metric) => metric.metricKey).filter(Boolean));
       getActiveReports(profileId).forEach((existing) => {
         const current = normalizeReportIdentity(existing);
         const sameDate = sameText(incoming.reportDate, current.reportDate);
-        const sameHospital = sameText(incoming.hospital, current.hospital);
+        const sameHospital = sameHospitalName(incoming.hospital, current.hospital);
         const sameTypeKey = incoming.typeKey && current.typeKey
           ? sameText(incoming.typeKey, current.typeKey)
           : sameText(incoming.type, current.type);
@@ -235,12 +282,12 @@ function createMockApi() {
         const sameExamMethod = sameText(incoming.examMethod, current.examMethod);
         if (!sameDate || !sameTypeKey || !sameExamPart || !sameExamMethod) return;
 
-        const existingMetricKeys = new Set((existing.metrics || []).map((metric) => metric.metricKey).filter(Boolean));
-        const overlapCount = Array.from(draftMetricKeys).filter((key) => existingMetricKeys.has(key)).length;
-        const overlapBase = Math.max(draftMetricKeys.size, existingMetricKeys.size, 1);
-        const metricOverlapRatio = overlapCount / overlapBase;
-        const matchLevel = sameHospital ? 'strong' : 'possible';
-        if (matchLevel !== 'strong' && metricOverlapRatio < 0.8) return;
+        const { metricOverlapRatio, sameResultRatio } = compareMetricResults(draft.metrics, existing.metrics);
+        const isImaging = incoming.modality === 'imaging' || existing.modality === 'imaging';
+        const resultMatches = isImaging || sameResultRatio >= 0.8;
+        const highOverlap = isImaging || metricOverlapRatio >= 0.8;
+        if (!sameHospital && !resultMatches && !highOverlap) return;
+        const matchLevel = resultMatches || sameHospital ? 'strong' : 'possible';
 
         candidates.push({
           id: `dup_${ocrTaskId || 'manual'}_${draft.draftId}_${existing.id}`,
@@ -257,9 +304,10 @@ function createMockApi() {
             sameTypeKey,
             sameExamPart,
             sameExamMethod,
-            metricOverlapRatio
+            metricOverlapRatio,
+            sameResultRatio
           },
-          suggestedDecision: matchLevel === 'strong' ? 'replace' : 'keep_both'
+          suggestedDecision: matchLevel === 'strong' ? 'replace' : 'skip'
         });
       });
     });
@@ -270,7 +318,7 @@ function createMockApi() {
     return Promise.reject(new ApiError({
       code: 'DUPLICATE_REPORT_REQUIRES_DECISION',
       statusCode: 409,
-      message: '发现相似报告，请选择覆盖旧报告或另存一份',
+      message: '发现相似报告，请选择覆盖旧报告或跳过重复报告',
       details: { candidates }
     }));
   }

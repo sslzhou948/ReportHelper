@@ -320,7 +320,7 @@ Snapshot excludes:
 
 ### duplicate_report_candidates
 
-保存前检测出的疑似重复报告。用于前端提示覆盖或另存。
+保存前检测出的疑似重复报告。用于前端提示覆盖或跳过。
 
 | field | type | note |
 | --- | --- | --- |
@@ -372,22 +372,23 @@ Strong duplicate:
 
 - 同一 `profile_id`
 - `report_date` 相同
-- `hospital` 相同或高度相似
 - `type_key + exam_part + exam_method` 相同
+- 检查结果相同或高度一致；数值/定性指标以 `metric_key + value + unit` 比较
+- `hospital` 相同、归一化后相似，或医院不同但检查结果高度一致
 - 且已有报告未删除
 
 Possible duplicate:
 
 - 日期相同且报告类型相同，但医院缺失/推测。
 - 图片 hash 相同。
-- 指标集合高度重叠，例如 metricKey 重合率超过 80% 且关键指标值相同。
+- 指标集合高度重叠，例如 metricKey 重合率超过 80%，但结果值不完全一致。
 
 默认策略：
 
 - API 返回重复候选，不直接覆盖。
-- 前端提示用户“已存在相似报告，保存将覆盖旧报告或另存一份”。
+- 前端提示用户“已存在相似报告，请选择覆盖旧报告或跳过重复报告”。
 - 用户选择 `replace` 时：旧报告软删除或标记 `replaced_by_report_id`，新报告成为有效版本。
-- 用户选择 `keep_both` 时：保留两份，并记录 duplicate candidate 为 ignored。
+- 普通用户 v1 不提供 `keep_both` 入口；该能力仅为后续管理员/高级纠错保留。
 - 用户未确认时：返回 409 或 `requiresDuplicateDecision=true`，不写入正式报告。
 
 ## 4. Backfill Safety

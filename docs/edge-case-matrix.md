@@ -58,9 +58,10 @@
 | 管理员未及时处理未知指标 | P1 | review item 长期 pending | 用户报告正常可查，指标标记“待系统确认” | 不阻塞报告归档；不进入趋势/汇总 | API 测试 |
 | 管理员发布新映射后回填 | P1 | pending 指标被确认 | 用户无感更新或详情状态变为已归类 | 只更新标准化字段和快照，不覆盖原始 OCR/用户编辑 | 后台任务测试 |
 | 手动编辑数值 | P0 | 用户修改 OCR 值 | 标记 manuallyEdited | 后端保存 `isManuallyEdited` | 表单测试 |
-| 保存时命中重复报告 | P0 | 同档案下日期/医院/标准类型/部位等匹配已有报告 | 弹窗让用户选择覆盖旧报告、仍保存为新报告或跳过 | 未带 `duplicateDecisions` 时返回 `409 DUPLICATE_REPORT_REQUIRES_DECISION` | API/页面测试 |
+| 保存时命中重复报告 | P0 | 同档案下日期/标准类型/部位/方法相同，且检查结果相同或高度一致 | 弹窗让用户选择覆盖旧报告或跳过重复报告 | 未带 `duplicateDecisions` 时返回 `409 DUPLICATE_REPORT_REQUIRES_DECISION` | API/页面测试 |
 | 保存为覆盖旧报告 | P0 | 用户选择覆盖 | 提示将替换旧报告，确认后保存 | 旧报告软删除或写入 `replacedByReportId`，重算 snapshot | API 测试 |
-| 疑似重复但用户保留 | P1 | 命中 possible duplicate | 允许保存为新报告，但记录用户选择 | 写入 duplicate candidate ignored，避免持续重复提示 | API 测试 |
+| 重复报告跳过 | P0 | 同批次里部分报告重复、部分不重复 | 跳过重复项，只保存非重复项 | 重复 draft 写入 `duplicateDecisions=skip` | API/页面测试 |
+| 医院名称别名 | P0 | “协和”与“北京协和医院”等人工编辑差异 | 不因医院别名差异漏判重复 | 医院名称归一化只做辅助判断，核心看日期/typeKey/结果 | 单元/API 测试 |
 | 用户取消保存 | P0 | 确认页返回/取消 | 弹“识别数据将丢失” | 确认后取消 task/draft | 交互测试 |
 
 ## 5. 报告与指标

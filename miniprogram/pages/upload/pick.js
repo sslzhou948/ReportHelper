@@ -2,6 +2,15 @@ const { api } = require('../../utils/api');
 const { getReportCount } = require('../../utils/upload');
 
 const initialPhotos = [];
+const realcaseFixtureCaseIds = [
+  'acth',
+  'thyroid',
+  'cortisol',
+  'liver_function',
+  'uric_electrolyte_lipid',
+  'chest_ct_plain',
+  'abdomen_pelvis_ct_plain'
+];
 
 function decoratePhotos(photos, selected) {
   return photos.map((photo) => {
@@ -126,19 +135,11 @@ Page({
       wx.showToast({ title: '\u521b\u5efa\u8bc6\u522b\u4efb\u52a1\u5931\u8d25', icon: 'none' });
     });
   },
-  startFixtureOcr() {
+  startFixtureOcr(options = {}) {
     if (this.data.loading) return Promise.resolve(null);
     const app = getApp();
     const profileId = app.getCurrentProfileId();
-    const fixtureCaseIds = [
-      'acth',
-      'thyroid',
-      'cortisol',
-      'liver_function',
-      'uric_electrolyte_lipid',
-      'chest_ct_plain',
-      'abdomen_pelvis_ct_plain'
-    ];
+    const fixtureCaseIds = realcaseFixtureCaseIds;
 
     this.setData({ loading: true });
     return api.createOcrTask({
@@ -157,6 +158,7 @@ Page({
         reportCount: task.reportCount,
         source: 'realcase-fixture'
       }].concat(pending.filter((item) => item.taskId !== task.id)));
+      if (options.skipNavigate) return task;
       wx.navigateTo({
         url,
         fail: () => wx.redirectTo({ url })
@@ -165,6 +167,45 @@ Page({
     }).catch(() => {
       this.setData({ loading: false });
       wx.showToast({ title: '加载真实样例失败', icon: 'none' });
+    });
+  },
+  runFixtureDuplicateSmokeForTest() {
+    const app = getApp();
+    const profileId = app.getCurrentProfileId();
+    return api.createOcrTask({
+      profileId,
+      fixtureCaseIds: realcaseFixtureCaseIds
+    }).then((firstTask) => api.batchCreateReports({
+      ocrTaskId: firstTask.id,
+      reports: firstTask.drafts
+    })).then(() => {
+      const firstCount = (wx.getStorageSync('mockReports') || [])
+        .filter((report) => report.profileId === profileId && !report.deletedAt).length;
+      return api.createOcrTask({
+        profileId,
+        fixtureCaseIds: realcaseFixtureCaseIds
+      }).then((secondTask) => api.checkDuplicateReports({
+        profileId,
+        ocrTaskId: secondTask.id,
+        reports: secondTask.drafts
+      }).then((duplicateResult) => api.batchCreateReports({
+        ocrTaskId: secondTask.id,
+        reports: secondTask.drafts,
+        duplicateDecisions: duplicateResult.candidates.map((candidate) => ({
+          draftId: candidate.draftId,
+          decision: 'skip',
+          existingReportId: candidate.existingReportId
+        }))
+      }).then(() => {
+        const secondCount = (wx.getStorageSync('mockReports') || [])
+          .filter((report) => report.profileId === profileId && !report.deletedAt).length;
+        return {
+          hasDuplicates: duplicateResult.hasDuplicates,
+          candidateCount: duplicateResult.candidates.length,
+          firstCount,
+          secondCount
+        };
+      })));
     });
   }
 });
