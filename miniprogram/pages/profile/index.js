@@ -64,6 +64,15 @@ Page({
   },
   showStatic(event) {
     const title = event.currentTarget.dataset.title;
+    if (title === '\u6e05\u7a7a\u5f53\u524d\u6863\u6848\u6570\u636e') {
+      wx.showModal({
+        title: '\u6682\u4e0d\u652f\u6301\u6e05\u7a7a',
+        content: '\u8fd9\u662f\u9ad8\u98ce\u9669\u64cd\u4f5c\uff0c\u9700\u8981\u5b8c\u6574\u7684\u5907\u4efd\u3001\u5ba1\u8ba1\u548c\u6062\u590d\u673a\u5236\u540e\u624d\u4f1a\u5f00\u653e\u3002',
+        showCancel: false,
+        confirmText: '\u77e5\u9053\u4e86'
+      });
+      return;
+    }
     if (ROUTE_MAP[title]) {
       wx.navigateTo({ url: ROUTE_MAP[title] });
       return;
