@@ -115,6 +115,8 @@ assert.ok(uploadEditDetailJs.includes('addFinding()'), 'upload edit detail must 
 assert.ok(!uploadEditDetailJs.includes("value: '32'"), 'upload edit detail must not ship hardcoded metric fixtures');
 assert.ok(!reportDetailJs.includes('api.updateReport(this.reportId'), 'report detail edit entry must not auto-save report data');
 assert.ok(!reportDetailJs.includes('已保存编辑'), 'report detail edit entry must not show a saved toast before real edits');
+assert.ok(reportDetailJs.includes('showReportGone'), 'report detail must handle deleted or missing reports');
+assert.ok(reportDetailJs.includes('isNotFoundError(error)'), 'report detail must treat NOT_FOUND as a stale page');
 assert.ok(!apiMockJs.includes('photoCount: 4'), 'OCR mock fallback must not fabricate four photos');
 assert.ok(metricDetailJs.includes('hasTrendChart') && metricDetailWxml.includes('!hasTrendChart'), 'metric detail must not draw trend charts for qualitative or single-record metrics');
 assert.ok(metricDetailJs.includes("return '\\u53c2\\u8003 --'") || metricDetailJs.includes("return '参考 --'"), 'metric detail must show missing reference ranges as --');
@@ -159,6 +161,8 @@ assert.ok(!recheckNewJs.includes("date: '2026-06-01'"), 'new recheck plan must n
 assert.ok(recheckDetailJs.includes("value < todayString()"), 'recheck detail must block editing the plan date into the past');
 assert.ok(recheckNewJs.includes('showApiErrorFeedback'), 'new recheck plan must show backend validation field errors');
 assert.ok(recheckDetailJs.includes('showApiErrorFeedback'), 'recheck detail must show backend validation field errors');
+assert.ok(recheckDetailJs.includes('showPlanGone'), 'recheck detail must handle deleted or missing plans');
+assert.ok(recheckDetailJs.includes('isNotFoundError(error)'), 'recheck detail must treat NOT_FOUND as a stale page');
 
 const profileWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'index.wxml'), 'utf8');
 const profileArchiveWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'archive.wxml'), 'utf8');

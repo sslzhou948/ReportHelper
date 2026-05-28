@@ -1,7 +1,13 @@
 const { api } = require('../../utils/api');
 const { daysBetween } = require('../../utils/date');
-const { showApiErrorFeedback } = require('../../utils/error');
+const { isNotFoundError, showApiErrorFeedback, showApiErrorToast } = require('../../utils/error');
 const { todayString } = require('../../utils/recheck');
+
+function backToRecheck() {
+  wx.navigateBack({
+    fail: () => wx.switchTab({ url: '/pages/recheck/index' })
+  });
+}
 
 function daysToPlan(plan) {
   return plan ? Math.max(0, daysBetween(new Date(), plan.date)) : 0;
@@ -42,11 +48,29 @@ Page({
     this.setData({ loading: true });
     api.listRecheckPlans(getApp().getCurrentProfileId()).then((recheck) => {
       const plans = [recheck.nextPlan].concat(recheck.otherPlans || []).filter(Boolean);
-      const plan = plans.find((item) => item.id === this.planId) || plans[0] || null;
+      const plan = plans.find((item) => item.id === this.planId) || null;
+      if (this.planId && !plan) {
+        this.setData({ loading: false });
+        this.showPlanGone();
+        return;
+      }
       applyPlan(this, plan, { loading: false });
-    }).catch(() => {
+    }).catch((error) => {
       this.setData({ loading: false });
-      wx.showToast({ title: '\u52a0\u8f7d\u590d\u67e5\u8be6\u60c5\u5931\u8d25', icon: 'none' });
+      if (isNotFoundError(error)) {
+        this.showPlanGone();
+        return;
+      }
+      showApiErrorToast(error, '\u52a0\u8f7d\u590d\u67e5\u8be6\u60c5\u5931\u8d25');
+    });
+  },
+  showPlanGone() {
+    wx.showModal({
+      title: '\u590d\u67e5\u8ba1\u5212\u5df2\u4e0d\u5b58\u5728',
+      content: '\u8fd9\u6761\u590d\u67e5\u8ba1\u5212\u53ef\u80fd\u5df2\u53d6\u6d88\u6216\u5220\u9664\uff0c\u8fd4\u56de\u5217\u8868\u540e\u4f1a\u5237\u65b0\u6570\u636e\u3002',
+      showCancel: false,
+      confirmText: '\u77e5\u9053\u4e86',
+      success: backToRecheck
     });
   },
   goBack() {
@@ -85,6 +109,10 @@ Page({
           applyPlan(this, plan);
           wx.showToast({ title: '\u5df2\u4fdd\u5b58', icon: 'success' });
         }).catch((error) => {
+          if (isNotFoundError(error)) {
+            this.showPlanGone();
+            return;
+          }
           showApiErrorFeedback(error, '\u4fdd\u5b58\u5931\u8d25');
         });
       }
@@ -145,8 +173,12 @@ Page({
       idempotencyKey: `recheck_reminder_${this.data.plan.id}_${day}_${Date.now()}`
     }).then((plan) => {
       applyPlan(this, plan);
-    }).catch(() => {
-      wx.showToast({ title: '\u66f4\u65b0\u63d0\u9192\u5931\u8d25', icon: 'none' });
+    }).catch((error) => {
+      if (isNotFoundError(error)) {
+        this.showPlanGone();
+        return;
+      }
+      showApiErrorToast(error, '\u66f4\u65b0\u63d0\u9192\u5931\u8d25');
       this.load();
     });
   },
@@ -161,9 +193,14 @@ Page({
           idempotencyKey: `cancel_${this.data.plan.id}`
         }).then(() => {
           wx.showToast({ title: '\u5df2\u53d6\u6d88', icon: 'success' });
-          setTimeout(() => wx.navigateBack(), 500);
-        }).catch(() => {
-          wx.showToast({ title: '\u53d6\u6d88\u5931\u8d25', icon: 'none' });
+          setTimeout(backToRecheck, 500);
+        }).catch((error) => {
+          if (isNotFoundError(error)) {
+            wx.showToast({ title: '\u590d\u67e5\u8ba1\u5212\u5df2\u4e0d\u5b58\u5728', icon: 'none' });
+            setTimeout(backToRecheck, 500);
+            return;
+          }
+          showApiErrorToast(error, '\u53d6\u6d88\u5931\u8d25');
         });
       }
     });
@@ -179,9 +216,14 @@ Page({
           idempotencyKey: `delete_recheck_${this.data.plan.id}`
         }).then(() => {
           wx.showToast({ title: '\u5df2\u5220\u9664', icon: 'success' });
-          setTimeout(() => wx.navigateBack(), 500);
-        }).catch(() => {
-          wx.showToast({ title: '\u5220\u9664\u5931\u8d25', icon: 'none' });
+          setTimeout(backToRecheck, 500);
+        }).catch((error) => {
+          if (isNotFoundError(error)) {
+            wx.showToast({ title: '\u590d\u67e5\u8ba1\u5212\u5df2\u5220\u9664', icon: 'none' });
+            setTimeout(backToRecheck, 500);
+            return;
+          }
+          showApiErrorToast(error, '\u5220\u9664\u5931\u8d25');
         });
       }
     });

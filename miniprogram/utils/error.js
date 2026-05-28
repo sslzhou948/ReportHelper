@@ -29,6 +29,10 @@ function getApiErrorToastTitle(error, fallback) {
   return requestId ? `${message} ${requestId}` : message;
 }
 
+function isNotFoundError(error) {
+  return !!error && error.code === 'NOT_FOUND';
+}
+
 function getValidationErrorLines(error) {
   const fieldErrors = error && error.details && error.details.fieldErrors;
   if (!fieldErrors || typeof fieldErrors !== 'object') return [];
@@ -66,6 +70,7 @@ module.exports = {
   getApiErrorMessage,
   getApiErrorToastTitle,
   getValidationErrorLines,
+  isNotFoundError,
   showApiErrorFeedback,
   showApiErrorToast
 };
