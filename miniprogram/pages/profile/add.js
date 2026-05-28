@@ -1,6 +1,13 @@
 const { api } = require('../../utils/api');
 const { buildProfileFields, validateProfile } = require('../../utils/profile');
 
+function refreshFields(page, form) {
+  page.setData({
+    form,
+    fields: buildProfileFields(form)
+  });
+}
+
 function defaultProfile(relation) {
   const isSelf = relation === '\u6211\u81ea\u5df1';
   return {
@@ -27,10 +34,7 @@ Page({
 
   onLoad(query = {}) {
     const form = defaultProfile(query.relation);
-    this.setData({
-      form,
-      fields: buildProfileFields(form)
-    });
+    refreshFields(this, form);
   },
 
   goBack() {
@@ -58,7 +62,49 @@ Page({
     });
   },
 
-  editField() {
-    wx.showToast({ title: '\u6253\u5f00\u5b57\u6bb5\u7f16\u8f91', icon: 'none' });
+  editField(event) {
+    const key = event.currentTarget.dataset.key;
+    const label = event.currentTarget.dataset.label || '\u5b57\u6bb5';
+    if (key === 'gender') {
+      wx.showActionSheet({
+        itemList: ['\u5973', '\u7537'],
+        success: (res) => {
+          const form = {
+            ...this.data.form,
+            gender: res.tapIndex === 0 ? 'F' : 'M'
+          };
+          refreshFields(this, form);
+        }
+      });
+      return;
+    }
+    if (key === 'treatmentPhase') {
+      wx.showActionSheet({
+        itemList: ['\u5eb7\u590d\u968f\u8bbf', '\u6cbb\u7597\u4e2d'],
+        success: (res) => {
+          const form = {
+            ...this.data.form,
+            treatmentPhase: res.tapIndex === 0 ? 'recovery' : 'treating'
+          };
+          refreshFields(this, form);
+        }
+      });
+      return;
+    }
+    wx.showModal({
+      title: `\u7f16\u8f91${label}`,
+      editable: true,
+      placeholderText: '\u8bf7\u8f93\u5165',
+      content: String(this.data.form[key] || ''),
+      confirmText: '\u4fdd\u5b58',
+      success: (res) => {
+        if (!res.confirm) return;
+        const form = {
+          ...this.data.form,
+          [key]: String(res.content || '').trim()
+        };
+        refreshFields(this, form);
+      }
+    });
   }
 });

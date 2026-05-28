@@ -10,7 +10,7 @@
   <view class="section-title">档案信息</view>
   <view class="pad">
     <view class="card">
-      <view wx:for="{{fields}}" wx:key="key" class="row" bindtap="editField">
+      <view wx:for="{{fields}}" wx:key="key" class="row" data-key="{{item.key}}" data-label="{{item.label}}" bindtap="editField">
         <view class="sub label">{{item.label}}</view>
         <view class="flex right">{{item.value}}</view>
         <view class="arrow">›</view>
