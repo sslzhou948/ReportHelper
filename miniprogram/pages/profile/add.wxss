@@ -1,10 +1,46 @@
-.label {
-  min-width: 150rpx;
+.form-card {
+  padding: 0;
 }
 
-.arrow {
+.form-row {
+  min-height: 104rpx;
+  padding: 22rpx 28rpx;
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  border-bottom: 1rpx solid var(--border-soft);
+}
+
+.form-row:last-child {
+  border-bottom: 0;
+}
+
+.label {
+  width: 160rpx;
+  flex: 0 0 160rpx;
+}
+
+.field-control {
+  flex: 1;
+  min-width: 0;
+}
+
+.field-input,
+.field-value {
+  width: 100%;
+  min-height: 60rpx;
+  color: var(--ink);
+  font-size: 28rpx;
+  line-height: 60rpx;
+  text-align: right;
+}
+
+.field-input {
+  display: block;
+}
+
+.placeholder {
   color: var(--ink-3);
-  font-size: 40rpx;
 }
 
 .btn.disabled {

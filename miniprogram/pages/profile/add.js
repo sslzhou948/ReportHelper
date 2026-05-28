@@ -1,12 +1,35 @@
 const { api } = require('../../utils/api');
 const { showApiErrorFeedback } = require('../../utils/error');
-const { buildProfileFields, validateProfile } = require('../../utils/profile');
+const { validateProfile } = require('../../utils/profile');
 
-function refreshFields(page, form) {
-  page.setData({
-    form,
-    fields: buildProfileFields(form)
-  });
+const relationOptions = [
+  { label: '\u6211\u81ea\u5df1', value: '\u6211\u81ea\u5df1' },
+  { label: '\u5988\u5988', value: '\u5988\u5988' },
+  { label: '\u7238\u7238', value: '\u7238\u7238' },
+  { label: '\u914d\u5076', value: '\u914d\u5076' },
+  { label: '\u5b50\u5973', value: '\u5b50\u5973' },
+  { label: '\u5176\u4ed6\u4eb2\u5c5e', value: '\u4eb2\u5c5e' }
+];
+const genderOptions = [
+  { label: '\u5973', value: 'F' },
+  { label: '\u7537', value: 'M' }
+];
+const phaseOptions = [
+  { label: '\u6cbb\u7597\u4e2d', value: 'treating' },
+  { label: '\u5eb7\u590d\u968f\u8bbf', value: 'recovery' }
+];
+
+function todayString() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function optionIndex(options, value) {
+  return Math.max(0, options.findIndex((item) => item.value === value));
+}
+
+function optionLabel(options, value, placeholder = '\u672a\u586b\u5199') {
+  const option = options.find((item) => item.value === value);
+  return option ? option.label : placeholder;
 }
 
 function defaultProfile(relation) {
@@ -25,32 +48,101 @@ function defaultProfile(relation) {
   };
 }
 
+function refreshForm(page, form) {
+  page.setData({
+    form,
+    relationIndex: optionIndex(relationOptions, form.relation),
+    relationText: form.relation || '\u8bf7\u9009\u62e9',
+    genderIndex: optionIndex(genderOptions, form.gender),
+    genderText: optionLabel(genderOptions, form.gender),
+    phaseIndex: optionIndex(phaseOptions, form.treatmentPhase),
+    phaseText: optionLabel(phaseOptions, form.treatmentPhase)
+  });
+}
+
 Page({
   data: {
     form: {},
-    fields: [],
+    relationOptions,
+    genderOptions,
+    phaseOptions,
+    relationIndex: 0,
+    genderIndex: 0,
+    phaseIndex: 0,
+    relationText: '\u8bf7\u9009\u62e9',
+    genderText: '\u672a\u586b\u5199',
+    phaseText: '\u672a\u586b\u5199',
+    today: todayString(),
     saving: false
   },
 
   onLoad(query = {}) {
-    const form = defaultProfile(query.relation);
-    refreshFields(this, form);
+    refreshForm(this, defaultProfile(query.relation));
   },
 
   goBack() {
     wx.navigateBack();
   },
 
+  inputField(event) {
+    const key = event.currentTarget.dataset.key;
+    refreshForm(this, {
+      ...this.data.form,
+      [key]: event.detail.value
+    });
+  },
+
+  pickRelation(event) {
+    const option = relationOptions[Number(event.detail.value)] || relationOptions[0];
+    refreshForm(this, {
+      ...this.data.form,
+      relation: option.value
+    });
+  },
+
+  pickGender(event) {
+    const option = genderOptions[Number(event.detail.value)] || genderOptions[0];
+    refreshForm(this, {
+      ...this.data.form,
+      gender: option.value
+    });
+  },
+
+  pickPhase(event) {
+    const option = phaseOptions[Number(event.detail.value)] || phaseOptions[0];
+    refreshForm(this, {
+      ...this.data.form,
+      treatmentPhase: option.value
+    });
+  },
+
+  pickDate(event) {
+    const key = event.currentTarget.dataset.key;
+    refreshForm(this, {
+      ...this.data.form,
+      [key]: event.detail.value
+    });
+  },
+
   save() {
     if (this.data.saving) return;
-    const result = validateProfile(this.data.form);
+    const form = {
+      ...this.data.form,
+      realName: String(this.data.form.realName || '').trim(),
+      diseaseType: String(this.data.form.diseaseType || '').trim(),
+      stage: String(this.data.form.stage || '').trim(),
+      primaryHospital: String(this.data.form.primaryHospital || '').trim(),
+      primaryDoctor: String(this.data.form.primaryDoctor || '').trim(),
+      primaryDepartment: String(this.data.form.primaryDepartment || '').trim()
+    };
+    const result = validateProfile(form);
     if (!result.ok) {
       wx.showToast({ title: Object.values(result.errors)[0], icon: 'none' });
       return;
     }
 
     this.setData({ saving: true });
-    api.createProfile(this.data.form, {
+    api.createProfile(form, {
       idempotencyKey: `profile_${Date.now()}`
     }).then((profile) => {
       getApp().setCurrentProfileId(profile.id);
@@ -59,52 +151,6 @@ Page({
     }).catch((error) => {
       this.setData({ saving: false });
       showApiErrorFeedback(error, '\u4fdd\u5b58\u6863\u6848\u5931\u8d25');
-    });
-  },
-
-  editField(event) {
-    const key = event.currentTarget.dataset.key;
-    const label = event.currentTarget.dataset.label || '\u5b57\u6bb5';
-    if (key === 'gender') {
-      wx.showActionSheet({
-        itemList: ['\u5973', '\u7537'],
-        success: (res) => {
-          const form = {
-            ...this.data.form,
-            gender: res.tapIndex === 0 ? 'F' : 'M'
-          };
-          refreshFields(this, form);
-        }
-      });
-      return;
-    }
-    if (key === 'treatmentPhase') {
-      wx.showActionSheet({
-        itemList: ['\u5eb7\u590d\u968f\u8bbf', '\u6cbb\u7597\u4e2d'],
-        success: (res) => {
-          const form = {
-            ...this.data.form,
-            treatmentPhase: res.tapIndex === 0 ? 'recovery' : 'treating'
-          };
-          refreshFields(this, form);
-        }
-      });
-      return;
-    }
-    wx.showModal({
-      title: `\u7f16\u8f91${label}`,
-      editable: true,
-      placeholderText: '\u8bf7\u8f93\u5165',
-      content: String(this.data.form[key] || ''),
-      confirmText: '\u4fdd\u5b58',
-      success: (res) => {
-        if (!res.confirm) return;
-        const form = {
-          ...this.data.form,
-          [key]: String(res.content || '').trim()
-        };
-        refreshFields(this, form);
-      }
     });
   }
 });

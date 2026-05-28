@@ -91,9 +91,10 @@ const reportMain = getRule(homeWxss, '.report-main');
 assertDecl(reportMain, 'flex: 1', 'home report main text must take remaining row width');
 assertDecl(reportMain, 'min-width: 0', 'home report main text must be allowed to shrink horizontally');
 
-const bellRule = getRule(homeWxss, '.bell');
-assertDecl(bellRule, 'position: absolute', 'home bell must be independently positioned inside the safe header area');
-assertDecl(bellRule, 'right: 0', 'home bell must align to the safe right edge before the WeChat capsule');
+const ocrStatusEntry = getRule(homeWxss, '.ocr-status-entry');
+assertDecl(ocrStatusEntry, 'margin-left: auto', 'home OCR status entry must align to the safe right side of the header');
+assertDecl(ocrStatusEntry, 'max-width: 220rpx', 'home OCR status entry must stay compact beside the profile chip');
+assertDecl(ocrStatusEntry, 'white-space: nowrap', 'home OCR status entry text must not wrap into the banner');
 
 const sectionAction = getRule(homeWxss, '.section-action');
 assertDecl(sectionAction, 'margin-left: auto', 'home section actions must be right aligned');

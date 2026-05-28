@@ -60,6 +60,7 @@ for (const file of wxmlFiles) {
 
 const homeWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'home', 'index.wxml'), 'utf8');
 const homeIndexJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'home', 'index.js'), 'utf8');
+const homeWxss = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'home', 'index.wxss'), 'utf8');
 const healthIndexJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'health', 'index.js'), 'utf8');
 const healthSearchJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'health', 'search.js'), 'utf8');
 const uploadPickJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'upload', 'pick.js'), 'utf8');
@@ -97,6 +98,10 @@ assert.ok(homeIndexJs.includes('api.listOcrTasks'), 'home must refresh pending O
 assert.ok(homeIndexJs.includes('formatPendingOcrSummary'), 'home must summarize multiple pending OCR tasks');
 assert.ok(homeIndexJs.includes('taskPriority'), 'home must prioritize ready or failed OCR tasks when several are pending');
 assert.ok(homeIndexJs.includes('taskCount: activeTasks.length'), 'home pending OCR summary must keep the task count');
+assert.ok(homeIndexJs.includes('statusLabel'), 'home OCR task summary must provide a concise status label');
+assert.ok(homeWxml.includes('wx:if="{{pendingOcrTask}}" class="ocr-status-entry'), 'home OCR status entry should only appear when there is an active OCR task');
+assert.ok(homeWxml.includes('{{pendingOcrTask.statusLabel}}'), 'home OCR status entry must show the task count or state');
+assert.ok(!homeWxml.includes('···') && !homeWxss.includes('.bell'), 'home OCR status entry must not ship as an ambiguous dot or bell affordance');
 const nativeHomeLayoutClasses = [
   'ocr-card',
   'upload-cta',
@@ -208,11 +213,16 @@ assert.ok(recheckDetailJs.includes('isNotFoundError(error)'), 'recheck detail mu
 
 const profileWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'index.wxml'), 'utf8');
 const profileArchiveWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'archive.wxml'), 'utf8');
+const profileAddWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'add.wxml'), 'utf8');
 assert.ok(!profileWxml.includes('<button class="row"'), 'profile menu rows must not use native button layout');
 assert.ok(!profileWxml.includes('<button class="row danger"'), 'profile danger rows must not use native button layout');
 assert.ok(!profileWxml.includes('<button class="btn secondary logout"'), 'profile logout control must not use native button layout');
 assert.ok(!profileArchiveWxml.includes('他莫昔芬'), 'profile archive must not show hardcoded medication records');
 assert.ok(profileAddJs.includes('showApiErrorFeedback'), 'profile add must show backend validation field errors');
+assert.ok(profileAddJs.includes('pickDate(event)') && profileAddJs.includes('pickRelation(event)') && profileAddJs.includes('inputField(event)'), 'profile add must use direct form editing and picker handlers');
+assert.ok(!profileAddJs.includes('wx.showModal'), 'profile add must not edit every field through modal prompts');
+assert.ok(profileAddWxml.includes('mode="date"'), 'profile add birth and diagnosis dates must use date pickers');
+assert.ok(profileAddWxml.includes('bindinput="inputField"'), 'profile add text fields must be editable in place');
 assert.ok(profileArchiveJs.includes('showApiErrorFeedback'), 'profile archive must show backend validation field errors');
 
 const apiErrorPages = [

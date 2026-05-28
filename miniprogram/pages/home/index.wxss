@@ -4,7 +4,6 @@
   gap: 20rpx;
   padding-right: 188rpx;
   margin-bottom: 16rpx;
-  position: relative;
 }
 
 .profile-chip {
@@ -36,38 +35,40 @@
   font-weight: 700;
 }
 
-.bell {
-  position: absolute;
-  right: 0;
-  top: 0;
-  width: 60rpx !important;
-  height: 60rpx;
+.ocr-status-entry {
+  flex: 0 0 auto;
+  margin-left: auto;
+  min-height: 60rpx;
+  max-width: 220rpx;
+  padding: 8rpx 16rpx 8rpx 10rpx;
   border-radius: 30rpx;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.24);
   color: #FFFFFF;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  justify-content: center;
+  font-size: 24rpx;
+  font-weight: 700;
+  line-height: 34rpx;
+  white-space: nowrap;
+}
+
+.ocr-status-entry.ready,
+.ocr-status-entry.warning {
+  background: rgba(250, 240, 224, 0.34);
+}
+
+.ocr-status-icon {
+  width: 38rpx;
+  height: 38rpx;
+  border-radius: 14rpx;
+  background: rgba(255, 255, 255, 0.24);
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 60rpx;
-  margin: 0 !important;
-  font-size: 24rpx;
-  letter-spacing: 2rpx;
-}
-
-.bell.active {
-  background: rgba(255, 255, 255, 0.32);
-}
-
-.bell-dot {
-  position: absolute;
-  right: 8rpx;
-  top: 8rpx;
-  width: 14rpx;
-  height: 14rpx;
-  border-radius: 7rpx;
-  background: #F2B84B;
-  box-shadow: 0 0 0 4rpx rgba(242, 184, 75, 0.2);
+  font-size: 22rpx;
+  font-weight: 800;
 }
 
 .section-action {

@@ -6,9 +6,9 @@
         <text>{{profile.relation}} · {{profile.realName}}</text>
         <text>⌄</text>
       </view>
-      <view class="bell {{pendingOcrTask ? 'active' : ''}}" bindtap="showRecognizing">
-        <text>···</text>
-        <view wx:if="{{pendingOcrTask}}" class="bell-dot"></view>
+      <view wx:if="{{pendingOcrTask}}" class="ocr-status-entry {{pendingOcrTask.tone}}" bindtap="showRecognizing">
+        <view class="ocr-status-icon">识</view>
+        <text>{{pendingOcrTask.statusLabel}}</text>
       </view>
     </view>
     <view class="greeting">早上好，愿您今天舒心</view>

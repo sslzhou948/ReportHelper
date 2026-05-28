@@ -68,6 +68,7 @@ function formatPendingOcrTask(task) {
       title: '\u8bc6\u522b\u4efb\u52a1\u5931\u8d25',
       detail: task.errorMessage || '\u53ef\u8fdb\u5165\u4efb\u52a1\u9875\u91cd\u8bd5\uff0c\u4e0d\u4f1a\u4e22\u5931\u5df2\u4e0a\u4f20\u7684\u56fe\u7247\u3002',
       actionText: '\u5904\u7406 \u203a',
+      statusLabel: '\u9700\u5904\u7406',
       tone: 'warning'
     };
   }
@@ -77,6 +78,7 @@ function formatPendingOcrTask(task) {
       title: `\u5df2\u8bc6\u522b\u51fa ${reportCount} \u4efd\u62a5\u544a`,
       detail: '\u8bf7\u786e\u8ba4\u57fa\u672c\u4fe1\u606f\u548c\u6307\u6807\u540e\u518d\u5f52\u6863\u3002',
       actionText: '\u786e\u8ba4 \u203a',
+      statusLabel: `${reportCount || 1} \u4efd\u5f85\u786e\u8ba4`,
       tone: 'ready'
     };
   }
@@ -87,6 +89,7 @@ function formatPendingOcrTask(task) {
       ? '\u8bc6\u522b\u65f6\u95f4\u8f83\u957f\uff0c\u53ef\u70b9\u51fb\u67e5\u770b\u4efb\u52a1\u72b6\u6001\u3002'
       : '\u8bc6\u522b\u5b8c\u6210\u540e\u4f1a\u63d0\u793a\u786e\u8ba4\uff0c\u60a8\u53ef\u7ee7\u7eed\u4f7f\u7528\u5176\u4ed6\u529f\u80fd\u3002',
     actionText: '\u67e5\u770b \u203a',
+    statusLabel: reportCount ? `\u8bc6\u522b\u4e2d ${reportCount}` : '\u8bc6\u522b\u4e2d',
     tone: isSlow ? 'warning' : 'processing'
   };
 }
@@ -107,6 +110,7 @@ function formatPendingOcrSummary(tasks) {
       : (failedCount ? `${failedCount} \u4e2a\u4efb\u52a1\u9700\u5904\u7406` : `\u8bc6\u522b\u4e2d\uff08${activeTasks.length} \u4e2a\u4efb\u52a1\uff09`),
     detail: `${countText}\uff0c\u4f18\u5148\u5904\u7406\uff1a${summary.title}`,
     actionText: '\u67e5\u770b \u203a',
+    statusLabel: readyCount ? `${readyCount} \u4e2a\u5f85\u786e\u8ba4` : `${activeTasks.length} \u4e2a\u4efb\u52a1`,
     tone: readyCount || failedCount ? 'warning' : summary.tone
   };
 }
@@ -161,7 +165,7 @@ Page({
         nextPlan,
         daysToNext: nextPlan ? Math.max(0, daysBetween(new Date(), nextPlan.date)) : 0,
         pendingOcrTask,
-        recognizing: pendingOcrTask ? this.data.recognizing : false
+        recognizing: pendingOcrTask ? (this.data.recognizing || ['ready', 'warning'].includes(pendingOcrTask.tone)) : false
       });
     }).catch((error) => {
       if (!finishSlowLoading(this, loadingToken)) return;

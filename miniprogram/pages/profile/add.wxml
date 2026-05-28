@@ -1,19 +1,68 @@
-﻿<view class="page">
+<view class="page">
   <view class="nav">
     <view class="nav-side left" bindtap="goBack">取消</view>
     <view class="nav-title">添加档案</view>
     <view class="nav-side right" bindtap="save">保存</view>
   </view>
   <view class="pad mt-12">
-    <view class="sub">请填写基本信息，后续可在档案中补全用药等详细记录</view>
+    <view class="sub">请填写基本信息。姓名和关系用于区分档案，其他信息可先留空，后续继续补充。</view>
   </view>
   <view class="section-title">档案信息</view>
   <view class="pad">
-    <view class="card">
-      <view wx:for="{{fields}}" wx:key="key" class="row" data-key="{{item.key}}" data-label="{{item.label}}" bindtap="editField">
-        <view class="sub label">{{item.label}}</view>
-        <view class="flex right">{{item.value}}</view>
-        <view class="arrow">›</view>
+    <view class="card form-card">
+      <view class="form-row">
+        <view class="sub label">关系</view>
+        <picker class="field-control" mode="selector" range="{{relationOptions}}" range-key="label" value="{{relationIndex}}" bindchange="pickRelation">
+          <view class="field-value {{form.relation ? '' : 'placeholder'}}">{{relationText}}</view>
+        </picker>
+      </view>
+      <view class="form-row">
+        <view class="sub label">姓名</view>
+        <input class="field-input" value="{{form.realName}}" placeholder="未填写" data-key="realName" bindinput="inputField" />
+      </view>
+      <view class="form-row">
+        <view class="sub label">性别</view>
+        <picker class="field-control" mode="selector" range="{{genderOptions}}" range-key="label" value="{{genderIndex}}" bindchange="pickGender">
+          <view class="field-value {{form.gender ? '' : 'placeholder'}}">{{genderText}}</view>
+        </picker>
+      </view>
+      <view class="form-row">
+        <view class="sub label">出生日期</view>
+        <picker class="field-control" mode="date" value="{{form.birthDate}}" end="{{today}}" data-key="birthDate" bindchange="pickDate">
+          <view class="field-value {{form.birthDate ? '' : 'placeholder'}}">{{form.birthDate || '未填写'}}</view>
+        </picker>
+      </view>
+      <view class="form-row">
+        <view class="sub label">病种</view>
+        <input class="field-input" value="{{form.diseaseType}}" placeholder="未填写" data-key="diseaseType" bindinput="inputField" />
+      </view>
+      <view class="form-row">
+        <view class="sub label">确诊日期</view>
+        <picker class="field-control" mode="date" value="{{form.diagnosedAt}}" end="{{today}}" data-key="diagnosedAt" bindchange="pickDate">
+          <view class="field-value {{form.diagnosedAt ? '' : 'placeholder'}}">{{form.diagnosedAt || '未填写'}}</view>
+        </picker>
+      </view>
+      <view class="form-row">
+        <view class="sub label">分期</view>
+        <input class="field-input" value="{{form.stage}}" placeholder="未填写" data-key="stage" bindinput="inputField" />
+      </view>
+      <view class="form-row">
+        <view class="sub label">治疗阶段</view>
+        <picker class="field-control" mode="selector" range="{{phaseOptions}}" range-key="label" value="{{phaseIndex}}" bindchange="pickPhase">
+          <view class="field-value {{form.treatmentPhase ? '' : 'placeholder'}}">{{phaseText}}</view>
+        </picker>
+      </view>
+      <view class="form-row">
+        <view class="sub label">主治医院</view>
+        <input class="field-input" value="{{form.primaryHospital}}" placeholder="未填写" data-key="primaryHospital" bindinput="inputField" />
+      </view>
+      <view class="form-row">
+        <view class="sub label">主治医生</view>
+        <input class="field-input" value="{{form.primaryDoctor}}" placeholder="未填写" data-key="primaryDoctor" bindinput="inputField" />
+      </view>
+      <view class="form-row">
+        <view class="sub label">科室</view>
+        <input class="field-input" value="{{form.primaryDepartment}}" placeholder="未填写" data-key="primaryDepartment" bindinput="inputField" />
       </view>
     </view>
   </view>
