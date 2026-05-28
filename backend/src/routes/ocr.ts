@@ -178,6 +178,16 @@ export async function registerOcrRoutes(app: FastifyInstance) {
     }
 
     const isFixtureTask = !!(parsed.data.fixtureCaseIds && parsed.data.fixtureCaseIds.length);
+    if (isFixtureTask && app.env.NODE_ENV === 'production') {
+      return reply.status(403).send({
+        error: {
+          code: 'FORBIDDEN',
+          message: 'Fixture OCR is disabled in production'
+        },
+        requestId
+      });
+    }
+
     const photos = parsed.data.photos || [];
     if (!isFixtureTask && photos.length === 0) {
       return reply.status(400).send({
