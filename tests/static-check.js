@@ -79,6 +79,8 @@ const metricDetailWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'he
 const pinnedManageJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'health', 'pinned-manage.js'), 'utf8');
 const apiJs = fs.readFileSync(path.join(miniprogramRoot, 'utils', 'api.js'), 'utf8');
 const apiMockJs = fs.readFileSync(path.join(miniprogramRoot, 'utils', 'api-mock.js'), 'utf8');
+const backendOcrRouteTs = fs.readFileSync(path.join(root, 'backend', 'src', 'routes', 'ocr.ts'), 'utf8');
+const backendOcrProviderTs = fs.readFileSync(path.join(root, 'backend', 'src', 'services', 'ocr-provider.ts'), 'utf8');
 assert.ok(uploadPickJs.includes("UPLOAD_DRAFT_KEY = 'uploadDraft'"), 'upload pick must persist unfinished upload drafts');
 assert.ok(uploadPickJs.includes('wx.chooseMedia') || uploadPickJs.includes('wx.chooseImage'), 'upload pick must use native image selection APIs');
 assert.ok(uploadPickJs.includes('persistUploadDraft(photos)'), 'upload pick must keep selected photos recoverable after task creation failures');
@@ -140,6 +142,9 @@ assert.ok(!apiMockJs.includes('reportCount: 3'), 'OCR mock fallback must not fab
 assert.ok(profileExportJs.includes('api.createExport'), 'profile export page must create a real export task');
 assert.ok(!profileExportWxml.includes('暂不创建导出任务'), 'profile export page must not present export as disabled');
 assert.ok(apiJs.includes('new Proxy') && apiJs.includes('getRuntimeApi()'), 'runtime API facade must allow DevTools mode switching');
+assert.ok(backendOcrRouteTs.includes('createOcrProvider()'), 'backend OCR route must use the OCR provider boundary');
+assert.ok(!backendOcrRouteTs.includes('getRealcaseOcrDrafts'), 'backend OCR route must not depend directly on fixture OCR data');
+assert.ok(backendOcrProviderTs.includes('recognizeFixture'), 'backend OCR provider must expose fixture recognition for downstream smoke tests');
 
 assert.ok(profileOnboardJs.includes('requestWxLoginCode()'), 'onboard login must use the native wx.login result');
 assert.ok(!profileOnboardJs.includes('mock_code'), 'onboard login must not continue with a mock code after wx.login failure');

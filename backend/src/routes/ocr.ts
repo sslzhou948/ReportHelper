@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import type { Prisma } from '@prisma/client';
 import { z } from 'zod';
-import { getRealcaseOcrDrafts, type RealcaseDraft } from '../fixtures/realcase.js';
+import { createOcrProvider, type OcrDraft } from '../services/ocr-provider.js';
 import { requireSession } from '../services/dev-user.js';
 import { getRequestId } from '../utils/request-id.js';
 
@@ -96,7 +96,7 @@ function serializeTask(task: {
   };
 }
 
-function draftCreateData(taskId: string, profileId: string, draft: RealcaseDraft) {
+function draftCreateData(taskId: string, profileId: string, draft: OcrDraft) {
   return {
     ocrTaskId: taskId,
     profileId,
@@ -150,6 +150,8 @@ function draftUpdateData(draft: z.infer<typeof updateDraftSchema>['draft']) {
 }
 
 export async function registerOcrRoutes(app: FastifyInstance) {
+  const ocrProvider = createOcrProvider();
+
   app.post('/api/ocr/tasks', async (request, reply) => {
     const requestId = getRequestId(request);
     const rawIdempotencyKey = request.headers['idempotency-key'];
@@ -261,7 +263,9 @@ export async function registerOcrRoutes(app: FastifyInstance) {
       }
     }
 
-    const drafts = isFixtureTask ? getRealcaseOcrDrafts(parsed.data.fixtureCaseIds) : [];
+    const drafts = isFixtureTask
+      ? await ocrProvider.recognizeFixture({ caseIds: parsed.data.fixtureCaseIds })
+      : [];
     if (isFixtureTask && !drafts.length) {
       return reply.status(400).send({
         error: {
