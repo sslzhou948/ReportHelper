@@ -130,9 +130,9 @@ Page({
       this.draftId = this.draft.draftId || '';
       this.setData({ loading: false });
       this.refreshData();
-    }).catch(() => {
+    }).catch((error) => {
       this.setData({ loading: false });
-      wx.showToast({ title: '加载报告详情失败', icon: 'none' });
+      showApiErrorToast(error, '加载报告详情失败');
     });
   },
 
@@ -164,9 +164,9 @@ Page({
       this.draftId = report.id;
       this.setData({ loading: false });
       this.refreshData();
-    }).catch(() => {
+    }).catch((error) => {
       this.setData({ loading: false });
-      wx.showToast({ title: '加载报告详情失败', icon: 'none' });
+      showApiErrorToast(error, '加载报告详情失败');
     });
   },
 
