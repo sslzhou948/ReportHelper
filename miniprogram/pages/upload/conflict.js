@@ -1,4 +1,5 @@
 const { api } = require('../../utils/api');
+const { showApiErrorToast } = require('../../utils/error');
 
 function sourceLabel(sourcePhotoId) {
   const match = String(sourcePhotoId || '').match(/\d+/);
@@ -42,9 +43,9 @@ Page({
           sourceLabel: sourceLabel(candidate.sourcePhotoId)
         }))
       });
-    }).catch(() => {
+    }).catch((error) => {
       this.setData({ loading: false });
-      wx.showToast({ title: '\u52a0\u8f7d\u51b2\u7a81\u4fe1\u606f\u5931\u8d25', icon: 'none' });
+      showApiErrorToast(error, '\u52a0\u8f7d\u51b2\u7a81\u4fe1\u606f\u5931\u8d25');
     });
   },
 
@@ -65,8 +66,8 @@ Page({
     }).then(() => {
       wx.showToast({ title: '\u5df2\u5e94\u7528\u9009\u62e9', icon: 'success' });
       setTimeout(() => wx.navigateBack(), 500);
-    }).catch(() => {
-      wx.showToast({ title: '\u5e94\u7528\u9009\u62e9\u5931\u8d25', icon: 'none' });
+    }).catch((error) => {
+      showApiErrorToast(error, '\u5e94\u7528\u9009\u62e9\u5931\u8d25');
     });
   }
 });

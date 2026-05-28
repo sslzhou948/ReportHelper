@@ -199,10 +199,10 @@ Page({
       this.updateProfileNotice(task.profileId || '');
       this.syncPendingTask(task);
       if (task.profileId) wx.setStorageSync('healthhelperBackendProfileId', task.profileId);
-    }).catch(() => {
+    }).catch((error) => {
       this.clearRecognitionTimer();
       this.setData({ loading: false });
-      wx.showToast({ title: '\u52a0\u8f7d\u8bc6\u522b\u7ed3\u679c\u5931\u8d25', icon: 'none' });
+      showApiErrorToast(error, '\u52a0\u8f7d\u8bc6\u522b\u7ed3\u679c\u5931\u8d25');
     });
   },
 
@@ -289,9 +289,9 @@ Page({
       this.clearRecognitionTimer();
       setTimeout(() => wx.switchTab({ url: '/pages/home/index' }), 500);
       return task;
-    }).catch(() => {
+    }).catch((error) => {
       this.setData({ retrying: false });
-      wx.showToast({ title: '\u91cd\u8bd5\u5931\u8d25\uff0c\u8bf7\u7a0d\u540e\u518d\u8bd5', icon: 'none' });
+      showApiErrorToast(error, '\u91cd\u8bd5\u5931\u8d25\uff0c\u8bf7\u7a0d\u540e\u518d\u8bd5');
       return false;
     });
   },

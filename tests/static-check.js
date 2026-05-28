@@ -65,6 +65,7 @@ const healthSearchJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'heal
 const uploadPickJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'upload', 'pick.js'), 'utf8');
 const uploadConfirmJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'upload', 'confirm.js'), 'utf8');
 const uploadEditDetailJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'upload', 'edit-detail.js'), 'utf8');
+const uploadConflictJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'upload', 'conflict.js'), 'utf8');
 const profileOnboardJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'onboard.js'), 'utf8');
 const profileIndexJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'index.js'), 'utf8');
 const profileExportJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'export.js'), 'utf8');
@@ -98,6 +99,7 @@ assert.ok(!homeWxml.includes('\u6700\u8fd1 3 \u9879\u6307\u6807\u504f\u79bb\u6b6
 assert.ok(!homeWxml.includes('\u767d\u7ec6\u80de\u3001CEA'), 'home alert metrics must come from data, not hardcoded text');
 assert.ok(uploadPickJs.includes('const initialPhotos = [];'), 'upload pick must start empty; keep upload fixtures in tests only');
 assert.ok(!uploadPickJs.includes('{ id: 1, group: 1 }'), 'upload pick must not ship test photo fixtures');
+assert.ok(uploadPickJs.includes('showApiErrorToast(error'), 'upload pick must surface normalized API errors for upload and fixture failures');
 assert.ok(uploadConfirmJs.includes("itemList: ['覆盖旧报告', '跳过重复报告']"), 'duplicate prompt should only expose replace or skip');
 assert.ok(!uploadConfirmJs.includes('仍保存为新报告'), 'duplicate prompt must not expose keep-both to normal users');
 assert.ok(uploadConfirmJs.includes('cancelTaskAndLeave()'), 'upload confirm cancel must explicitly discard the OCR task');
@@ -113,11 +115,13 @@ assert.ok(uploadConfirmJs.includes('scheduleRecognitionPoll()'), 'upload confirm
 assert.ok(uploadConfirmJs.includes('clearRecognitionTimer()'), 'upload confirm must clear OCR polling timers on exit');
 assert.ok(uploadConfirmJs.includes('shouldShowRecognitionSlow'), 'upload confirm must show a slow-recognition state before the user can save');
 assert.ok(uploadConfirmJs.includes('if (this.data.recognizing)'), 'upload confirm must block saving while OCR is still running');
+assert.ok(uploadConfirmJs.includes('showApiErrorToast(error'), 'upload confirm must surface normalized API errors');
 assert.ok(uploadEditDetailJs.includes('api.getOcrTask(this.taskId)'), 'upload edit detail must load the selected OCR draft');
 assert.ok(uploadEditDetailJs.includes("showApiErrorToast(error, '加载报告详情失败')"), 'upload edit detail must surface API errors when detail loading fails');
 assert.ok(uploadEditDetailJs.includes('addManualMetric()'), 'upload edit detail must allow manual metric entry');
 assert.ok(uploadEditDetailJs.includes('addFinding()'), 'upload edit detail must allow manual imaging finding entry');
 assert.ok(!uploadEditDetailJs.includes("value: '32'"), 'upload edit detail must not ship hardcoded metric fixtures');
+assert.ok(uploadConflictJs.includes('showApiErrorToast(error'), 'upload conflict page must surface normalized API errors');
 assert.ok(!reportDetailJs.includes('api.updateReport(this.reportId'), 'report detail edit entry must not auto-save report data');
 assert.ok(!reportDetailJs.includes('已保存编辑'), 'report detail edit entry must not show a saved toast before real edits');
 assert.ok(reportDetailJs.includes('showReportGone'), 'report detail must handle deleted or missing reports');
