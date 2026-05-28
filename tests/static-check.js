@@ -81,6 +81,8 @@ const apiJs = fs.readFileSync(path.join(miniprogramRoot, 'utils', 'api.js'), 'ut
 const apiMockJs = fs.readFileSync(path.join(miniprogramRoot, 'utils', 'api-mock.js'), 'utf8');
 const backendOcrRouteTs = fs.readFileSync(path.join(root, 'backend', 'src', 'routes', 'ocr.ts'), 'utf8');
 const backendOcrProviderTs = fs.readFileSync(path.join(root, 'backend', 'src', 'services', 'ocr-provider.ts'), 'utf8');
+const backendUploadRouteTs = fs.readFileSync(path.join(root, 'backend', 'src', 'routes', 'uploads.ts'), 'utf8');
+const backendUploadStorageTs = fs.readFileSync(path.join(root, 'backend', 'src', 'services', 'upload-storage.ts'), 'utf8');
 assert.ok(uploadPickJs.includes("UPLOAD_DRAFT_KEY = 'uploadDraft'"), 'upload pick must persist unfinished upload drafts');
 assert.ok(uploadPickJs.includes('wx.chooseMedia') || uploadPickJs.includes('wx.chooseImage'), 'upload pick must use native image selection APIs');
 assert.ok(uploadPickJs.includes('persistUploadDraft(photos)'), 'upload pick must keep selected photos recoverable after task creation failures');
@@ -145,6 +147,9 @@ assert.ok(apiJs.includes('new Proxy') && apiJs.includes('getRuntimeApi()'), 'run
 assert.ok(backendOcrRouteTs.includes('createOcrProvider()'), 'backend OCR route must use the OCR provider boundary');
 assert.ok(!backendOcrRouteTs.includes('getRealcaseOcrDrafts'), 'backend OCR route must not depend directly on fixture OCR data');
 assert.ok(backendOcrProviderTs.includes('recognizeFixture'), 'backend OCR provider must expose fixture recognition for downstream smoke tests');
+assert.ok(backendUploadRouteTs.includes('createUploadStorageProvider()'), 'backend upload route must use the storage provider boundary');
+assert.ok(!backendUploadRouteTs.includes('local-upload://'), 'backend upload route must not hardcode local storage URLs');
+assert.ok(backendUploadStorageTs.includes('signUpload'), 'backend upload storage provider must expose upload signing');
 
 assert.ok(profileOnboardJs.includes('requestWxLoginCode()'), 'onboard login must use the native wx.login result');
 assert.ok(!profileOnboardJs.includes('mock_code'), 'onboard login must not continue with a mock code after wx.login failure');

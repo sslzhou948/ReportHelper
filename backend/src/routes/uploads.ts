@@ -1,7 +1,7 @@
-import { randomUUID } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { requireSession } from '../services/dev-user.js';
+import { createUploadStorageProvider } from '../services/upload-storage.js';
 import { getRequestId } from '../utils/request-id.js';
 
 const SUPPORTED_IMAGE_TYPES = new Set([
@@ -31,22 +31,15 @@ const completeUploadsSchema = z.object({
   })).min(1).max(MAX_FILE_COUNT)
 });
 
-function objectKey(profileId: string, fileName: string) {
-  const safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_').slice(-120) || 'report-image';
-  return `profiles/${profileId}/reports/${new Date().toISOString().slice(0, 10)}/${randomUUID()}-${safeName}`;
-}
-
 function normalizeMimeType(mimeType: string) {
   const value = mimeType.trim().toLowerCase();
   if (value === 'image/jpg') return 'image/jpeg';
   return value;
 }
 
-function expiresAt() {
-  return new Date(Date.now() + 15 * 60 * 1000).toISOString();
-}
-
 export async function registerUploadRoutes(app: FastifyInstance) {
+  const storageProvider = createUploadStorageProvider();
+
   app.post('/api/uploads/sign', async (request, reply) => {
     const requestId = getRequestId(request);
     const parsed = signUploadsSchema.safeParse(request.body || {});
@@ -115,12 +108,15 @@ export async function registerUploadRoutes(app: FastifyInstance) {
 
     const uploads = [];
     for (const file of parsed.data.files) {
-      const key = objectKey(profile.id, file.fileName);
+      const signedUpload = await storageProvider.signUpload({
+        profileId: profile.id,
+        fileName: file.fileName
+      });
       const photo = await app.prisma.reportPhoto.create({
         data: {
           profileId: profile.id,
           userId: user.id,
-          objectKey: key,
+          objectKey: signedUpload.objectKey,
           thumbnailObjectKey: null,
           mimeType: normalizeMimeType(file.mimeType),
           sizeBytes: BigInt(file.size),
@@ -130,10 +126,10 @@ export async function registerUploadRoutes(app: FastifyInstance) {
       uploads.push({
         clientFileId: file.clientFileId,
         photoId: photo.id,
-        objectKey: key,
-        uploadUrl: `local-upload://${key}`,
-        headers: {},
-        expiresAt: expiresAt()
+        objectKey: signedUpload.objectKey,
+        uploadUrl: signedUpload.uploadUrl,
+        headers: signedUpload.headers,
+        expiresAt: signedUpload.expiresAt
       });
     }
 

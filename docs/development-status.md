@@ -18,6 +18,7 @@ Updated: 2026-05-29
 - Full local verification is available through `npm run check:all`; WeChat DevTools smoke remains a separate explicit check.
 - Hybrid-upload DevTools smoke now runs without local Docker/Postgres by starting an in-memory Fastify backend, saving seven realcase fixture reports through backend APIs, and reading them back from the mini program health page.
 - Backend OCR task creation now goes through an OCR provider boundary, so the real OCR provider can replace the fixture provider without changing route contracts.
+- Backend upload signing now goes through a storage provider boundary, so object storage signing can replace the local upload provider without changing mini program API contracts.
 
 ## Verified Commands
 
