@@ -1111,6 +1111,40 @@ assert.equal(skipSaveResponse.statusCode, 200);
 assert.equal(skipSaveResponse.json().data.reports.length, 0);
 assert.equal(prisma.reports.filter((report) => !report.deletedAt).length, 7);
 
+const scopedProfileResponse = await app.inject({
+  method: 'POST',
+  url: '/api/profiles',
+  payload: {
+    relation: 'scope',
+    realName: 'Scoped Save',
+    gender: '',
+    diseaseType: '',
+    primaryHospital: 'Union Hospital'
+  }
+});
+assert.equal(scopedProfileResponse.statusCode, 200);
+const scopedProfileId = scopedProfileResponse.json().data.id;
+const scopedTaskResponse = await app.inject({
+  method: 'POST',
+  url: '/api/ocr/tasks',
+  payload: {
+    profileId: scopedProfileId,
+    fixtureCaseIds: ['acth']
+  }
+});
+assert.equal(scopedTaskResponse.statusCode, 200);
+const scopedSaveResponse = await app.inject({
+  method: 'POST',
+  url: '/api/reports/batch-create',
+  payload: {
+    ocrTaskId: scopedTaskResponse.json().data.id
+  }
+});
+assert.equal(scopedSaveResponse.statusCode, 200);
+assert.equal(scopedSaveResponse.json().data.reports.length, 1);
+assert.equal(prisma.reports.filter((report) => report.profileId === scopedProfileId && !report.deletedAt).length, 1);
+assert.equal(prisma.reports.filter((report) => report.profileId === profileId && !report.deletedAt).length, 7);
+
 const deleteReportResponse = await app.inject({
   method: 'DELETE',
   url: `/api/reports/${firstReportId}`

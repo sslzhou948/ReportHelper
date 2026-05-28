@@ -59,6 +59,16 @@
   border-left: 8rpx solid var(--high);
 }
 
+.profile-notice {
+  margin-top: 16rpx;
+  padding: 18rpx 22rpx;
+  border-radius: 20rpx;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: 24rpx;
+  line-height: 1.45;
+}
+
 .failed-title {
   font-size: 32rpx;
   font-weight: 800;

@@ -267,6 +267,9 @@ export async function batchCreateReports(prisma: PrismaClient, input: BatchCreat
         profileId: input.profileId
       }
     });
+    if (!task) {
+      throw new Error('OCR_TASK_NOT_FOUND');
+    }
     if (task?.status === 'confirmed') {
       return savedReportsForTask(tx as PrismaClient, input.profileId, input.ocrTaskId);
     }

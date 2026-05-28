@@ -270,7 +270,22 @@ export async function registerReportRoutes(app: FastifyInstance) {
     const session = await requireSession(app, request, reply);
     if (!session) return;
     const { user, profile: defaultProfile } = session;
-    const profileId = parsed.data.profileId || defaultProfile.id;
+    let profileId = parsed.data.profileId || '';
+    if (!profileId) {
+      const task = await app.prisma.ocrTask.findFirst({
+        where: {
+          id: parsed.data.ocrTaskId,
+          userId: user.id
+        }
+      });
+      if (!task) {
+        return reply.status(404).send({
+          error: { code: 'NOT_FOUND', message: 'OCR task not found' },
+          requestId
+        });
+      }
+      profileId = task.profileId || defaultProfile.id;
+    }
     const profile = await app.prisma.profile.findFirst({
       where: {
         id: profileId,
@@ -308,6 +323,12 @@ export async function registerReportRoutes(app: FastifyInstance) {
               candidates: error.candidates
             }
           },
+          requestId
+        });
+      }
+      if (error instanceof Error && error.message === 'OCR_TASK_NOT_FOUND') {
+        return reply.status(404).send({
+          error: { code: 'NOT_FOUND', message: 'OCR task not found' },
           requestId
         });
       }

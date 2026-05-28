@@ -6,6 +6,7 @@
   </view>
   <view class="pad mt-12">
     <view class="sub">共识别出 {{reportCount}} 份报告。请逐份查看详情核对，有冲突的请优先处理。</view>
+    <view wx:if="{{profileNoticeText}}" class="profile-notice">{{profileNoticeText}}</view>
   </view>
   <view wx:if="{{taskStatus === 'failed'}}" class="pad mt-12">
     <view class="card card-pad failed-card">

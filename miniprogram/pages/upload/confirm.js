@@ -62,6 +62,11 @@ function chooseDuplicateDecision(candidates) {
   });
 }
 
+function buildProfileLabel(profile) {
+  if (!profile) return '\u53d1\u8d77\u4e0a\u4f20\u65f6\u7684\u6863\u6848';
+  return `${profile.relation || ''}${profile.realName || ''}` || '\u53d1\u8d77\u4e0a\u4f20\u65f6\u7684\u6863\u6848';
+}
+
 Page({
   taskId: '',
   drafts: [],
@@ -75,7 +80,8 @@ Page({
     unresolvedConflictCount: 0,
     taskStatus: '',
     errorMessage: '',
-    retrying: false
+    retrying: false,
+    profileNoticeText: ''
   },
 
   onLoad(query = {}) {
@@ -106,10 +112,28 @@ Page({
         taskStatus: task.status || '',
         errorMessage: task.errorMessage || '\u8bc6\u522b\u670d\u52a1\u6682\u65f6\u672a\u8fd4\u56de\u7ed3\u679c\uff0c\u8bf7\u91cd\u8bd5'
       });
+      this.updateProfileNotice(task.profileId || '');
       if (task.profileId) wx.setStorageSync('healthhelperBackendProfileId', task.profileId);
     }).catch(() => {
       this.setData({ loading: false });
       wx.showToast({ title: '\u52a0\u8f7d\u8bc6\u522b\u7ed3\u679c\u5931\u8d25', icon: 'none' });
+    });
+  },
+
+  updateProfileNotice(profileId) {
+    if (!profileId || profileId === getApp().getCurrentProfileId()) {
+      this.setData({ profileNoticeText: '' });
+      return;
+    }
+    api.getProfiles().then((profiles) => {
+      const profile = (profiles || []).find((item) => item.id === profileId);
+      this.setData({
+        profileNoticeText: `\u6b63\u5728\u786e\u8ba4${buildProfileLabel(profile)}\u7684\u62a5\u544a\uff0c\u4fdd\u5b58\u65f6\u4e0d\u4f1a\u5f52\u5165\u5f53\u524d\u6d4f\u89c8\u6863\u6848\u3002`
+      });
+    }).catch(() => {
+      this.setData({
+        profileNoticeText: '\u6b63\u5728\u786e\u8ba4\u53d1\u8d77\u4e0a\u4f20\u65f6\u7684\u6863\u6848\u62a5\u544a\uff0c\u4fdd\u5b58\u65f6\u4e0d\u4f1a\u5f52\u5165\u5f53\u524d\u6d4f\u89c8\u6863\u6848\u3002'
+      });
     });
   },
 
@@ -185,6 +209,7 @@ Page({
 
   saveWithDecisions(duplicateDecisions = []) {
     return api.batchCreateReports({
+      profileId: this.data.profileId,
       ocrTaskId: this.taskId,
       reports: this.drafts,
       duplicateDecisions
