@@ -10,6 +10,9 @@
     "test": "tsx src/backend-smoke.test.ts",
     "start": "node dist/server.js",
     "migration:check": "node scripts/check-migration.js",
+    "db:up": "docker compose up -d postgres",
+    "db:down": "docker compose down",
+    "db:reset": "prisma migrate reset --force",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio"

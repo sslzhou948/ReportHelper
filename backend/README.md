@@ -35,9 +35,18 @@ npm install
 Create `.env` from `.env.example`, then run:
 
 ```bash
+npm run db:up
 npm run prisma:migrate
 npm run dev
 ```
+
+When you need a clean local database for repeatable product testing:
+
+```bash
+npm run db:reset
+```
+
+`db:up` uses the PostgreSQL service in `docker-compose.yml`. If Docker is not installed, use any local PostgreSQL instance and keep `DATABASE_URL` aligned with `.env`.
 
 Before committing schema changes, verify that the initial migration still matches the Prisma schema:
 

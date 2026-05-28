@@ -22,6 +22,7 @@ Updated: 2026-05-29
 - Login onboarding now exposes tappable user agreement and privacy policy pages, with a clear medical disclaimer before account/profile creation.
 - Prisma now has an initial PostgreSQL migration and a drift check that compares the committed migration against the current schema without requiring a running database.
 - Backend health check now reports database readiness when a real Prisma client is available, giving the future admin system-health page a reusable API signal.
+- Backend local database scripts now expose `db:up`, `db:down`, and `db:reset` around the checked-in PostgreSQL compose service.
 
 ## Verified Commands
 
@@ -54,4 +55,4 @@ Start hardening the real backend integration loop:
 1. Keep `npm run devtools:hybrid-flow` as the no-Postgres downstream business-loop gate.
 2. Add the same fixture loop against a real PostgreSQL database once local Docker/Postgres is available.
 3. Keep physical image upload and real OCR provider integration decoupled until the downstream data loop is stable.
-4. After Postgres is wired, add migration/seed/reset guidance for repeatable local product testing.
+4. Use `npm --prefix backend run db:up`, `npm --prefix backend run prisma:migrate`, and `npm --prefix backend run db:reset` for repeatable local product testing once Docker or another local PostgreSQL runtime is installed.
