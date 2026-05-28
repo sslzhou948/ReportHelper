@@ -51,6 +51,17 @@ function toDateOnly(value: Date | string) {
   return String(value).slice(0, 10);
 }
 
+function todayDateOnly() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function isValidDateOnly(value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [year, month, day] = value.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.toISOString().slice(0, 10) === value;
+}
+
 function toInputJson(value: unknown): Prisma.InputJsonValue {
   return JSON.parse(JSON.stringify(value ?? { advanceDays: [3, 1, 0], subscribeAccepted: false })) as Prisma.InputJsonValue;
 }
@@ -161,6 +172,22 @@ export async function registerRecheckRoutes(app: FastifyInstance) {
       });
     }
 
+    const dateOnly = toDateOnly(parsed.data.date);
+    if (!isValidDateOnly(dateOnly) || dateOnly < todayDateOnly()) {
+      return reply.status(400).send({
+        error: {
+          code: 'VALIDATION_FAILED',
+          message: 'Recheck date must be today or later',
+          details: {
+            fieldErrors: {
+              date: 'Date must be today or later'
+            }
+          }
+        },
+        requestId
+      });
+    }
+
     const session = await requireSession(app, request, reply);
     if (!session) return;
     const { user } = session;
@@ -176,7 +203,7 @@ export async function registerRecheckRoutes(app: FastifyInstance) {
       data: {
         profileId: profile.id,
         type: parsed.data.type,
-        date: new Date(parsed.data.date),
+        date: new Date(`${dateOnly}T00:00:00.000Z`),
         timeOfDay: parsed.data.timeOfDay || '',
         hospital: parsed.data.hospital,
         department: parsed.data.department || '',

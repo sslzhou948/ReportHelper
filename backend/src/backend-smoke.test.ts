@@ -10,6 +10,12 @@ function now() {
   return new Date();
 }
 
+function offsetDateOnly(days: number) {
+  const date = new Date();
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
 class MemoryPrisma {
   users: Row[] = [];
   profiles: Row[] = [];
@@ -722,12 +728,25 @@ const afterDeleteProfilesResponse = await app.inject({
 assert.equal(afterDeleteProfilesResponse.statusCode, 200);
 assert.ok(!afterDeleteProfilesResponse.json().data.some((profile: Row) => profile.id === createdProfile.id));
 
+const pastRecheckResponse = await app.inject({
+  method: 'POST',
+  url: `/api/profiles/${profileId}/recheck-plans`,
+  payload: {
+    type: '甯歌澶嶆煡',
+    date: offsetDateOnly(-1),
+    hospital: '鍗忓拰鍖婚櫌'
+  }
+});
+assert.equal(pastRecheckResponse.statusCode, 400);
+assert.equal(pastRecheckResponse.json().error.code, 'VALIDATION_FAILED');
+
+const nextRecheckDate = offsetDateOnly(4);
 const createRecheckResponse = await app.inject({
   method: 'POST',
   url: `/api/profiles/${profileId}/recheck-plans`,
   payload: {
     type: '常规复查',
-    date: '2026-06-01',
+    date: nextRecheckDate,
     hospital: '协和医院',
     department: '肿瘤科',
     todos: [
@@ -742,7 +761,7 @@ const createRecheckResponse = await app.inject({
 });
 assert.equal(createRecheckResponse.statusCode, 200);
 const recheckPlan = createRecheckResponse.json().data;
-assert.equal(recheckPlan.date, '2026-06-01');
+assert.equal(recheckPlan.date, nextRecheckDate);
 assert.equal(recheckPlan.todos.length, 2);
 
 const listRecheckResponse = await app.inject({
