@@ -256,6 +256,48 @@ asyncChecks.push(mockApi.createOcrTask({
 }).then((snapshots) => {
   assert.ok(snapshots.some((snapshot) => snapshot.metricKey === 'acth' && snapshot.lastTone === 'high'), 'fixture metrics should feed snapshots');
   assert.ok(!snapshots.some((snapshot) => snapshot.lastReportId === savedFixtureCtReportId), 'imaging reports should not feed metric snapshots');
+  return mockApi.createOcrTask({
+    profileId: 'profile_self',
+    fixtureCaseIds: ['acth']
+  });
+}).then((task) => mockApi.batchCreateReports({ ocrTaskId: task.id, reports: task.drafts }).then(
+  () => assert.fail('duplicate reports should require a user decision'),
+  (error) => {
+    assert.ok(error instanceof ApiError);
+    assert.strictEqual(error.code, 'DUPLICATE_REPORT_REQUIRES_DECISION');
+    assert.ok(error.details.candidates.length >= 1, 'duplicate error should include candidates');
+    return { task, candidates: error.details.candidates };
+  }
+)).then(({ task, candidates }) => mockApi.checkDuplicateReports({
+  profileId: 'profile_self',
+  ocrTaskId: task.id,
+  reports: task.drafts
+}).then((result) => {
+  assert.strictEqual(result.hasDuplicates, true);
+  assert.ok(result.candidates.some((candidate) => candidate.existingReportId && ['strong', 'possible'].includes(candidate.matchLevel)));
+  return mockApi.batchCreateReports({
+    ocrTaskId: task.id,
+    reports: task.drafts,
+    duplicateDecisions: candidates.map((candidate) => ({
+      draftId: candidate.draftId,
+      decision: 'replace',
+      existingReportId: candidate.existingReportId
+    }))
+  });
+})).then((result) => {
+  assert.strictEqual(result.reports.length, 1);
+  assert.strictEqual(result.reports[0].action, 'replaced');
+  assert.ok(result.reports[0].replacedReportId);
+  return mockApi.createOcrTask({
+    profileId: 'profile_self',
+    fixtureCaseIds: ['abdomen_pelvis_ct_plain']
+  });
+}).then((task) => mockApi.checkDuplicateReports({
+  profileId: 'profile_self',
+  ocrTaskId: task.id,
+  reports: task.drafts
+})).then((result) => {
+  assert.strictEqual(result.hasDuplicates, false, 'same CT type with different exam part should not be treated as duplicate');
 }));
 asyncChecks.push(mockApi.listRecheckPlans('profile_mom').then((recheck) => {
   assert.ok(recheck.nextPlan, 'mock api should expose next recheck plan');

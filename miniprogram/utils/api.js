@@ -79,6 +79,9 @@ function createBackendApi(client) {
     updateOcrDraft(payload, config) {
       return client.patch(`/api/ocr/tasks/${payload.taskId}/drafts/${payload.draftId}`, payload, config);
     },
+    checkDuplicateReports(payload, config) {
+      return client.post('/api/reports/duplicate-check', payload, config);
+    },
     batchCreateReports(payload, config) {
       return client.post('/api/reports/batch-create', payload, config);
     }

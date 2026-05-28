@@ -42,6 +42,26 @@ function toDisplayReport(draft, index) {
   };
 }
 
+function chooseDuplicateDecision(candidates) {
+  const first = candidates[0] || {};
+  const countText = candidates.length > 1 ? `等 ${candidates.length} 份` : '';
+  const typeText = first.existingReportType || '相似报告';
+  const dateText = first.existingReportDate || '';
+  return new Promise((resolve, reject) => {
+    wx.showActionSheet({
+      alertText: `已存在 ${dateText} ${typeText}${countText}，请选择保存方式`,
+      itemList: ['覆盖旧报告', '仍保存为新报告', '跳过重复报告'],
+      success(res) {
+        const decisions = ['replace', 'keep_both', 'skip'];
+        resolve(decisions[res.tapIndex] || 'keep_both');
+      },
+      fail(error) {
+        reject(error);
+      }
+    });
+  });
+}
+
 Page({
   taskId: '',
   drafts: [],
@@ -49,6 +69,7 @@ Page({
   data: {
     loading: false,
     saving: false,
+    profileId: '',
     reports: [],
     reportCount: 0,
     unresolvedConflictCount: 0
@@ -74,6 +95,7 @@ Page({
       const reports = this.drafts.map(toDisplayReport);
       this.setData({
         loading: false,
+        profileId: task.profileId || '',
         reports,
         reportCount: task.reportCount || reports.length,
         unresolvedConflictCount: reports.reduce((sum, report) => sum + (report.conflictCount || 0), 0)
@@ -97,6 +119,40 @@ Page({
     wx.navigateTo({ url: `/pages/upload/conflict?taskId=${this.taskId}&reportIdx=${event.currentTarget.dataset.index}&metricKey=${report.metricKey || 'wbc'}` });
   },
 
+  buildDuplicateDecisions(candidates, decision) {
+    return (candidates || []).map((candidate) => ({
+      draftId: candidate.draftId,
+      decision,
+      existingReportId: candidate.existingReportId
+    }));
+  },
+
+  saveWithDecisions(duplicateDecisions = []) {
+    return api.batchCreateReports({
+      ocrTaskId: this.taskId,
+      reports: this.drafts,
+      duplicateDecisions
+    }, {
+      idempotencyKey: `save_${this.taskId}_${duplicateDecisions.map((item) => item.decision).join('_') || 'new'}`
+    });
+  },
+
+  finishSave(result) {
+    const savedCount = result.reports ? result.reports.length : this.data.reportCount;
+    wx.showToast({ title: `\u5df2\u4fdd\u5b58 ${savedCount} \u4efd\u62a5\u544a`, icon: 'success' });
+    wx.setStorageSync('healthDefaultView', 'time');
+    const pending = wx.getStorageSync('pendingOcrTasks') || [];
+    wx.setStorageSync('pendingOcrTasks', pending.filter((item) => item.taskId !== this.taskId));
+    setTimeout(() => wx.switchTab({ url: '/pages/health/index' }), 600);
+  },
+
+  handleDuplicateCandidates(candidates) {
+    return chooseDuplicateDecision(candidates).then((decision) => {
+      const duplicateDecisions = this.buildDuplicateDecisions(candidates, decision);
+      return this.saveWithDecisions(duplicateDecisions);
+    });
+  },
+
   saveAll() {
     if (this.data.saving) return Promise.resolve(false);
     if (this.data.unresolvedConflictCount > 0) {
@@ -108,21 +164,29 @@ Page({
     }
 
     this.setData({ saving: true });
-    return api.batchCreateReports({
+    return api.checkDuplicateReports({
+      profileId: this.data.profileId,
       ocrTaskId: this.taskId,
       reports: this.drafts
-    }, {
-      idempotencyKey: `save_${this.taskId}`
+    }).then((duplicateResult) => {
+      if (duplicateResult.hasDuplicates) {
+        return this.handleDuplicateCandidates(duplicateResult.candidates);
+      }
+      return this.saveWithDecisions();
     }).then((result) => {
-      const savedCount = result.reports ? result.reports.length : this.data.reportCount;
-      wx.showToast({ title: `\u5df2\u4fdd\u5b58 ${savedCount} \u4efd\u62a5\u544a`, icon: 'success' });
-      wx.setStorageSync('healthDefaultView', 'time');
-      const pending = wx.getStorageSync('pendingOcrTasks') || [];
-      wx.setStorageSync('pendingOcrTasks', pending.filter((item) => item.taskId !== this.taskId));
-      setTimeout(() => wx.switchTab({ url: '/pages/health/index' }), 600);
-    }).catch(() => {
+      this.finishSave(result);
+    }).catch((error) => {
+      if (error && error.code === 'DUPLICATE_REPORT_REQUIRES_DECISION') {
+        return this.handleDuplicateCandidates(error.details.candidates).then((result) => {
+          this.finishSave(result);
+        }).catch(() => {
+          this.setData({ saving: false });
+        });
+      }
       this.setData({ saving: false });
-      wx.showToast({ title: '\u4fdd\u5b58\u62a5\u544a\u5931\u8d25', icon: 'none' });
+      if (!error || error.errMsg !== 'showActionSheet:fail cancel') {
+        wx.showToast({ title: '\u4fdd\u5b58\u62a5\u544a\u5931\u8d25', icon: 'none' });
+      }
     });
   }
 });

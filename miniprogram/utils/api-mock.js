@@ -1,4 +1,5 @@
 const store = require('./store');
+const { ApiError } = require('./api-client');
 const { buildMetricSnapshots, groupMetricsByCategory, normalizeReportMetrics } = require('./report');
 const { avatarText, formatProfileSummary: buildProfileSummary } = require('./profile');
 const { buildRecognitionReports } = require('./upload');
@@ -81,6 +82,7 @@ function toPersistedReport(draft, profileId, ocrTaskId, index) {
 
   return {
     id: `report_${draft.draftId}_${index + 1}`,
+    draftId: draft.draftId,
     profileId,
     type: info.type || '待确认报告',
     originalType: info.originalType || info.type || '待确认报告',
@@ -122,9 +124,27 @@ function normalizeEditedDraft(draft) {
   return next;
 }
 
+function sameText(a, b) {
+  return String(a || '').trim() === String(b || '').trim();
+}
+
+function normalizeReportIdentity(reportOrDraft) {
+  const info = reportOrDraft.basicInfo || reportOrDraft;
+  return {
+    type: info.type || '',
+    typeKey: info.typeKey || '',
+    hospital: info.hospital || '',
+    reportDate: info.reportDate || '',
+    modality: info.modality || 'laboratory',
+    examPart: info.examPart || '',
+    examMethod: info.examMethod || ''
+  };
+}
+
 function createMockApi() {
   const pinnedOverrides = {};
   const ocrTasks = {};
+  const duplicateCandidates = [];
   const profiles = clone(store.mock.profiles);
   const reports = clone(store.mock.reports);
   const recheckPlans = clone(store.mock.recheckPlans);
@@ -181,6 +201,64 @@ function createMockApi() {
       .flatMap((report) => normalizeReportMetrics(report, store.mock.metricDefinitions))
       .filter((row) => row.metricKey === metricKey)
       .sort((a, b) => new Date(b.reportDate) - new Date(a.reportDate));
+  }
+
+  function detectDuplicateCandidates({ profileId, ocrTaskId, reports: draftReports }) {
+    const candidates = [];
+    const drafts = draftReports || [];
+    drafts.forEach((draft) => {
+      const incoming = normalizeReportIdentity(draft);
+      if (!incoming.reportDate) return;
+      const draftMetricKeys = new Set((draft.metrics || []).map((metric) => metric.metricKey).filter(Boolean));
+      getActiveReports(profileId).forEach((existing) => {
+        const current = normalizeReportIdentity(existing);
+        const sameDate = sameText(incoming.reportDate, current.reportDate);
+        const sameHospital = sameText(incoming.hospital, current.hospital);
+        const sameTypeKey = incoming.typeKey && current.typeKey
+          ? sameText(incoming.typeKey, current.typeKey)
+          : sameText(incoming.type, current.type);
+        const sameExamPart = sameText(incoming.examPart, current.examPart);
+        const sameExamMethod = sameText(incoming.examMethod, current.examMethod);
+        if (!sameDate || !sameTypeKey || !sameExamPart || !sameExamMethod) return;
+
+        const existingMetricKeys = new Set((existing.metrics || []).map((metric) => metric.metricKey).filter(Boolean));
+        const overlapCount = Array.from(draftMetricKeys).filter((key) => existingMetricKeys.has(key)).length;
+        const overlapBase = Math.max(draftMetricKeys.size, existingMetricKeys.size, 1);
+        const metricOverlapRatio = overlapCount / overlapBase;
+        const matchLevel = sameHospital ? 'strong' : 'possible';
+        if (matchLevel !== 'strong' && metricOverlapRatio < 0.8) return;
+
+        candidates.push({
+          id: `dup_${ocrTaskId || 'manual'}_${draft.draftId}_${existing.id}`,
+          draftId: draft.draftId,
+          existingReportId: existing.id,
+          existingReportType: existing.type,
+          existingReportDate: existing.reportDate,
+          existingHospital: existing.hospital,
+          matchLevel,
+          matchReason: {
+            sameProfile: true,
+            sameReportDate: sameDate,
+            sameHospital,
+            sameTypeKey,
+            sameExamPart,
+            sameExamMethod,
+            metricOverlapRatio
+          },
+          suggestedDecision: matchLevel === 'strong' ? 'replace' : 'keep_both'
+        });
+      });
+    });
+    return candidates;
+  }
+
+  function rejectDuplicateCandidates(candidates) {
+    return Promise.reject(new ApiError({
+      code: 'DUPLICATE_REPORT_REQUIRES_DECISION',
+      statusCode: 409,
+      message: '发现相似报告，请选择覆盖旧报告或另存一份',
+      details: { candidates }
+    }));
   }
 
   function applyPinned(snapshot) {
@@ -471,17 +549,70 @@ function createMockApi() {
       return ok(task.drafts[index]);
     },
 
-    batchCreateReports({ ocrTaskId, reports: draftReports }) {
+    checkDuplicateReports({ profileId, ocrTaskId, reports: draftReports }) {
+      const task = ocrTaskId && ocrTasks[ocrTaskId];
+      const drafts = draftReports || (task && task.drafts) || [];
+      const resolvedProfileId = profileId || (task && task.profileId) || (reports[0] && reports[0].profileId) || store.getProfiles()[0].id;
+      const candidates = detectDuplicateCandidates({
+        profileId: resolvedProfileId,
+        ocrTaskId,
+        reports: drafts
+      });
+      duplicateCandidates.push(...candidates.map((candidate) => ({
+        ...candidate,
+        profileId: resolvedProfileId,
+        ocrTaskId,
+        status: 'pending'
+      })));
+      return ok({
+        hasDuplicates: candidates.length > 0,
+        candidates
+      });
+    },
+
+    batchCreateReports({ ocrTaskId, reports: draftReports, duplicateDecisions = [] }) {
       const task = ocrTaskId && ocrTasks[ocrTaskId];
       const drafts = draftReports || (task && task.drafts) || [];
       const profileId = (task && task.profileId) || (reports[0] && reports[0].profileId) || store.getProfiles()[0].id;
+      const candidates = detectDuplicateCandidates({ profileId, ocrTaskId, reports: drafts });
+      const decisionByDraft = duplicateDecisions.reduce((acc, item) => {
+        if (item && item.draftId) acc[item.draftId] = item;
+        return acc;
+      }, {});
+      const unresolved = candidates.filter((candidate) => !decisionByDraft[candidate.draftId]);
+      if (unresolved.length) return rejectDuplicateCandidates(unresolved);
+
       const startIndex = reports.length;
-      const savedReports = drafts.map((draft, index) => toPersistedReport(draft, profileId, ocrTaskId, startIndex + index));
+      const savedReports = drafts.reduce((acc, draft, index) => {
+        const decision = decisionByDraft[draft.draftId];
+        if (decision && decision.decision === 'skip') return acc;
+        if (decision && decision.decision === 'replace' && decision.existingReportId) {
+          const oldReport = reports.find((report) => report.id === decision.existingReportId);
+          if (oldReport) oldReport.deletedAt = new Date().toISOString();
+        }
+        const report = toPersistedReport(draft, profileId, ocrTaskId, startIndex + index);
+        if (decision && decision.decision === 'replace') {
+          report.replacedByReportId = decision.existingReportId || null;
+          report.action = 'replaced';
+        } else if (decision && decision.decision === 'keep_both') {
+          report.action = 'created';
+          const candidate = duplicateCandidates.find((item) => (
+            item.draftId === draft.draftId && item.existingReportId === decision.existingReportId
+          ));
+          if (candidate) candidate.status = 'ignored';
+        } else {
+          report.action = 'created';
+        }
+        acc.push(report);
+        return acc;
+      }, []);
       reports.push(...savedReports);
       return ok({
-        reports: savedReports.map((report, index) => ({
-          draftId: drafts[index] && (drafts[index].draftId || `draft_${index + 1}`),
-          reportId: report.id
+        reports: savedReports.map((report) => ({
+          draftId: report.draftId,
+          reportId: report.id,
+          action: report.action || 'created',
+          replacedReportId: report.replacedByReportId || null
         }))
       });
     }
