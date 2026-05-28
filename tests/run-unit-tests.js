@@ -16,7 +16,7 @@ const {
 const { validateProfile } = require('../miniprogram/utils/profile');
 const { buildDefaultTodos, validateRecheckPlan } = require('../miniprogram/utils/recheck');
 const { isRecognizingTaskStatus, shouldShowRecognitionSlow } = require('../miniprogram/utils/ocr-task');
-const { ApiError, createApiClient, createMemoryStorage } = require('../miniprogram/utils/api-client');
+const { ApiError, DEFAULT_REQUEST_TIMEOUT_MS, createApiClient, createMemoryStorage, isTimeoutError } = require('../miniprogram/utils/api-client');
 const { createApi } = require('../miniprogram/utils/api');
 const { realcaseOcrDrafts } = require('../miniprogram/data/ocr-fixtures');
 const mock = require('../miniprogram/data/mock');
@@ -44,6 +44,8 @@ assert.strictEqual(isRecognizingTaskStatus('processing'), true);
 assert.strictEqual(isRecognizingTaskStatus('needs_confirmation'), false);
 assert.strictEqual(shouldShowRecognitionSlow(1000, 10999, 10000), false);
 assert.strictEqual(shouldShowRecognitionSlow(1000, 11000, 10000), true);
+assert.strictEqual(isTimeoutError({ errMsg: 'request:fail timeout' }), true);
+assert.strictEqual(isTimeoutError({ errMsg: 'request:fail' }), false);
 
 assert.strictEqual(calculateTone(2.9, 3.5, 9.5, 'quantitative'), 'low');
 assert.strictEqual(calculateTone(10.2, 3.5, 9.5, 'quantitative'), 'high');
@@ -443,6 +445,7 @@ asyncChecks.push(client.get('/api/profiles').then((data) => {
   assert.strictEqual(capturedRequest.url, 'https://api.example.test/api/profiles');
   assert.strictEqual(capturedRequest.header.Authorization, 'Bearer token_1');
   assert.strictEqual(capturedRequest.header['X-Request-Id'], 'req_test');
+  assert.strictEqual(capturedRequest.timeout, DEFAULT_REQUEST_TIMEOUT_MS);
 }));
 
 const refreshStorage = createMemoryStorage({
@@ -529,10 +532,27 @@ asyncChecks.push(expiredClient.get('/api/profiles', { skipUnauthorizedRedirect: 
   }
 ));
 
-const networkClient = createApiClient({
+const timeoutClient = createApiClient({
   baseUrl: 'https://api.example.test',
   request() {
     return Promise.reject({ errMsg: 'request:fail timeout' });
+  }
+});
+asyncChecks.push(timeoutClient.get('/api/profiles').then(
+  () => assert.fail('request timeout should reject as ApiError'),
+  (error) => {
+    assert.strictEqual(error.code, 'REQUEST_TIMEOUT');
+    assert.strictEqual(error.message, '请求超时，请稍后重试');
+    assert.strictEqual(error.requestId.startsWith('req_'), true);
+  }
+));
+
+const networkClient = createApiClient({
+  baseUrl: 'https://api.example.test',
+  timeout: 8000,
+  request(config) {
+    assert.strictEqual(config.timeout, 8000);
+    return Promise.reject({ errMsg: 'request:fail' });
   }
 });
 asyncChecks.push(networkClient.get('/api/profiles').then(

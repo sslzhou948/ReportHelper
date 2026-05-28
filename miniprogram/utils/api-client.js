@@ -9,8 +9,15 @@ class ApiError extends Error {
   }
 }
 
+const DEFAULT_REQUEST_TIMEOUT_MS = 15000;
+
 function createRequestId() {
   return `req_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+}
+
+function isTimeoutError(error) {
+  const errMsg = error && error.errMsg ? String(error.errMsg) : '';
+  return errMsg.toLowerCase().includes('timeout');
 }
 
 function createMemoryStorage(initial = {}) {
@@ -66,6 +73,7 @@ function redirectToLogin() {
 
 function createApiClient(options = {}) {
   const baseUrl = options.baseUrl || '';
+  const defaultTimeout = options.timeout || DEFAULT_REQUEST_TIMEOUT_MS;
   const storage = options.storage || (typeof wx !== 'undefined' ? createWxStorage() : createMemoryStorage());
   const request = options.request || ((config) => new Promise((resolve, reject) => {
     wx.request({
@@ -88,7 +96,8 @@ function createApiClient(options = {}) {
       header: {
         'Content-Type': 'application/json',
         'X-Request-Id': requestId
-      }
+      },
+      timeout: defaultTimeout
     });
 
     const statusCode = response.statusCode || 0;
@@ -106,6 +115,7 @@ function createApiClient(options = {}) {
 
   async function requestJson(method, path, data, config = {}) {
     const requestId = config.requestId || createId();
+    const requestTimeout = config.timeout === undefined ? defaultTimeout : config.timeout;
     const token = storage.get('token');
     const headers = {
       'Content-Type': 'application/json',
@@ -121,12 +131,14 @@ function createApiClient(options = {}) {
         url: `${baseUrl}${path}`,
         method,
         data,
-        header: headers
+        header: headers,
+        timeout: requestTimeout
       });
     } catch (error) {
+      const timeout = isTimeoutError(error);
       throw new ApiError({
-        code: 'NETWORK_ERROR',
-        message: '\u7f51\u7edc\u8fde\u63a5\u5931\u8d25\uff0c\u8bf7\u91cd\u8bd5',
+        code: timeout ? 'REQUEST_TIMEOUT' : 'NETWORK_ERROR',
+        message: timeout ? '\u8bf7\u6c42\u8d85\u65f6\uff0c\u8bf7\u7a0d\u540e\u91cd\u8bd5' : '\u7f51\u7edc\u8fde\u63a5\u5931\u8d25\uff0c\u8bf7\u91cd\u8bd5',
         statusCode: 0,
         details: { errMsg: error && error.errMsg },
         requestId
@@ -185,7 +197,9 @@ function createApiClient(options = {}) {
 
 module.exports = {
   ApiError,
+  DEFAULT_REQUEST_TIMEOUT_MS,
   createApiClient,
   createMemoryStorage,
-  createRequestId
+  createRequestId,
+  isTimeoutError
 };
