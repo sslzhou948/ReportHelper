@@ -14,6 +14,7 @@ class MemoryPrisma {
   users: Row[] = [];
   profiles: Row[] = [];
   ocrTasks: Row[] = [];
+  ocrTaskPhotos: Row[] = [];
   drafts: Row[] = [];
   reports: Row[] = [];
   reportPhotos: Row[] = [];
@@ -274,6 +275,37 @@ class MemoryPrisma {
       };
       this.reportPhotos.push(photo);
       return photo;
+    },
+    findMany: async ({ where }: any) => {
+      return this.reportPhotos.filter((photo) => {
+        if (where.id?.in && !where.id.in.includes(photo.id)) return false;
+        if (where.profileId && photo.profileId !== where.profileId) return false;
+        if (where.userId && photo.userId !== where.userId) return false;
+        if (where.status?.in && !where.status.in.includes(photo.status)) return false;
+        return true;
+      });
+    },
+    updateMany: async ({ where, data }: any) => {
+      const rows = this.reportPhotos.filter((photo) => {
+        if (where.id?.in && !where.id.in.includes(photo.id)) return false;
+        return true;
+      });
+      rows.forEach((photo) => Object.assign(photo, data, { updatedAt: now() }));
+      return { count: rows.length };
+    }
+  };
+
+  ocrTaskPhoto = {
+    createMany: async ({ data }: any) => {
+      for (const item of data) {
+        this.ocrTaskPhotos.push({
+          id: randomUUID(),
+          ...item,
+          createdAt: now(),
+          updatedAt: now()
+        });
+      }
+      return { count: data.length };
     }
   };
 
@@ -574,6 +606,27 @@ const unsupportedUploadResponse = await app.inject({
 });
 assert.equal(unsupportedUploadResponse.statusCode, 415);
 assert.equal(unsupportedUploadResponse.json().error.code, 'UNSUPPORTED_MEDIA_TYPE');
+
+const signedPhotoTaskResponse = await app.inject({
+  method: 'POST',
+  url: '/api/ocr/tasks',
+  payload: {
+    profileId,
+    photos: signUploadsPayload.data.uploads.map((upload: Row, index: number) => ({
+      photoId: upload.photoId,
+      groupId: 'group_1',
+      sortOrder: index + 1
+    }))
+  }
+});
+assert.equal(signedPhotoTaskResponse.statusCode, 200);
+const signedPhotoTaskPayload = signedPhotoTaskResponse.json();
+assert.equal(signedPhotoTaskPayload.data.status, 'queued');
+assert.equal(signedPhotoTaskPayload.data.photoCount, 2);
+assert.equal(signedPhotoTaskPayload.data.reportCount, 1);
+assert.equal(signedPhotoTaskPayload.data.drafts.length, 0);
+assert.equal(prisma.ocrTaskPhotos.length, 2);
+assert.ok(prisma.reportPhotos.every((photo) => photo.status === 'attached'));
 
 const createProfileResponse = await app.inject({
   method: 'POST',

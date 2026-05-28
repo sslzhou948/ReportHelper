@@ -7,7 +7,12 @@ import { getRequestId } from '../utils/request-id.js';
 
 const createOcrTaskSchema = z.object({
   profileId: z.string().uuid().optional(),
-  fixtureCaseIds: z.array(z.string()).optional()
+  fixtureCaseIds: z.array(z.string()).optional(),
+  photos: z.array(z.object({
+    photoId: z.string().uuid(),
+    groupId: z.string().trim().min(1).max(128),
+    sortOrder: z.number().int().positive()
+  })).optional()
 });
 
 const listOcrTasksSchema = z.object({
@@ -97,6 +102,10 @@ function draftCreateData(taskId: string, profileId: string, draft: RealcaseDraft
   };
 }
 
+function countReportGroups(photos: { photoId: string; groupId: string }[]) {
+  return new Set(photos.map((photo) => photo.groupId || photo.photoId)).size;
+}
+
 async function findTaskForUser(app: FastifyInstance, taskId: string, userId: string) {
   return app.prisma.ocrTask.findFirst({
     where: {
@@ -168,8 +177,41 @@ export async function registerOcrRoutes(app: FastifyInstance) {
       });
     }
 
-    const drafts = getRealcaseOcrDrafts(parsed.data.fixtureCaseIds);
-    if (!drafts.length) {
+    const isFixtureTask = !!(parsed.data.fixtureCaseIds && parsed.data.fixtureCaseIds.length);
+    const photos = parsed.data.photos || [];
+    if (!isFixtureTask && photos.length === 0) {
+      return reply.status(400).send({
+        error: {
+          code: 'VALIDATION_FAILED',
+          message: 'OCR task requires photos or fixtureCaseIds'
+        },
+        requestId
+      });
+    }
+
+    if (!isFixtureTask) {
+      const uniquePhotoIds = Array.from(new Set(photos.map((photo) => photo.photoId)));
+      const signedPhotos = await app.prisma.reportPhoto.findMany({
+        where: {
+          id: { in: uniquePhotoIds },
+          profileId: profile.id,
+          userId: user.id,
+          status: { in: ['signed', 'uploaded'] }
+        }
+      });
+      if (signedPhotos.length !== uniquePhotoIds.length) {
+        return reply.status(400).send({
+          error: {
+            code: 'VALIDATION_FAILED',
+            message: 'Some photos are unavailable for OCR task creation'
+          },
+          requestId
+        });
+      }
+    }
+
+    const drafts = isFixtureTask ? getRealcaseOcrDrafts(parsed.data.fixtureCaseIds) : [];
+    if (isFixtureTask && !drafts.length) {
       return reply.status(400).send({
         error: {
           code: 'VALIDATION_FAILED',
@@ -184,15 +226,30 @@ export async function registerOcrRoutes(app: FastifyInstance) {
         data: {
           profileId: profile.id,
           userId: user.id,
-          status: 'needs_confirmation',
-          photoCount: drafts.reduce((sum, draft) => sum + (draft.sourcePhotoIds || []).length, 0),
-          reportCount: drafts.length
+          status: isFixtureTask ? 'needs_confirmation' : 'queued',
+          photoCount: isFixtureTask ? drafts.reduce((sum, draft) => sum + (draft.sourcePhotoIds || []).length, 0) : photos.length,
+          reportCount: isFixtureTask ? drafts.length : countReportGroups(photos)
         }
       });
 
-      await tx.recognizedReportDraft.createMany({
-        data: drafts.map((draft) => draftCreateData(createdTask.id, profile.id, draft))
-      });
+      if (isFixtureTask) {
+        await tx.recognizedReportDraft.createMany({
+          data: drafts.map((draft) => draftCreateData(createdTask.id, profile.id, draft))
+        });
+      } else {
+        await tx.ocrTaskPhoto.createMany({
+          data: photos.map((photo) => ({
+            ocrTaskId: createdTask.id,
+            photoId: photo.photoId,
+            groupId: photo.groupId || photo.photoId,
+            sortOrder: photo.sortOrder
+          }))
+        });
+        await tx.reportPhoto.updateMany({
+          where: { id: { in: photos.map((photo) => photo.photoId) } },
+          data: { status: 'attached' }
+        });
+      }
 
       return tx.ocrTask.findUniqueOrThrow({
         where: { id: createdTask.id },

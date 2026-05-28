@@ -3,8 +3,14 @@ const { createMockApi } = require('./api-mock');
 const { getRuntimeApiOptions } = require('./api-config');
 
 function toBackendCreateOcrTaskPayload(payload = {}) {
+  if (payload.fixtureCaseIds && payload.fixtureCaseIds.length) {
+    return {
+      fixtureCaseIds: payload.fixtureCaseIds
+    };
+  }
   return {
-    fixtureCaseIds: payload.fixtureCaseIds
+    profileId: payload.profileId,
+    photos: payload.photos || []
   };
 }
 
@@ -153,7 +159,11 @@ function createHybridUploadApi(options = {}) {
   return {
     ...mockApi,
     createOcrTask(payload, config) {
-      return backendApi.createOcrTask(toBackendCreateOcrTaskPayload(payload), config).then(rememberProfile);
+      const backendPayload = toBackendCreateOcrTaskPayload({
+        ...payload,
+        profileId: payload.profileId ? backendProfileId(payload.profileId) : payload.profileId
+      });
+      return backendApi.createOcrTask(backendPayload, config).then(rememberProfile);
     },
     signUploads(payload, config) {
       return backendApi.signUploads({
