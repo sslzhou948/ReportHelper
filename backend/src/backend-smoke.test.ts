@@ -21,6 +21,13 @@ class MemoryPrisma {
   recheckTodos: Row[] = [];
 
   user = {
+    findUnique: async ({ where }: any) => {
+      return this.users.find((item) => {
+        if (where.id && item.id !== where.id) return false;
+        if (where.wxOpenid && item.wxOpenid !== where.wxOpenid) return false;
+        return true;
+      }) || null;
+    },
     upsert: async ({ where, create }: any) => {
       let user = this.users.find((item) => item.wxOpenid === where.wxOpenid);
       if (!user) {
@@ -370,6 +377,36 @@ const env: Env = {
 const prisma = new MemoryPrisma();
 const app = buildApp({ env, prisma: prisma as any });
 
+const loginResponse = await app.inject({
+  method: 'POST',
+  url: '/api/auth/wx-login',
+  payload: {
+    code: 'smoke_code'
+  }
+});
+assert.equal(loginResponse.statusCode, 200);
+const loginPayload = loginResponse.json();
+assert.ok(loginPayload.data.token);
+assert.ok(loginPayload.data.refreshToken);
+assert.ok(loginPayload.data.userId);
+
+const refreshResponse = await app.inject({
+  method: 'POST',
+  url: '/api/auth/refresh',
+  payload: {
+    refreshToken: loginPayload.data.refreshToken
+  }
+});
+assert.equal(refreshResponse.statusCode, 200);
+assert.ok(refreshResponse.json().data.token);
+
+const logoutResponse = await app.inject({
+  method: 'POST',
+  url: '/api/auth/logout'
+});
+assert.equal(logoutResponse.statusCode, 200);
+assert.equal(logoutResponse.json().data.ok, true);
+
 const profilesResponse = await app.inject({
   method: 'GET',
   url: '/api/profiles'
@@ -674,4 +711,4 @@ assert.ok(!afterDeleteListResponse.json().data.some((report: Row) => report.id =
 
 await app.close();
 
-console.log('Backend smoke passed: profile CRUD, recheck plans, fixture OCR, report save/read/edit/delete, and duplicate check routes');
+console.log('Backend smoke passed: auth, profile CRUD, recheck plans, fixture OCR, report save/read/edit/delete, and duplicate check routes');

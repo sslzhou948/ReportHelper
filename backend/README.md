@@ -8,6 +8,7 @@ This is the self-managed backend for the mini program. v1 uses local PostgreSQL 
 - Keep schema portable to Supabase/PostgreSQL.
 - WeChat AppSecret must stay in backend environment variables only.
 - Real upload/OCR is deferred; the first loop uses structured fixture OCR drafts.
+- Auth routes currently provide a local-development `code -> openid` mapping and backend JWTs. Replace that mapper with WeChat `code2Session` before production.
 
 ## First Loop
 
