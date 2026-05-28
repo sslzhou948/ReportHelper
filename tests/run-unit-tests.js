@@ -14,7 +14,7 @@ const {
   validateUploadFiles
 } = require('../miniprogram/utils/upload');
 const { isProfileRequiredError, validateProfile } = require('../miniprogram/utils/profile');
-const { buildDefaultTodos, validateRecheckPlan } = require('../miniprogram/utils/recheck');
+const { buildDefaultTodos, defaultRecheckDate, validateRecheckPlan } = require('../miniprogram/utils/recheck');
 const { isRecognizingTaskStatus, shouldShowRecognitionSlow } = require('../miniprogram/utils/ocr-task');
 const { requestWxLoginCode } = require('../miniprogram/utils/auth');
 const { ApiError, DEFAULT_REQUEST_TIMEOUT_MS, createApiClient, createMemoryStorage, isTimeoutError } = require('../miniprogram/utils/api-client');
@@ -445,6 +445,7 @@ assert.ok(realcaseOcrDrafts.flatMap((draft) => draft.metrics || []).every((metri
 assert.ok(realcaseOcrDrafts.flatMap((draft) => draft.metrics || []).some((metric) => metric.metricKey === 'tc' && metric.refText), 'complex lipid references should keep display refText');
 
 assert.strictEqual(buildDefaultTodos().length, 5);
+assert.strictEqual(defaultRecheckDate(new Date('2026-05-27T00:00:00'), 30), '2026-06-26');
 assert.strictEqual(validateRecheckPlan({
   type: '常规复查',
   date: '2026-06-01',

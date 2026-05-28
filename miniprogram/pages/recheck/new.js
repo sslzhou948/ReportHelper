@@ -1,5 +1,5 @@
 const { api } = require('../../utils/api');
-const { buildDefaultTodos, validateRecheckPlan } = require('../../utils/recheck');
+const { buildDefaultTodos, defaultRecheckDate, validateRecheckPlan } = require('../../utils/recheck');
 
 const RECHECK_TEMPLATE_ID_KEY = 'recheckSubscribeTemplateId';
 
@@ -43,7 +43,7 @@ Page({
   data: {
     form: {
       type: '\u5e38\u89c4\u590d\u67e5',
-      date: '2026-06-01',
+      date: defaultRecheckDate(),
       hospital: '\u534f\u548c\u533b\u9662',
       department: '\u80bf\u7624\u79d1'
     },
@@ -146,7 +146,7 @@ Page({
     const key = event.currentTarget.dataset.key;
     const demoValues = {
       type: '\u5e38\u89c4\u590d\u67e5',
-      date: '2026-06-01',
+      date: defaultRecheckDate(),
       hospital: '\u534f\u548c\u533b\u9662',
       department: '\u80bf\u7624\u79d1'
     };

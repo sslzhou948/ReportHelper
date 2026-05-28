@@ -147,6 +147,8 @@ assert.ok(!recheckWxml.includes('<button class="row add-row"'), 'recheck add row
 assert.ok(recheckWxml.includes('bindtap="goNextDetail"') && recheckJs.includes('goNextDetail()'), 'next recheck plan must expose detail/cancel entry');
 assert.ok(recheckNewJs.includes('wx.requestSubscribeMessage'), 'new recheck plan should request subscription messages when a template id is configured');
 assert.ok(recheckNewJs.includes('subscribeAccepted: subscribe.subscribeAccepted'), 'new recheck plan must persist subscription rejection without blocking save');
+assert.ok(recheckNewJs.includes('defaultRecheckDate()'), 'new recheck plan default date must stay valid over time');
+assert.ok(!recheckNewJs.includes("date: '2026-06-01'"), 'new recheck plan must not ship a stale fixed default date');
 
 const profileWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'index.wxml'), 'utf8');
 const profileArchiveWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'archive.wxml'), 'utf8');

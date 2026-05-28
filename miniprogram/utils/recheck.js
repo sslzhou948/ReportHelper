@@ -23,6 +23,12 @@ function buildDefaultTodos() {
   }));
 }
 
+function defaultRecheckDate(now = new Date(), days = 30) {
+  const date = new Date(now.getTime());
+  date.setDate(date.getDate() + days);
+  return todayString(date);
+}
+
 function validateRecheckPlan(plan, now = new Date()) {
   const errors = {};
   if (!plan.type) errors.type = '\u8bf7\u586b\u5199\u68c0\u67e5\u7c7b\u578b';
@@ -42,6 +48,7 @@ function validateRecheckPlan(plan, now = new Date()) {
 module.exports = {
   DEFAULT_RECHECK_TODOS,
   buildDefaultTodos,
+  defaultRecheckDate,
   todayString,
   validateRecheckPlan
 };
