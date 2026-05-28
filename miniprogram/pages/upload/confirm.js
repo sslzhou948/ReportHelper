@@ -108,7 +108,30 @@ Page({
   },
 
   goBack() {
-    wx.navigateBack();
+    if (!this.taskId) {
+      wx.navigateBack();
+      return;
+    }
+    wx.showModal({
+      title: '\u53d6\u6d88\u4fdd\u5b58\uff1f',
+      content: '\u8bc6\u522b\u7ed3\u679c\u5c1a\u672a\u4fdd\u5b58\uff0c\u53d6\u6d88\u540e\u5c06\u4e22\u5f03\u672c\u6b21\u8bc6\u522b\u4efb\u52a1\u3002',
+      confirmText: '\u4e22\u5f03',
+      confirmColor: '#C56F5F',
+      success: (res) => {
+        if (!res.confirm) return;
+        this.cancelTaskAndLeave();
+      }
+    });
+  },
+
+  cancelTaskAndLeave() {
+    api.cancelOcrTask(this.taskId).catch(() => null).then(() => {
+      const pending = wx.getStorageSync('pendingOcrTasks') || [];
+      wx.setStorageSync('pendingOcrTasks', pending.filter((item) => item.taskId !== this.taskId));
+      wx.navigateBack({
+        fail: () => wx.switchTab({ url: '/pages/home/index' })
+      });
+    });
   },
 
   goEdit(event) {

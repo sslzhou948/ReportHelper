@@ -80,6 +80,8 @@ assert.ok(uploadPickJs.includes('const initialPhotos = [];'), 'upload pick must 
 assert.ok(!uploadPickJs.includes('{ id: 1, group: 1 }'), 'upload pick must not ship test photo fixtures');
 assert.ok(uploadConfirmJs.includes("itemList: ['覆盖旧报告', '跳过重复报告']"), 'duplicate prompt should only expose replace or skip');
 assert.ok(!uploadConfirmJs.includes('仍保存为新报告'), 'duplicate prompt must not expose keep-both to normal users');
+assert.ok(uploadConfirmJs.includes('cancelTaskAndLeave()'), 'upload confirm cancel must explicitly discard the OCR task');
+assert.ok(uploadConfirmJs.includes('api.cancelOcrTask(this.taskId)'), 'upload confirm cancel must call the cancel OCR API');
 assert.ok(uploadEditDetailJs.includes('api.getOcrTask(this.taskId)'), 'upload edit detail must load the selected OCR draft');
 assert.ok(!uploadEditDetailJs.includes("value: '32'"), 'upload edit detail must not ship hardcoded metric fixtures');
 assert.ok(!reportDetailJs.includes('api.updateReport(this.reportId'), 'report detail edit entry must not auto-save report data');
