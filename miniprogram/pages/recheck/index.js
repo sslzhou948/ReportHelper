@@ -1,6 +1,11 @@
 const { api } = require('../../utils/api');
 const { daysBetween, formatMonthDay } = require('../../utils/date');
 const { showApiErrorToast } = require('../../utils/error');
+const {
+  beginSlowLoading,
+  cancelSlowLoading: cancelPageLoading,
+  finishSlowLoading
+} = require('../../utils/loading');
 const { bindNetworkStatus, refreshNetworkStatus } = require('../../utils/network');
 const { isProfileRequiredError } = require('../../utils/profile');
 
@@ -49,19 +54,21 @@ Page({
     allReady: false,
     daysToNext: 0,
     networkOffline: false,
-    loading: false
+    loading: false,
+    loadingSlow: false
   },
   onShow() {
     bindNetworkStatus(this);
     this.load();
   },
   load() {
-    this.setData({ loading: true });
+    const loadingToken = beginSlowLoading(this);
     const app = getApp();
     app.ensureCurrentProfileId(api).then((profileId) => api.listRecheckPlans(profileId)).then((recheck) => {
-      this.setData({ ...buildPlanState(recheck), loading: false });
+      if (!finishSlowLoading(this, loadingToken)) return;
+      this.setData(buildPlanState(recheck));
     }).catch((error) => {
-      this.setData({ loading: false });
+      if (!finishSlowLoading(this, loadingToken)) return;
       if (isProfileRequiredError(error)) return;
       showApiErrorToast(error, '\u52a0\u8f7d\u590d\u67e5\u8ba1\u5212\u5931\u8d25');
     });
@@ -151,5 +158,11 @@ Page({
   },
   retryAfterNetwork() {
     refreshNetworkStatus(this).then(() => this.load());
+  },
+  retrySlowLoading() {
+    this.load();
+  },
+  cancelSlowLoading() {
+    cancelPageLoading(this);
   }
 });

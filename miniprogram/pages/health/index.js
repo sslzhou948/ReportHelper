@@ -1,6 +1,11 @@
 const { api } = require('../../utils/api');
 const { formatMonthDay } = require('../../utils/date');
 const { showApiErrorToast } = require('../../utils/error');
+const {
+  beginSlowLoading,
+  cancelSlowLoading: cancelPageLoading,
+  finishSlowLoading
+} = require('../../utils/loading');
 const { bindNetworkStatus, refreshNetworkStatus } = require('../../utils/network');
 const { isProfileRequiredError } = require('../../utils/profile');
 
@@ -72,7 +77,8 @@ Page({
     reportsByMonth: [],
     chips: DEFAULT_CHIPS,
     networkOffline: false,
-    loading: false
+    loading: false,
+    loadingSlow: false
   },
 
   onLoad(query = {}) {
@@ -91,22 +97,22 @@ Page({
 
   load() {
     const app = getApp();
-    this.setData({ loading: true });
+    const loadingToken = beginSlowLoading(this);
     app.ensureCurrentProfileId(api).then((profileId) => Promise.all([
       api.listMetricSnapshots(profileId),
       api.listReports(profileId)
     ])).then(([metrics, reports]) => {
+      if (!finishSlowLoading(this, loadingToken)) return;
       this.setData({
         metrics,
         metricCount: metrics.length,
         reportCount: reports.length,
         abnormalCount: metrics.filter((item) => item.lastTone !== 'ok').length,
         groupedMetrics: groupMetrics(filterMetrics(metrics, this.data.filter)),
-        reportsByMonth: buildReportsByMonth(reports),
-        loading: false
+        reportsByMonth: buildReportsByMonth(reports)
       });
     }).catch((error) => {
-      this.setData({ loading: false });
+      if (!finishSlowLoading(this, loadingToken)) return;
       if (isProfileRequiredError(error)) return;
       showApiErrorToast(error, '\u52a0\u8f7d\u5065\u5eb7\u6570\u636e\u5931\u8d25');
     });
@@ -143,5 +149,13 @@ Page({
 
   retryAfterNetwork() {
     refreshNetworkStatus(this).then(() => this.load());
+  },
+
+  retrySlowLoading() {
+    this.load();
+  },
+
+  cancelSlowLoading() {
+    cancelPageLoading(this);
   }
 });

@@ -17,6 +17,7 @@ const { isProfileRequiredError, validateProfile } = require('../miniprogram/util
 const { buildDefaultTodos, defaultRecheckDate, validateRecheckPlan } = require('../miniprogram/utils/recheck');
 const { isRecognizingTaskStatus, shouldShowRecognitionSlow } = require('../miniprogram/utils/ocr-task');
 const { isOfflineNetworkType } = require('../miniprogram/utils/network');
+const { beginSlowLoading, cancelSlowLoading, finishSlowLoading } = require('../miniprogram/utils/loading');
 const { requestWxLoginCode } = require('../miniprogram/utils/auth');
 const { ApiError, DEFAULT_REQUEST_TIMEOUT_MS, createApiClient, createMemoryStorage, isTimeoutError } = require('../miniprogram/utils/api-client');
 const { getApiErrorMessage, getApiErrorToastTitle, getValidationErrorLines, isNotFoundError } = require('../miniprogram/utils/error');
@@ -52,6 +53,39 @@ assert.strictEqual(isTimeoutError({ errMsg: 'request:fail' }), false);
 assert.strictEqual(isOfflineNetworkType('none'), true);
 assert.strictEqual(isOfflineNetworkType('unknown'), true);
 assert.strictEqual(isOfflineNetworkType('wifi'), false);
+
+asyncChecks.push(new Promise((resolve) => {
+  const page = {
+    data: {},
+    setData(update) {
+      this.data = { ...this.data, ...update };
+    }
+  };
+  const seq = beginSlowLoading(page, { delay: 1 });
+  assert.strictEqual(page.data.loading, true);
+  assert.strictEqual(page.data.loadingSlow, false);
+  setTimeout(() => {
+    assert.strictEqual(page.data.loadingSlow, true, 'slow loading should become visible after delay');
+    assert.strictEqual(finishSlowLoading(page, seq), true);
+    assert.strictEqual(page.data.loading, false);
+    assert.strictEqual(page.data.loadingSlow, false);
+    resolve();
+  }, 5);
+}));
+
+{
+  const page = {
+    data: {},
+    setData(update) {
+      this.data = { ...this.data, ...update };
+    }
+  };
+  const staleSeq = beginSlowLoading(page, { delay: 100 });
+  cancelSlowLoading(page);
+  assert.strictEqual(finishSlowLoading(page, staleSeq), false, 'cancelled loading should ignore stale responses');
+  assert.strictEqual(page.data.loading, false);
+}
+
 assert.strictEqual(getApiErrorMessage({ code: 'NETWORK_ERROR' }, '保存失败'), '网络连接失败，请重试');
 assert.strictEqual(getApiErrorMessage({ statusCode: 500, message: 'raw' }, '保存失败'), '服务暂时不可用，请稍后重试');
 assert.strictEqual(getApiErrorToastTitle({ code: 'REQUEST_TIMEOUT', requestId: 'req_1234567890' }, '保存失败'), '请求超时，请稍后重试 34567890');

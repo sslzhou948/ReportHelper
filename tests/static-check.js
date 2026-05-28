@@ -206,6 +206,11 @@ for (const [name, pagePath] of mainTabPages) {
   assert.ok(js.includes('retryAfterNetwork()'), `${name} tab must expose network retry`);
   assert.ok(wxml.includes('<network-banner'), `${name} tab must show the offline network banner`);
   assert.ok(json.includes('/components/network-banner/network-banner'), `${name} tab must register the network banner component`);
+  assert.ok(js.includes('beginSlowLoading(this)'), `${name} tab must start slow-loading tracking`);
+  assert.ok(js.includes('finishSlowLoading(this, loadingToken)'), `${name} tab must finish slow-loading tracking with a token`);
+  assert.ok(js.includes('cancelPageLoading(this)'), `${name} tab must let users cancel a slow load`);
+  assert.ok(wxml.includes('<loading-slow-banner'), `${name} tab must show the slow-loading banner`);
+  assert.ok(json.includes('/components/loading-slow-banner/loading-slow-banner'), `${name} tab must register the slow-loading banner component`);
 }
 
 console.log(`Static checks passed: ${app.pages.length} pages, ${wxmlFiles.length} WXML files`);

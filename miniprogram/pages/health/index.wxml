@@ -6,6 +6,7 @@
   </view>
 
   <network-banner offline="{{networkOffline}}" bind:retry="retryAfterNetwork" />
+  <loading-slow-banner visible="{{loadingSlow}}" bind:retry="retrySlowLoading" bind:cancel="cancelSlowLoading" />
 
   <view class="pad mt-12">
     <view class="search" bindtap="goSearch">搜索指标 / 报告 / 医院</view>

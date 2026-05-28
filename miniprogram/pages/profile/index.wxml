@@ -5,6 +5,7 @@
     <view class="nav-side right"></view>
   </view>
   <network-banner offline="{{networkOffline}}" bind:retry="retryAfterNetwork" />
+  <loading-slow-banner visible="{{loadingSlow}}" bind:retry="retrySlowLoading" bind:cancel="cancelSlowLoading" />
   <view class="pad mt-12">
     <view class="card card-pad">
       <view class="profile-card-head">

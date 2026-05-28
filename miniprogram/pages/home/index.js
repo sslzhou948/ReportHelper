@@ -1,6 +1,11 @@
 const { api } = require('../../utils/api');
 const { formatMonthDay, daysBetween } = require('../../utils/date');
 const { showApiErrorToast } = require('../../utils/error');
+const {
+  beginSlowLoading,
+  cancelSlowLoading: cancelPageLoading,
+  finishSlowLoading
+} = require('../../utils/loading');
 const { bindNetworkStatus, refreshNetworkStatus } = require('../../utils/network');
 const { isProfileRequiredError } = require('../../utils/profile');
 
@@ -85,7 +90,8 @@ Page({
     recognizing: false,
     pendingOcrTask: null,
     networkOffline: false,
-    loading: false
+    loading: false,
+    loadingSlow: false
   },
 
   onShow() {
@@ -95,7 +101,8 @@ Page({
 
   load() {
     const app = getApp();
-    this.setData({ loading: true, layout: app.getLayout() });
+    const loadingToken = beginSlowLoading(this);
+    this.setData({ layout: app.getLayout() });
 
     app.ensureCurrentProfileId(api).then((profileId) => Promise.all([
       api.getProfile(profileId),
@@ -105,6 +112,7 @@ Page({
       api.listRecheckPlans(profileId),
       this.loadPendingOcrTask(profileId)
     ])).then(([profile, profiles, reports, snapshots, recheck, pendingOcrTask]) => {
+      if (!finishSlowLoading(this, loadingToken)) return;
       const nextPlan = recheck.nextPlan || null;
       this.setData({
         profile,
@@ -118,11 +126,10 @@ Page({
         nextPlan,
         daysToNext: nextPlan ? Math.max(0, daysBetween(new Date(), nextPlan.date)) : 0,
         pendingOcrTask,
-        recognizing: pendingOcrTask ? this.data.recognizing : false,
-        loading: false
+        recognizing: pendingOcrTask ? this.data.recognizing : false
       });
     }).catch((error) => {
-      this.setData({ loading: false });
+      if (!finishSlowLoading(this, loadingToken)) return;
       if (isProfileRequiredError(error)) return;
       showApiErrorToast(error, '\u52a0\u8f7d\u9996\u9875\u6570\u636e\u5931\u8d25');
     });
@@ -210,5 +217,13 @@ Page({
 
   retryAfterNetwork() {
     refreshNetworkStatus(this).then(() => this.load());
+  },
+
+  retrySlowLoading() {
+    this.load();
+  },
+
+  cancelSlowLoading() {
+    cancelPageLoading(this);
   }
 });

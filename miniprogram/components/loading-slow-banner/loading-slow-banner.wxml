@@ -1,0 +1,6 @@
+<view wx:if="{{visible}}" class="loading-slow-banner">
+  <view class="loading-slow-dot"></view>
+  <view class="loading-slow-text">{{message}}</view>
+  <view class="loading-slow-action" bindtap="retry">重试</view>
+  <view class="loading-slow-cancel" bindtap="cancel">取消</view>
+</view>

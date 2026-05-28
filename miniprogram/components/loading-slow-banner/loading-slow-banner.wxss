@@ -1,0 +1,39 @@
+.loading-slow-banner {
+  margin: 20rpx 32rpx 0;
+  min-height: 76rpx;
+  padding: 16rpx 20rpx;
+  border-radius: 24rpx;
+  background: var(--warn-soft);
+  color: var(--warn);
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  font-size: 24rpx;
+  font-weight: 700;
+}
+
+.loading-slow-dot {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 8rpx;
+  background: var(--warn);
+  flex: 0 0 auto;
+}
+
+.loading-slow-text {
+  flex: 1;
+  min-width: 0;
+  line-height: 1.45;
+}
+
+.loading-slow-action,
+.loading-slow-cancel {
+  min-width: 56rpx;
+  color: var(--primary);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.loading-slow-cancel {
+  color: var(--ink-2);
+}

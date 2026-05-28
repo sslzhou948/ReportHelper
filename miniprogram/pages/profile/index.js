@@ -1,5 +1,10 @@
 const { api } = require('../../utils/api');
 const { showApiErrorToast } = require('../../utils/error');
+const {
+  beginSlowLoading,
+  cancelSlowLoading: cancelPageLoading,
+  finishSlowLoading
+} = require('../../utils/loading');
 const { bindNetworkStatus, refreshNetworkStatus } = require('../../utils/network');
 const { isProfileRequiredError } = require('../../utils/profile');
 
@@ -21,7 +26,8 @@ Page({
     recheckCount: 0,
     switcherVisible: false,
     networkOffline: false,
-    loading: false
+    loading: false,
+    loadingSlow: false
   },
   onShow() {
     bindNetworkStatus(this);
@@ -29,7 +35,7 @@ Page({
   },
   load() {
     const app = getApp();
-    this.setData({ loading: true });
+    const loadingToken = beginSlowLoading(this);
     app.ensureCurrentProfileId(api).then((profileId) => Promise.all([
       api.getProfile(profileId),
       api.getProfiles(),
@@ -37,16 +43,16 @@ Page({
       api.listMetricSnapshots(profileId),
       api.listRecheckPlans(profileId)
     ])).then(([profile, profiles, reports, metrics, recheck]) => {
+      if (!finishSlowLoading(this, loadingToken)) return;
       this.setData({
         profile,
         profiles,
         reportsCount: reports.length,
         metricsCount: metrics.length,
-        recheckCount: (recheck.nextPlan ? 1 : 0) + (recheck.otherPlans || []).length,
-        loading: false
+        recheckCount: (recheck.nextPlan ? 1 : 0) + (recheck.otherPlans || []).length
       });
     }).catch((error) => {
-      this.setData({ loading: false });
+      if (!finishSlowLoading(this, loadingToken)) return;
       if (isProfileRequiredError(error)) return;
       showApiErrorToast(error, '\u52a0\u8f7d\u6211\u7684\u9875\u9762\u5931\u8d25');
     });
@@ -106,5 +112,11 @@ Page({
   },
   retryAfterNetwork() {
     refreshNetworkStatus(this).then(() => this.load());
+  },
+  retrySlowLoading() {
+    this.load();
+  },
+  cancelSlowLoading() {
+    cancelPageLoading(this);
   }
 });
