@@ -19,7 +19,7 @@ const { isRecognizingTaskStatus, shouldShowRecognitionSlow } = require('../minip
 const { isOfflineNetworkType } = require('../miniprogram/utils/network');
 const { requestWxLoginCode } = require('../miniprogram/utils/auth');
 const { ApiError, DEFAULT_REQUEST_TIMEOUT_MS, createApiClient, createMemoryStorage, isTimeoutError } = require('../miniprogram/utils/api-client');
-const { getApiErrorMessage, getApiErrorToastTitle } = require('../miniprogram/utils/error');
+const { getApiErrorMessage, getApiErrorToastTitle, getValidationErrorLines } = require('../miniprogram/utils/error');
 const { createApi } = require('../miniprogram/utils/api');
 const { realcaseOcrDrafts } = require('../miniprogram/data/ocr-fixtures');
 const mock = require('../miniprogram/data/mock');
@@ -56,6 +56,15 @@ assert.strictEqual(getApiErrorMessage({ code: 'NETWORK_ERROR' }, '保存失败')
 assert.strictEqual(getApiErrorMessage({ statusCode: 500, message: 'raw' }, '保存失败'), '服务暂时不可用，请稍后重试');
 assert.strictEqual(getApiErrorToastTitle({ code: 'REQUEST_TIMEOUT', requestId: 'req_1234567890' }, '保存失败'), '请求超时，请稍后重试 34567890');
 assert.strictEqual(getApiErrorMessage({ code: 'WX_LOGIN_FAILED' }, '登录失败'), '微信登录失败，请重试');
+assert.deepStrictEqual(getValidationErrorLines({
+  code: 'VALIDATION_FAILED',
+  details: {
+    fieldErrors: {
+      type: ['请填写检查类型'],
+      date: '复查日期不能早于今天'
+    }
+  }
+}), ['请填写检查类型', '复查日期不能早于今天']);
 
 asyncChecks.push(requestWxLoginCode({
   login({ success }) {

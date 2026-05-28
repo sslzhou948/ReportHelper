@@ -1,4 +1,5 @@
 const { api } = require('../../utils/api');
+const { showApiErrorFeedback } = require('../../utils/error');
 const { buildProfileFields } = require('../../utils/profile');
 
 function refreshFields(page, profile) {
@@ -41,8 +42,8 @@ Page({
     }).then((profile) => {
       refreshFields(this, profile || this.data.profile);
       wx.showToast({ title: '\u5df2\u4fdd\u5b58', icon: 'success' });
-    }).catch(() => {
-      wx.showToast({ title: '\u4fdd\u5b58\u6863\u6848\u5931\u8d25', icon: 'none' });
+    }).catch((error) => {
+      showApiErrorFeedback(error, '\u4fdd\u5b58\u6863\u6848\u5931\u8d25');
     });
   },
   editField(event) {

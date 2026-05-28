@@ -1,5 +1,6 @@
 const { api } = require('../../utils/api');
 const { daysBetween } = require('../../utils/date');
+const { showApiErrorFeedback } = require('../../utils/error');
 const { todayString } = require('../../utils/recheck');
 
 function daysToPlan(plan) {
@@ -84,10 +85,7 @@ Page({
           applyPlan(this, plan);
           wx.showToast({ title: '\u5df2\u4fdd\u5b58', icon: 'success' });
         }).catch((error) => {
-          const title = error && error.code === 'VALIDATION_FAILED'
-            ? '\u8bf7\u68c0\u67e5\u586b\u5199\u5185\u5bb9'
-            : '\u4fdd\u5b58\u5931\u8d25';
-          wx.showToast({ title, icon: 'none' });
+          showApiErrorFeedback(error, '\u4fdd\u5b58\u5931\u8d25');
         });
       }
     });

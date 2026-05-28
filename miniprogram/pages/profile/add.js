@@ -1,4 +1,5 @@
 const { api } = require('../../utils/api');
+const { showApiErrorFeedback } = require('../../utils/error');
 const { buildProfileFields, validateProfile } = require('../../utils/profile');
 
 function refreshFields(page, form) {
@@ -55,9 +56,9 @@ Page({
       getApp().setCurrentProfileId(profile.id);
       wx.showToast({ title: '\u5df2\u4fdd\u5b58', icon: 'success' });
       setTimeout(() => wx.switchTab({ url: '/pages/home/index' }), 500);
-    }).catch(() => {
+    }).catch((error) => {
       this.setData({ saving: false });
-      wx.showToast({ title: '\u4fdd\u5b58\u6863\u6848\u5931\u8d25', icon: 'none' });
+      showApiErrorFeedback(error, '\u4fdd\u5b58\u6863\u6848\u5931\u8d25');
     });
   },
 

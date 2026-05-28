@@ -1,4 +1,5 @@
 const { api } = require('../../utils/api');
+const { showApiErrorFeedback } = require('../../utils/error');
 const { buildDefaultTodos, defaultRecheckDate, validateRecheckPlan } = require('../../utils/recheck');
 
 const RECHECK_TEMPLATE_ID_KEY = 'recheckSubscribeTemplateId';
@@ -136,9 +137,9 @@ Page({
         icon: subscribe.subscribeAccepted ? 'success' : 'none'
       });
       setTimeout(() => wx.navigateBack(), 500);
-    }).catch(() => {
+    }).catch((error) => {
       this.setData({ saving: false });
-      wx.showToast({ title: '\u4fdd\u5b58\u590d\u67e5\u8ba1\u5212\u5931\u8d25', icon: 'none' });
+      showApiErrorFeedback(error, '\u4fdd\u5b58\u590d\u67e5\u8ba1\u5212\u5931\u8d25');
     });
   },
 

@@ -66,6 +66,8 @@ const profileOnboardJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'pr
 const profileIndexJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'index.js'), 'utf8');
 const profileExportJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'export.js'), 'utf8');
 const profileExportWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'export.wxml'), 'utf8');
+const profileAddJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'add.js'), 'utf8');
+const profileArchiveJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'archive.js'), 'utf8');
 const reportDetailJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'health', 'report-detail.js'), 'utf8');
 const metricDetailJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'health', 'metric-detail.js'), 'utf8');
 const metricDetailWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'health', 'metric-detail.wxml'), 'utf8');
@@ -155,6 +157,8 @@ assert.ok(recheckNewJs.includes('subscribeAccepted: subscribe.subscribeAccepted'
 assert.ok(recheckNewJs.includes('defaultRecheckDate()'), 'new recheck plan default date must stay valid over time');
 assert.ok(!recheckNewJs.includes("date: '2026-06-01'"), 'new recheck plan must not ship a stale fixed default date');
 assert.ok(recheckDetailJs.includes("value < todayString()"), 'recheck detail must block editing the plan date into the past');
+assert.ok(recheckNewJs.includes('showApiErrorFeedback'), 'new recheck plan must show backend validation field errors');
+assert.ok(recheckDetailJs.includes('showApiErrorFeedback'), 'recheck detail must show backend validation field errors');
 
 const profileWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'index.wxml'), 'utf8');
 const profileArchiveWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'archive.wxml'), 'utf8');
@@ -162,6 +166,8 @@ assert.ok(!profileWxml.includes('<button class="row"'), 'profile menu rows must 
 assert.ok(!profileWxml.includes('<button class="row danger"'), 'profile danger rows must not use native button layout');
 assert.ok(!profileWxml.includes('<button class="btn secondary logout"'), 'profile logout control must not use native button layout');
 assert.ok(!profileArchiveWxml.includes('他莫昔芬'), 'profile archive must not show hardcoded medication records');
+assert.ok(profileAddJs.includes('showApiErrorFeedback'), 'profile add must show backend validation field errors');
+assert.ok(profileArchiveJs.includes('showApiErrorFeedback'), 'profile archive must show backend validation field errors');
 
 const mainTabPages = [
   ['home', 'pages/home/index'],

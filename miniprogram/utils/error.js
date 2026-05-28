@@ -29,6 +29,32 @@ function getApiErrorToastTitle(error, fallback) {
   return requestId ? `${message} ${requestId}` : message;
 }
 
+function getValidationErrorLines(error) {
+  const fieldErrors = error && error.details && error.details.fieldErrors;
+  if (!fieldErrors || typeof fieldErrors !== 'object') return [];
+  return Object.keys(fieldErrors)
+    .map((key) => fieldErrors[key])
+    .flat()
+    .filter(Boolean)
+    .map((value) => String(value));
+}
+
+function showApiErrorFeedback(error, fallback) {
+  const validationLines = error && error.code === 'VALIDATION_FAILED'
+    ? getValidationErrorLines(error)
+    : [];
+  if (validationLines.length > 0) {
+    wx.showModal({
+      title: '请检查填写内容',
+      content: validationLines.join('\n'),
+      showCancel: false,
+      confirmText: '知道了'
+    });
+    return;
+  }
+  showApiErrorToast(error, fallback);
+}
+
 function showApiErrorToast(error, fallback) {
   wx.showToast({
     title: getApiErrorToastTitle(error, fallback),
@@ -39,5 +65,7 @@ function showApiErrorToast(error, fallback) {
 module.exports = {
   getApiErrorMessage,
   getApiErrorToastTitle,
+  getValidationErrorLines,
+  showApiErrorFeedback,
   showApiErrorToast
 };
