@@ -13,6 +13,7 @@ Before implementing feature logic, use these local contracts as the source of tr
 - `docs/api-contract.md`: frontend/backend request and response shapes, error format, idempotency, and endpoint list.
 - `docs/database-schema.md`: backend data model, stable IDs/keys, OCR draft/report persistence, duplicate-save decisions, and backfill safety rules.
 - `docs/backend-technical-plan.md`: backend architecture, implementation slices, duplicate detection rules, and minimum production loop.
+- `docs/development-status.md`: current implementation status, verified commands, remaining product items, and next recommended slice.
 
 If code behavior and these contracts diverge, update the contract first, then update code and tests.
 
@@ -34,6 +35,7 @@ If code behavior and these contracts diverge, update the contract first, then up
 - `npm run fixtures:check`: verifies all real screenshot fixtures and golden placeholder files are present.
 - `npm run devtools:cli-check`: checks whether the local WeChat DevTools CLI can be invoked.
 - `npm run devtools:preview`: compiles the real mini program project in WeChat DevTools and generates preview output.
+- `npm run check:all`: runs mini program unit/static checks, visual checks, fixture checks, backend build, and backend smoke tests. WeChat DevTools checks remain separate because they require local DevTools access.
 - Manual/interactive testing: open the project in WeChat DevTools, use it like a patient family member, and test upload grouping, OCR confirmation, health data switching, report detail editing, recheck todo completion, and profile switching.
 
 ## WeChat DevTools
