@@ -1,5 +1,6 @@
 const { api } = require('../../utils/api');
 const { daysBetween, formatMonthDay } = require('../../utils/date');
+const { showApiErrorToast } = require('../../utils/error');
 const { bindNetworkStatus, refreshNetworkStatus } = require('../../utils/network');
 const { isProfileRequiredError } = require('../../utils/profile');
 
@@ -62,7 +63,7 @@ Page({
     }).catch((error) => {
       this.setData({ loading: false });
       if (isProfileRequiredError(error)) return;
-      wx.showToast({ title: '\u52a0\u8f7d\u590d\u67e5\u8ba1\u5212\u5931\u8d25', icon: 'none' });
+      showApiErrorToast(error, '\u52a0\u8f7d\u590d\u67e5\u8ba1\u5212\u5931\u8d25');
     });
   },
   goNew() {
@@ -93,8 +94,8 @@ Page({
     });
     api.updateRecheckTodo(nextPlan.id, todo.id, { isDone: nextPlan.todos[index].isDone }).then((plan) => {
       if (plan) this.load();
-    }).catch(() => {
-      wx.showToast({ title: '\u66f4\u65b0\u5f85\u529e\u5931\u8d25', icon: 'none' });
+    }).catch((error) => {
+      showApiErrorToast(error, '\u66f4\u65b0\u5f85\u529e\u5931\u8d25');
       this.load();
     });
   },
@@ -121,8 +122,8 @@ Page({
         }).then(() => {
           wx.showToast({ title: '\u5df2\u6dfb\u52a0', icon: 'success' });
           this.load();
-        }).catch(() => {
-          wx.showToast({ title: '\u6dfb\u52a0\u5f85\u529e\u5931\u8d25', icon: 'none' });
+        }).catch((error) => {
+          showApiErrorToast(error, '\u6dfb\u52a0\u5f85\u529e\u5931\u8d25');
         });
       }
     });
@@ -142,8 +143,8 @@ Page({
         }).then(() => {
           wx.showToast({ title: '\u5df2\u5b8c\u6210', icon: 'success' });
           this.load();
-        }).catch(() => {
-          wx.showToast({ title: '\u5b8c\u6210\u8ba1\u5212\u5931\u8d25', icon: 'none' });
+        }).catch((error) => {
+          showApiErrorToast(error, '\u5b8c\u6210\u8ba1\u5212\u5931\u8d25');
         });
       }
     });

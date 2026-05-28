@@ -59,6 +59,9 @@ for (const file of wxmlFiles) {
 }
 
 const homeWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'home', 'index.wxml'), 'utf8');
+const homeIndexJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'home', 'index.js'), 'utf8');
+const healthIndexJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'health', 'index.js'), 'utf8');
+const healthSearchJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'health', 'search.js'), 'utf8');
 const uploadPickJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'upload', 'pick.js'), 'utf8');
 const uploadConfirmJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'upload', 'confirm.js'), 'utf8');
 const uploadEditDetailJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'upload', 'edit-detail.js'), 'utf8');
@@ -66,6 +69,7 @@ const profileOnboardJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'pr
 const profileIndexJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'index.js'), 'utf8');
 const profileExportJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'export.js'), 'utf8');
 const profileExportWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'export.wxml'), 'utf8');
+const profileReportsArchiveJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'reports-archive.js'), 'utf8');
 const profileAddJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'add.js'), 'utf8');
 const profileArchiveJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'archive.js'), 'utf8');
 const reportDetailJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'health', 'report-detail.js'), 'utf8');
@@ -79,7 +83,7 @@ assert.ok(uploadPickJs.includes('persistUploadDraft(photos)'), 'upload pick must
 assert.ok(uploadPickJs.includes('wx.showModal'), 'upload pick must confirm leaving with an unfinished draft');
 assert.ok(uploadPickJs.includes('splitGroup(event)'), 'upload pick must allow cancelling an existing photo merge');
 assert.ok(!homeWxml.includes('\u6b63\u5728\u8bc6\u522b 3 \u5f20\u62a5\u544a'), 'home OCR notice must not hardcode report counts');
-assert.ok(fs.readFileSync(path.join(miniprogramRoot, 'pages', 'home', 'index.js'), 'utf8').includes('api.listOcrTasks'), 'home must refresh pending OCR state from API');
+assert.ok(homeIndexJs.includes('api.listOcrTasks'), 'home must refresh pending OCR state from API');
 const nativeHomeLayoutClasses = [
   'ocr-card',
   'upload-cta',
@@ -130,8 +134,8 @@ assert.ok(!profileExportWxml.includes('暂不创建导出任务'), 'profile expo
 
 assert.ok(profileOnboardJs.includes('requestWxLoginCode()'), 'onboard login must use the native wx.login result');
 assert.ok(!profileOnboardJs.includes('mock_code'), 'onboard login must not continue with a mock code after wx.login failure');
-assert.ok(fs.readFileSync(path.join(miniprogramRoot, 'pages', 'home', 'index.js'), 'utf8').includes('isProfileRequiredError(error)'), 'home must treat empty profile as a create-profile transition');
-assert.ok(fs.readFileSync(path.join(miniprogramRoot, 'pages', 'health', 'index.js'), 'utf8').includes('isProfileRequiredError(error)'), 'health must treat empty profile as a create-profile transition');
+assert.ok(homeIndexJs.includes('isProfileRequiredError(error)'), 'home must treat empty profile as a create-profile transition');
+assert.ok(healthIndexJs.includes('isProfileRequiredError(error)'), 'health must treat empty profile as a create-profile transition');
 assert.ok(fs.readFileSync(path.join(miniprogramRoot, 'pages', 'recheck', 'index.js'), 'utf8').includes('isProfileRequiredError(error)'), 'recheck must treat empty profile as a create-profile transition');
 assert.ok(profileIndexJs.includes('isProfileRequiredError(error)'), 'profile must treat empty profile as a create-profile transition');
 
@@ -173,6 +177,20 @@ assert.ok(!profileWxml.includes('<button class="btn secondary logout"'), 'profil
 assert.ok(!profileArchiveWxml.includes('他莫昔芬'), 'profile archive must not show hardcoded medication records');
 assert.ok(profileAddJs.includes('showApiErrorFeedback'), 'profile add must show backend validation field errors');
 assert.ok(profileArchiveJs.includes('showApiErrorFeedback'), 'profile archive must show backend validation field errors');
+
+const apiErrorPages = [
+  ['home', homeIndexJs],
+  ['health', healthIndexJs],
+  ['health search', healthSearchJs],
+  ['metric detail', metricDetailJs],
+  ['recheck', recheckJs],
+  ['profile', profileIndexJs],
+  ['profile export', profileExportJs],
+  ['profile reports archive', profileReportsArchiveJs]
+];
+for (const [name, source] of apiErrorPages) {
+  assert.ok(source.includes('showApiErrorToast'), `${name} page must surface normalized API errors`);
+}
 
 const mainTabPages = [
   ['home', 'pages/home/index'],

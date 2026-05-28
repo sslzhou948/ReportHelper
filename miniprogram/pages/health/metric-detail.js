@@ -58,9 +58,9 @@ Page({
         isPinned: !!(latest && latest.isPinned),
         loading: false
       });
-    }).catch(() => {
+    }).catch((error) => {
       this.setData({ loading: false });
-      wx.showToast({ title: '\u52a0\u8f7d\u6307\u6807\u5931\u8d25', icon: 'none' });
+      showApiErrorToast(error, '\u52a0\u8f7d\u6307\u6807\u5931\u8d25');
     });
   },
   goBack() {

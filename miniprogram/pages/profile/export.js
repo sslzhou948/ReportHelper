@@ -1,4 +1,5 @@
 const { api } = require('../../utils/api');
+const { showApiErrorToast } = require('../../utils/error');
 
 Page({
   data: {
@@ -32,9 +33,9 @@ Page({
         loading: false
       });
       wx.showToast({ title: result && result.status === 'ready' ? '导出已生成' : '导出处理中', icon: 'none' });
-    }).catch(() => {
+    }).catch((error) => {
       this.setData({ loading: false });
-      wx.showToast({ title: '导出失败，请重试', icon: 'none' });
+      showApiErrorToast(error, '导出失败，请重试');
     });
   },
 

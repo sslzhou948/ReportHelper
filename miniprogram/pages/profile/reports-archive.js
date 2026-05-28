@@ -1,5 +1,6 @@
 const { api } = require('../../utils/api');
 const { formatMonthDay } = require('../../utils/date');
+const { showApiErrorToast } = require('../../utils/error');
 
 Page({
   data: {
@@ -20,9 +21,9 @@ Page({
         })),
         loading: false
       });
-    }).catch(() => {
+    }).catch((error) => {
       this.setData({ loading: false });
-      wx.showToast({ title: '加载报告失败', icon: 'none' });
+      showApiErrorToast(error, '加载报告失败');
     });
   },
   goBack() {

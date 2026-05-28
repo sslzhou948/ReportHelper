@@ -1,4 +1,5 @@
 const { api } = require('../../utils/api');
+const { showApiErrorToast } = require('../../utils/error');
 const { bindNetworkStatus, refreshNetworkStatus } = require('../../utils/network');
 const { isProfileRequiredError } = require('../../utils/profile');
 
@@ -47,7 +48,7 @@ Page({
     }).catch((error) => {
       this.setData({ loading: false });
       if (isProfileRequiredError(error)) return;
-      wx.showToast({ title: '\u52a0\u8f7d\u6211\u7684\u9875\u9762\u5931\u8d25', icon: 'none' });
+      showApiErrorToast(error, '\u52a0\u8f7d\u6211\u7684\u9875\u9762\u5931\u8d25');
     });
   },
   goArchive() {

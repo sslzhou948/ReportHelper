@@ -1,5 +1,6 @@
 const { api } = require('../../utils/api');
 const { formatMonthDay } = require('../../utils/date');
+const { showApiErrorToast } = require('../../utils/error');
 
 Page({
   data: {
@@ -30,9 +31,9 @@ Page({
         loading: false
       });
       this.search(this.data.keyword);
-    }).catch(() => {
+    }).catch((error) => {
       this.setData({ loading: false });
-      wx.showToast({ title: '\u641c\u7d22\u6570\u636e\u52a0\u8f7d\u5931\u8d25', icon: 'none' });
+      showApiErrorToast(error, '\u641c\u7d22\u6570\u636e\u52a0\u8f7d\u5931\u8d25');
     });
   },
   onInput(event) {

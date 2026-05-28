@@ -1,5 +1,6 @@
 const { api } = require('../../utils/api');
 const { formatMonthDay, daysBetween } = require('../../utils/date');
+const { showApiErrorToast } = require('../../utils/error');
 const { bindNetworkStatus, refreshNetworkStatus } = require('../../utils/network');
 const { isProfileRequiredError } = require('../../utils/profile');
 
@@ -123,7 +124,7 @@ Page({
     }).catch((error) => {
       this.setData({ loading: false });
       if (isProfileRequiredError(error)) return;
-      wx.showToast({ title: '\u52a0\u8f7d\u9996\u9875\u6570\u636e\u5931\u8d25', icon: 'none' });
+      showApiErrorToast(error, '\u52a0\u8f7d\u9996\u9875\u6570\u636e\u5931\u8d25');
     });
   },
 
