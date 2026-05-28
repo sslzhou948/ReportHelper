@@ -1,0 +1,407 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String    @id @default(uuid()) @db.Uuid
+  wxOpenid       String    @unique @map("wx_openid") @db.VarChar(128)
+  wxUnionid      String?   @map("wx_unionid") @db.VarChar(128)
+  phoneEncrypted String?   @map("phone_encrypted")
+  status         String    @default("active") @db.VarChar(32)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  profiles       Profile[]
+  reports        Report[]
+  ocrTasks       OcrTask[]
+  reportPhotos   ReportPhoto[]
+
+  @@map("users")
+}
+
+model Profile {
+  id                String    @id @default(uuid()) @db.Uuid
+  userId            String    @map("user_id") @db.Uuid
+  relation          String    @db.VarChar(32)
+  realName          String    @map("real_name") @db.VarChar(64)
+  gender            String?   @db.VarChar(16)
+  birthDate         DateTime? @map("birth_date") @db.Date
+  diseaseType       String?   @map("disease_type") @db.VarChar(128)
+  diagnosedAt       DateTime? @map("diagnosed_at") @db.Date
+  stage             String?   @db.VarChar(64)
+  treatmentPhase    String?   @map("treatment_phase") @db.VarChar(64)
+  primaryHospital   String?   @map("primary_hospital") @db.VarChar(128)
+  primaryDoctor     String?   @map("primary_doctor") @db.VarChar(64)
+  primaryDepartment String?   @map("primary_department") @db.VarChar(64)
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt         DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  user              User      @relation(fields: [userId], references: [id])
+  reports           Report[]
+  ocrTasks          OcrTask[]
+  reportPhotos      ReportPhoto[]
+  metricSnapshots   UserMetricSnapshot[]
+  recheckPlans      RecheckPlan[]
+  duplicateCandidates DuplicateReportCandidate[]
+
+  @@index([userId, deletedAt])
+  @@map("profiles")
+}
+
+model ReportType {
+  id                    String   @id @default(uuid()) @db.Uuid
+  typeKey               String   @unique @map("type_key") @db.VarChar(128)
+  canonicalName         String   @map("canonical_name") @db.VarChar(128)
+  modality              String   @db.VarChar(32)
+  defaultAnalysisPolicy String   @map("default_analysis_policy") @db.VarChar(32)
+  status                String   @default("active") @db.VarChar(32)
+  createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  reports               Report[]
+  mappingRules          MappingRule[]
+
+  @@map("report_types")
+}
+
+model MetricCategory {
+  id          String   @id @default(uuid()) @db.Uuid
+  categoryKey String  @unique @map("category_key") @db.VarChar(128)
+  nameCn      String  @map("name_cn") @db.VarChar(128)
+  sortOrder   Int     @default(0) @map("sort_order")
+  status      String  @default("active") @db.VarChar(32)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  metrics      MetricDefinition[]
+  mappingRules MappingRule[]
+  values       ReportMetricValue[]
+
+  @@map("metric_categories")
+}
+
+model MetricDefinition {
+  id          String   @id @default(uuid()) @db.Uuid
+  metricKey   String  @unique @map("metric_key") @db.VarChar(128)
+  nameCn      String  @map("name_cn") @db.VarChar(128)
+  nameEn      String? @map("name_en") @db.VarChar(128)
+  categoryId  String  @map("category_id") @db.Uuid
+  valueType   String  @map("value_type") @db.VarChar(32)
+  defaultUnit String? @map("default_unit") @db.VarChar(64)
+  status      String  @default("active") @db.VarChar(32)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  category    MetricCategory @relation(fields: [categoryId], references: [id])
+  mappingRules MappingRule[]
+  values      ReportMetricValue[]
+
+  @@index([categoryId, status])
+  @@map("metric_definitions")
+}
+
+model MappingRule {
+  id             String   @id @default(uuid()) @db.Uuid
+  ruleType       String   @map("rule_type") @db.VarChar(32)
+  rawName        String   @map("raw_name") @db.VarChar(256)
+  rawUnit        String?  @map("raw_unit") @db.VarChar(64)
+  hospitalScope  String?  @map("hospital_scope") @db.VarChar(128)
+  reportTypeId   String?  @map("report_type_id") @db.Uuid
+  metricId       String?  @map("metric_id") @db.Uuid
+  categoryId     String?  @map("category_id") @db.Uuid
+  normalizedUnit String?  @map("normalized_unit") @db.VarChar(64)
+  confidence     Decimal  @default(1.0) @db.Decimal(5, 4)
+  version        Int      @default(1)
+  status         String   @default("published") @db.VarChar(32)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  reportType     ReportType? @relation(fields: [reportTypeId], references: [id])
+  metric         MetricDefinition? @relation(fields: [metricId], references: [id])
+  category       MetricCategory? @relation(fields: [categoryId], references: [id])
+
+  @@index([ruleType, rawName, rawUnit, status])
+  @@index([version, status])
+  @@map("mapping_rules")
+}
+
+model MappingReviewItem {
+  id                    String    @id @default(uuid()) @db.Uuid
+  kind                  String    @db.VarChar(32)
+  rawName               String    @map("raw_name") @db.VarChar(256)
+  rawUnit               String?   @map("raw_unit") @db.VarChar(64)
+  reportOriginalType    String?   @map("report_original_type") @db.VarChar(256)
+  suggestedMetricId     String?   @map("suggested_metric_id") @db.Uuid
+  suggestedReportTypeId String?   @map("suggested_report_type_id") @db.Uuid
+  suggestedCategoryId   String?   @map("suggested_category_id") @db.Uuid
+  mappingStatus         String    @default("pending") @map("mapping_status") @db.VarChar(32)
+  confidence            Decimal   @default(0.0) @db.Decimal(5, 4)
+  sampleCount           Int       @default(1) @map("sample_count")
+  firstSeenAt           DateTime  @default(now()) @map("first_seen_at") @db.Timestamptz(6)
+  lastSeenAt            DateTime  @default(now()) @map("last_seen_at") @db.Timestamptz(6)
+  resolvedBy            String?   @map("resolved_by") @db.Uuid
+  resolvedAt            DateTime? @map("resolved_at") @db.Timestamptz(6)
+  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([mappingStatus, lastSeenAt])
+  @@index([kind, rawName, rawUnit])
+  @@map("mapping_review_items")
+}
+
+model ReportPhoto {
+  id                 String   @id @default(uuid()) @db.Uuid
+  profileId          String   @map("profile_id") @db.Uuid
+  userId             String   @map("user_id") @db.Uuid
+  objectKey          String   @map("object_key") @db.VarChar(512)
+  thumbnailObjectKey String?  @map("thumbnail_object_key") @db.VarChar(512)
+  mimeType           String   @map("mime_type") @db.VarChar(64)
+  sizeBytes          BigInt   @map("size_bytes")
+  sha256             String?  @db.VarChar(128)
+  status             String   @default("uploaded") @db.VarChar(32)
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  profile            Profile  @relation(fields: [profileId], references: [id])
+  user               User     @relation(fields: [userId], references: [id])
+
+  @@index([profileId, createdAt])
+  @@index([sha256])
+  @@map("report_photos")
+}
+
+model OcrTask {
+  id             String   @id @default(uuid()) @db.Uuid
+  profileId      String   @map("profile_id") @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  status         String   @db.VarChar(32)
+  photoCount     Int      @default(0) @map("photo_count")
+  reportCount    Int      @default(0) @map("report_count")
+  errorCode      String?  @map("error_code") @db.VarChar(64)
+  errorMessage   String?  @map("error_message")
+  idempotencyKey String?  @map("idempotency_key") @db.VarChar(128)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  profile        Profile  @relation(fields: [profileId], references: [id])
+  user           User     @relation(fields: [userId], references: [id])
+  photos         OcrTaskPhoto[]
+  drafts         RecognizedReportDraft[]
+  reports        Report[]
+
+  @@index([profileId, status, createdAt])
+  @@unique([userId, idempotencyKey])
+  @@map("ocr_tasks")
+}
+
+model OcrTaskPhoto {
+  id        String  @id @default(uuid()) @db.Uuid
+  ocrTaskId String @map("ocr_task_id") @db.Uuid
+  photoId   String @map("photo_id") @db.Uuid
+  groupId   String @map("group_id") @db.VarChar(128)
+  sortOrder Int    @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  ocrTask   OcrTask @relation(fields: [ocrTaskId], references: [id])
+
+  @@index([ocrTaskId, groupId, sortOrder])
+  @@map("ocr_task_photos")
+}
+
+model RecognizedReportDraft {
+  id             String   @id @default(uuid()) @db.Uuid
+  ocrTaskId      String   @map("ocr_task_id") @db.Uuid
+  profileId      String   @map("profile_id") @db.Uuid
+  sourcePhotoIds Json     @map("source_photo_ids")
+  pageCount      Int      @default(1) @map("page_count")
+  basicInfo      Json     @map("basic_info")
+  metrics        Json
+  findings       Json
+  conflicts      Json
+  warnings       Json
+  status         String   @db.VarChar(32)
+  version        Int      @default(1)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  ocrTask        OcrTask  @relation(fields: [ocrTaskId], references: [id])
+
+  @@index([ocrTaskId, status])
+  @@index([profileId, createdAt])
+  @@map("recognized_report_drafts")
+}
+
+model Report {
+  id                String    @id @default(uuid()) @db.Uuid
+  profileId         String    @map("profile_id") @db.Uuid
+  userId            String    @map("user_id") @db.Uuid
+  ocrTaskId         String?   @map("ocr_task_id") @db.Uuid
+  draftId           String?   @map("draft_id") @db.Uuid
+  type              String    @db.VarChar(128)
+  originalType      String    @map("original_type") @db.VarChar(256)
+  reportTypeId      String?   @map("report_type_id") @db.Uuid
+  typeKey           String    @map("type_key") @db.VarChar(128)
+  canonicalTypeName String    @map("canonical_type_name") @db.VarChar(128)
+  modality          String    @db.VarChar(32)
+  examPart          String?   @map("exam_part") @db.VarChar(128)
+  examMethod        String?   @map("exam_method") @db.VarChar(128)
+  analysisPolicy    String    @map("analysis_policy") @db.VarChar(32)
+  hospital          String    @db.VarChar(128)
+  hospitalSource    String    @map("hospital_source") @db.VarChar(32)
+  reportDate        DateTime  @map("report_date") @db.Date
+  reportDateSource  String    @map("report_date_source") @db.VarChar(32)
+  findings          Json
+  warnings          Json
+  abnormalCount     Int       @default(0) @map("abnormal_count")
+  note              String?
+  duplicateGroupId  String?   @map("duplicate_group_id") @db.Uuid
+  replacedByReportId String?  @map("replaced_by_report_id") @db.Uuid
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt         DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  profile           Profile   @relation(fields: [profileId], references: [id])
+  user              User      @relation(fields: [userId], references: [id])
+  ocrTask           OcrTask?  @relation(fields: [ocrTaskId], references: [id])
+  reportType        ReportType? @relation(fields: [reportTypeId], references: [id])
+  metrics           ReportMetricValue[]
+  duplicateCandidates DuplicateReportCandidate[]
+
+  @@index([profileId, reportDate, deletedAt])
+  @@index([profileId, typeKey, reportDate, hospital])
+  @@index([ocrTaskId])
+  @@index([duplicateGroupId])
+  @@map("reports")
+}
+
+model ReportMetricValue {
+  id                 String   @id @default(uuid()) @db.Uuid
+  reportId           String   @map("report_id") @db.Uuid
+  profileId          String   @map("profile_id") @db.Uuid
+  metricId           String?  @map("metric_id") @db.Uuid
+  metricKey          String   @map("metric_key") @db.VarChar(128)
+  metricName         String   @map("metric_name") @db.VarChar(128)
+  originalMetricName String   @map("original_metric_name") @db.VarChar(256)
+  categoryId         String?  @map("category_id") @db.Uuid
+  category           String   @db.VarChar(128)
+  categoryCn         String   @map("category_cn") @db.VarChar(128)
+  mappingStatus      String   @map("mapping_status") @db.VarChar(32)
+  valueType          String   @map("value_type") @db.VarChar(32)
+  valueNumeric       Decimal? @map("value_numeric") @db.Decimal(18, 6)
+  valueQualitative   String?  @map("value_qualitative") @db.VarChar(64)
+  unit               String?  @db.VarChar(64)
+  normalizedUnit     String?  @map("normalized_unit") @db.VarChar(64)
+  refRangeLow        Decimal? @map("ref_range_low") @db.Decimal(18, 6)
+  refRangeHigh       Decimal? @map("ref_range_high") @db.Decimal(18, 6)
+  refQualitative     String?  @map("ref_qualitative") @db.VarChar(64)
+  refText            String?  @map("ref_text")
+  tone               String   @db.VarChar(32)
+  ocrConfidence      Decimal? @map("ocr_confidence") @db.Decimal(5, 4)
+  isManuallyEdited   Boolean  @default(false) @map("is_manually_edited")
+  sourcePhotoIds     Json?    @map("source_photo_ids")
+  reportDate         DateTime @map("report_date") @db.Date
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  report             Report   @relation(fields: [reportId], references: [id])
+  metric             MetricDefinition? @relation(fields: [metricId], references: [id])
+  metricCategory     MetricCategory? @relation(fields: [categoryId], references: [id])
+
+  @@index([profileId, metricKey, reportDate])
+  @@index([reportId])
+  @@index([mappingStatus])
+  @@map("report_metric_values")
+}
+
+model UserMetricSnapshot {
+  id                   String   @id @default(uuid()) @db.Uuid
+  profileId            String   @map("profile_id") @db.Uuid
+  metricKey            String   @map("metric_key") @db.VarChar(128)
+  metricId             String?  @map("metric_id") @db.Uuid
+  metricName           String   @map("metric_name") @db.VarChar(128)
+  category             String   @db.VarChar(128)
+  categoryCn           String   @map("category_cn") @db.VarChar(128)
+  valueType            String   @map("value_type") @db.VarChar(32)
+  lastValueNumeric     Decimal? @map("last_value_numeric") @db.Decimal(18, 6)
+  lastValueQualitative String?  @map("last_value_qualitative") @db.VarChar(64)
+  unit                 String?  @db.VarChar(64)
+  lastDate             DateTime @map("last_date") @db.Date
+  lastReportId         String   @map("last_report_id") @db.Uuid
+  lastTone             String   @map("last_tone") @db.VarChar(32)
+  trendDirection       String   @map("trend_direction") @db.VarChar(32)
+  trendLabel           String   @map("trend_label") @db.VarChar(64)
+  measureCount         Int      @map("measure_count")
+  isPinned             Boolean  @default(false) @map("is_pinned")
+  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  profile              Profile  @relation(fields: [profileId], references: [id])
+
+  @@unique([profileId, metricKey])
+  @@map("user_metric_snapshots")
+}
+
+model DuplicateReportCandidate {
+  id               String   @id @default(uuid()) @db.Uuid
+  profileId        String   @map("profile_id") @db.Uuid
+  ocrTaskId        String?  @map("ocr_task_id") @db.Uuid
+  draftId          String?  @map("draft_id") @db.Uuid
+  existingReportId String   @map("existing_report_id") @db.Uuid
+  matchLevel       String   @map("match_level") @db.VarChar(32)
+  matchReason      Json     @map("match_reason")
+  status           String   @default("pending") @db.VarChar(32)
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  profile          Profile  @relation(fields: [profileId], references: [id])
+  existingReport   Report   @relation(fields: [existingReportId], references: [id])
+
+  @@index([profileId, status, createdAt])
+  @@index([draftId, existingReportId])
+  @@map("duplicate_report_candidates")
+}
+
+model RecheckPlan {
+  id              String   @id @default(uuid()) @db.Uuid
+  profileId       String   @map("profile_id") @db.Uuid
+  type            String   @db.VarChar(128)
+  date            DateTime @db.Date
+  timeOfDay       String?  @map("time_of_day") @db.VarChar(32)
+  hospital        String   @db.VarChar(128)
+  department      String?  @db.VarChar(128)
+  doctor          String?  @db.VarChar(64)
+  status          String   @default("pending") @db.VarChar(32)
+  reminderConfig  Json     @map("reminder_config")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt       DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  profile         Profile  @relation(fields: [profileId], references: [id])
+  todos           RecheckTodo[]
+
+  @@index([profileId, status, date])
+  @@map("recheck_plans")
+}
+
+model RecheckTodo {
+  id          String   @id @default(uuid()) @db.Uuid
+  planId      String   @map("plan_id") @db.Uuid
+  text        String   @db.VarChar(256)
+  sortOrder   Int      @map("sort_order")
+  isDone      Boolean  @default(false) @map("is_done")
+  isTemplate  Boolean  @default(true) @map("is_template")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  plan        RecheckPlan @relation(fields: [planId], references: [id])
+
+  @@index([planId, sortOrder])
+  @@map("recheck_todos")
+}

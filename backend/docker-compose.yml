@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: healthhelper-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: healthhelper
+      POSTGRES_PASSWORD: healthhelper
+      POSTGRES_DB: healthhelper
+    ports:
+      - "5432:5432"
+    volumes:
+      - healthhelper_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U healthhelper -d healthhelper"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  healthhelper_pgdata:
