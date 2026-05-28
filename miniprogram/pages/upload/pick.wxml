@@ -7,6 +7,8 @@
   <block wx:if="{{!grouping}}">
     <view class="pad mt-12">
       <view class="sub">默认每张图为独立报告。同一份报告的多页，点曲别针建立关联。</view>
+      <view wx:if="{{hasDraft && photos.length > 0}}" class="draft-hint">已恢复上次未完成的上传草稿。</view>
+      <view wx:if="{{uploadError}}" class="upload-error">{{uploadError}}</view>
     </view>
     <view class="pad mt-12">
       <view class="upload-actions">
@@ -18,7 +20,7 @@
     <view wx:else class="section-title">已选 0 张</view>
     <view class="pad">
       <view class="photo-grid">
-        <view wx:for="{{photos}}" wx:key="id" class="photo {{item.group ? 'grouped' : ''}}" bindtap="preview">
+        <view wx:for="{{photos}}" wx:key="id" data-id="{{item.id}}" class="photo {{item.group ? 'grouped' : ''}}" bindtap="preview">
           <view wx:if="{{item.group}}" class="group-label">组 {{item.group}}</view>
           <view>第 {{item.id}} 张</view>
           <view class="clip" catchtap="startGrouping">⌘</view>

@@ -107,6 +107,25 @@
   font-size: 26rpx;
 }
 
+.draft-hint,
+.upload-error {
+  margin-top: 16rpx;
+  padding: 18rpx 22rpx;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+  line-height: 1.45;
+}
+
+.draft-hint {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+.upload-error {
+  background: #FFF4E3;
+  color: #A45B1E;
+}
+
 .center {
   text-align: center;
 }

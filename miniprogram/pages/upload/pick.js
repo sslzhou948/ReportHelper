@@ -11,6 +11,89 @@ const realcaseFixtureCaseIds = [
   'chest_ct_plain',
   'abdomen_pelvis_ct_plain'
 ];
+const UPLOAD_DRAFT_KEY = 'uploadDraft';
+const MAX_UPLOAD_PHOTOS = 9;
+
+function readUploadDraft() {
+  try {
+    const draft = wx.getStorageSync(UPLOAD_DRAFT_KEY);
+    if (!draft || !Array.isArray(draft.photos)) return [];
+    return draft.photos
+      .filter((photo) => photo && photo.id)
+      .slice(0, MAX_UPLOAD_PHOTOS)
+      .map((photo, index) => ({
+        id: Number(photo.id) || index + 1,
+        group: Number(photo.group) || 0,
+        tempFilePath: photo.tempFilePath || '',
+        fileName: photo.fileName || `report-${index + 1}`,
+        mimeType: photo.mimeType || '',
+        size: Number(photo.size) || 0
+      }));
+  } catch (error) {
+    return [];
+  }
+}
+
+function persistUploadDraft(photos) {
+  const safePhotos = (photos || []).map((photo) => ({
+    id: photo.id,
+    group: Number(photo.group) || 0,
+    tempFilePath: photo.tempFilePath || '',
+    fileName: photo.fileName || `report-${photo.id}`,
+    mimeType: photo.mimeType || '',
+    size: Number(photo.size) || 0
+  }));
+  if (safePhotos.length === 0) {
+    wx.removeStorageSync(UPLOAD_DRAFT_KEY);
+    return;
+  }
+  wx.setStorageSync(UPLOAD_DRAFT_KEY, {
+    photos: safePhotos,
+    updatedAt: Date.now()
+  });
+}
+
+function clearUploadDraft() {
+  wx.removeStorageSync(UPLOAD_DRAFT_KEY);
+}
+
+function getPathName(filePath) {
+  if (!filePath) return '';
+  const parts = filePath.split(/[\\/]/);
+  return parts[parts.length - 1] || '';
+}
+
+function getMimeType(filePath) {
+  const lower = (filePath || '').toLowerCase();
+  if (lower.endsWith('.png')) return 'image/png';
+  if (lower.endsWith('.webp')) return 'image/webp';
+  if (lower.endsWith('.heic')) return 'image/heic';
+  return 'image/jpeg';
+}
+
+function normalizeChosenFiles(files, existingPhotos) {
+  const startId = (existingPhotos || []).reduce((max, photo) => Math.max(max, Number(photo.id) || 0), 0) + 1;
+  return (files || []).map((file, index) => {
+    const filePath = file.tempFilePath || file.path || '';
+    return {
+      id: startId + index,
+      group: 0,
+      tempFilePath: filePath,
+      fileName: file.name || getPathName(filePath) || `report-${startId + index}`,
+      mimeType: file.type || getMimeType(filePath),
+      size: Number(file.size) || 0
+    };
+  });
+}
+
+function normalizeChooseImageFiles(result) {
+  const paths = result.tempFilePaths || [];
+  const files = result.tempFiles || [];
+  return paths.map((path, index) => ({
+    tempFilePath: path,
+    size: files[index] && files[index].size
+  }));
+}
 
 function decoratePhotos(photos, selected) {
   return photos.map((photo) => {
@@ -66,10 +149,28 @@ Page({
     grouping: false,
     selected: [],
     loading: false,
-    showFixtureEntry: false
+    showFixtureEntry: false,
+    uploadError: '',
+    hasDraft: false
   },
   onLoad(query = {}) {
-    this.setData({ showFixtureEntry: query.fixture === 'realcase' });
+    const draftPhotos = readUploadDraft();
+    this.setData({
+      showFixtureEntry: query.fixture === 'realcase',
+      photos: decoratePhotos(draftPhotos, []),
+      reportCount: getReportCount(draftPhotos),
+      hasDraft: draftPhotos.length > 0
+    });
+  },
+  updatePhotos(photos, selected = this.data.selected) {
+    persistUploadDraft(photos);
+    this.setData({
+      selected,
+      photos: decoratePhotos(photos, selected),
+      reportCount: getReportCount(photos),
+      hasDraft: photos.length > 0,
+      uploadError: ''
+    });
   },
   setSelected(selected) {
     this.setData({
@@ -78,15 +179,87 @@ Page({
     });
   },
   goBack() {
+    if (this.data.photos.length > 0 && !this.data.loading) {
+      wx.showModal({
+        title: '\u9000\u51fa\u4e0a\u4f20\uff1f',
+        content: '\u5df2\u9009\u56fe\u7247\u4f1a\u4fdd\u7559\u4e3a\u8349\u7a3f\uff0c\u4e0b\u6b21\u8fdb\u5165\u53ef\u7ee7\u7eed\u8bc6\u522b\u3002',
+        confirmText: '\u9000\u51fa',
+        cancelText: '\u7ee7\u7eed',
+        success: (res) => {
+          if (res.confirm) wx.navigateBack();
+        }
+      });
+      return;
+    }
     wx.navigateBack();
   },
+  chooseReportImages(sourceType) {
+    if (this.data.loading) return;
+    const remain = MAX_UPLOAD_PHOTOS - this.data.photos.length;
+    if (remain <= 0) {
+      wx.showToast({ title: `\u6700\u591a\u9009\u62e9 ${MAX_UPLOAD_PHOTOS} \u5f20`, icon: 'none' });
+      return;
+    }
+    const onFiles = (files) => {
+      const chosen = normalizeChosenFiles(files, this.data.photos);
+      const nextPhotos = this.data.photos
+        .concat(chosen)
+        .slice(0, MAX_UPLOAD_PHOTOS)
+        .map((photo) => ({
+          id: photo.id,
+          group: photo.group || 0,
+          tempFilePath: photo.tempFilePath || '',
+          fileName: photo.fileName || `report-${photo.id}`,
+          mimeType: photo.mimeType || '',
+          size: photo.size || 0
+        }));
+      this.updatePhotos(nextPhotos, []);
+      if (chosen.length > remain) {
+        wx.showToast({ title: `\u5df2\u4fdd\u7559\u524d ${MAX_UPLOAD_PHOTOS} \u5f20`, icon: 'none' });
+      }
+    };
+    if (wx.chooseMedia) {
+      wx.chooseMedia({
+        count: remain,
+        mediaType: ['image'],
+        sourceType: [sourceType],
+        success: (res) => onFiles(res.tempFiles || []),
+        fail: (error) => {
+          if (!error || !/cancel/i.test(error.errMsg || '')) {
+            wx.showToast({ title: '\u9009\u62e9\u56fe\u7247\u5931\u8d25', icon: 'none' });
+          }
+        }
+      });
+      return;
+    }
+    wx.chooseImage({
+      count: remain,
+      sourceType: [sourceType],
+      success: (res) => onFiles(normalizeChooseImageFiles(res)),
+      fail: (error) => {
+        if (!error || !/cancel/i.test(error.errMsg || '')) {
+          wx.showToast({ title: '\u9009\u62e9\u56fe\u7247\u5931\u8d25', icon: 'none' });
+        }
+      }
+    });
+  },
   chooseCamera() {
-    wx.showToast({ title: '调用相机', icon: 'none' });
+    this.chooseReportImages('camera');
   },
   chooseAlbum() {
-    wx.showToast({ title: '打开相册', icon: 'none' });
+    this.chooseReportImages('album');
   },
-  preview() {
+  preview(event) {
+    const id = event.currentTarget.dataset.id;
+    const current = this.data.photos.find((photo) => photo.id === id);
+    const urls = this.data.photos.map((photo) => photo.tempFilePath).filter(Boolean);
+    if (current && current.tempFilePath && urls.length > 0) {
+      wx.previewImage({
+        current: current.tempFilePath,
+        urls
+      });
+      return;
+    }
     wx.showToast({ title: '预览图片', icon: 'none' });
   },
   startGrouping() {
@@ -113,10 +286,12 @@ Page({
       ...photo,
       group: this.data.selected.includes(photo.id) ? 1 : photo.group
     }));
+    persistUploadDraft(photos);
     this.setData({
       photos: decoratePhotos(photos, this.data.selected),
       reportCount: getReportCount(photos),
-      grouping: false
+      grouping: false,
+      hasDraft: photos.length > 0
     });
   },
   cancelGrouping() {
@@ -132,11 +307,15 @@ Page({
     const profileId = app.getCurrentProfileId();
     const photos = this.data.photos.map((photo) => ({
       id: photo.id,
-      group: photo.group || 0
+      group: photo.group || 0,
+      tempFilePath: photo.tempFilePath || '',
+      fileName: photo.fileName || `report-${photo.id}`,
+      mimeType: photo.mimeType || '',
+      size: photo.size || 0
     }));
 
     wx.setStorageSync('uploadPhotos', photos);
-    this.setData({ loading: true });
+    this.setData({ loading: true, uploadError: '' });
 
     return api.createOcrTask({
       profileId,
@@ -151,15 +330,22 @@ Page({
         profileId,
         status: task.status,
         photoCount: task.photoCount,
-        reportCount: task.reportCount
+        reportCount: task.reportCount,
+        createdAt: Date.now()
       }].concat(pending.filter((item) => item.taskId !== task.id)));
+      clearUploadDraft();
       wx.navigateTo({
         url,
         fail: () => wx.redirectTo({ url })
       });
       return task;
     }).catch(() => {
-      this.setData({ loading: false });
+      persistUploadDraft(photos);
+      this.setData({
+        loading: false,
+        hasDraft: true,
+        uploadError: '\u8bc6\u522b\u4efb\u52a1\u521b\u5efa\u5931\u8d25\uff0c\u5df2\u4fdd\u7559\u8349\u7a3f\uff0c\u53ef\u7a0d\u540e\u91cd\u8bd5\u3002'
+      });
       wx.showToast({ title: '\u521b\u5efa\u8bc6\u522b\u4efb\u52a1\u5931\u8d25', icon: 'none' });
     });
   },
@@ -184,7 +370,8 @@ Page({
         status: task.status,
         photoCount: task.photoCount,
         reportCount: task.reportCount,
-        source: 'realcase-fixture'
+        source: 'realcase-fixture',
+        createdAt: Date.now()
       }].concat(pending.filter((item) => item.taskId !== task.id)));
       if (options.skipNavigate) return task;
       wx.navigateTo({

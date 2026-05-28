@@ -6,7 +6,10 @@
         <text>{{profile.relation}} · {{profile.realName}}</text>
         <text>⌄</text>
       </view>
-      <view class="bell" bindtap="showRecognizing">···</view>
+      <view class="bell {{pendingOcrTask ? 'active' : ''}}" bindtap="showRecognizing">
+        <text>···</text>
+        <view wx:if="{{pendingOcrTask}}" class="bell-dot"></view>
+      </view>
     </view>
     <view class="greeting">早上好，愿您今天舒心</view>
   </view>
@@ -14,11 +17,15 @@
   <view wx:if="{{recognizing}}" class="pad mt-12">
     <view class="ocr-card" bindtap="goOcrTask">
       <view class="ocr-icon">识</view>
-      <view class="flex">
-        <view class="body strong">正在识别 3 张报告</view>
-        <view class="tiny">识别完成后会通知您，请放心使用其他功能</view>
+      <view wx:if="{{pendingOcrTask}}" class="flex">
+        <view class="body strong">{{pendingOcrTask.title}}</view>
+        <view class="tiny">{{pendingOcrTask.detail}}</view>
       </view>
-      <hh-pill tone="primary">查看 ›</hh-pill>
+      <view wx:else class="flex">
+        <view class="body strong">暂无识别中的报告</view>
+        <view class="tiny">可以继续上传新的检查报告。</view>
+      </view>
+      <hh-pill tone="primary">{{pendingOcrTask ? pendingOcrTask.actionText : '上传 ›'}}</hh-pill>
     </view>
   </view>
 

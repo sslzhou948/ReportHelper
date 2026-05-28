@@ -55,6 +55,21 @@
   letter-spacing: 2rpx;
 }
 
+.bell.active {
+  background: rgba(255, 255, 255, 0.32);
+}
+
+.bell-dot {
+  position: absolute;
+  right: 8rpx;
+  top: 8rpx;
+  width: 14rpx;
+  height: 14rpx;
+  border-radius: 7rpx;
+  background: #F2B84B;
+  box-shadow: 0 0 0 4rpx rgba(242, 184, 75, 0.2);
+}
+
 .section-action {
   flex: 0 0 auto;
   margin-left: auto;

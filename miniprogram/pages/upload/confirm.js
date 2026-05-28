@@ -134,6 +134,7 @@ Page({
     api.cancelOcrTask(this.taskId).catch(() => null).then(() => {
       const pending = wx.getStorageSync('pendingOcrTasks') || [];
       wx.setStorageSync('pendingOcrTasks', pending.filter((item) => item.taskId !== this.taskId));
+      wx.removeStorageSync('uploadPhotos');
       wx.navigateBack({
         fail: () => wx.switchTab({ url: '/pages/home/index' })
       });
@@ -161,7 +162,8 @@ Page({
         profileId: task.profileId,
         status: task.status,
         photoCount: task.photoCount,
-        reportCount: task.reportCount
+        reportCount: task.reportCount,
+        createdAt: Date.now()
       }].concat(pending.filter((item) => item.taskId !== task.id)));
       wx.showToast({ title: '\u5df2\u91cd\u65b0\u53d1\u8d77\u8bc6\u522b', icon: 'success' });
       setTimeout(() => wx.switchTab({ url: '/pages/home/index' }), 500);
@@ -197,6 +199,7 @@ Page({
     wx.setStorageSync('healthDefaultView', 'time');
     const pending = wx.getStorageSync('pendingOcrTasks') || [];
     wx.setStorageSync('pendingOcrTasks', pending.filter((item) => item.taskId !== this.taskId));
+    wx.removeStorageSync('uploadPhotos');
     setTimeout(() => wx.switchTab({ url: '/pages/health/index' }), 600);
   },
 

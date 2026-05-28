@@ -47,6 +47,7 @@ async function waitForPath(miniProgram, expectedPath, timeout = 5000) {
     await miniProgram.evaluate(() => {
       wx.removeStorageSync('pendingOcrTasks');
       wx.removeStorageSync('uploadPhotos');
+      wx.removeStorageSync('uploadDraft');
       wx.removeStorageSync('healthDefaultView');
       wx.removeStorageSync('mockReports');
       wx.removeStorageSync('lastDuplicateAlertText');
