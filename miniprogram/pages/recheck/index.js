@@ -97,6 +97,10 @@ Page({
     wx.showToast({ title: '\u6253\u5f00\u5f85\u529e\u8f93\u5165\u6846', icon: 'none' });
   },
   completePlan() {
+    if (!this.data.allReady) {
+      wx.showToast({ title: '\u8bf7\u5148\u5b8c\u6210\u5168\u90e8\u5f85\u529e', icon: 'none' });
+      return;
+    }
     wx.showModal({
       title: '\u6807\u8bb0\u4e3a\u5df2\u5b8c\u6210\uff1f',
       content: '\u8ba1\u5212\u4f1a\u79fb\u5230\u5e95\u90e8\u5df2\u5b8c\u6210\u5217\u8868\u3002',

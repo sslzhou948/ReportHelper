@@ -800,6 +800,13 @@ const listRecheckResponse = await app.inject({
 assert.equal(listRecheckResponse.statusCode, 200);
 assert.equal(listRecheckResponse.json().data.nextPlan.id, recheckPlan.id);
 
+const incompleteRecheckResponse = await app.inject({
+  method: 'POST',
+  url: `/api/recheck-plans/${recheckPlan.id}/complete`
+});
+assert.equal(incompleteRecheckResponse.statusCode, 409);
+assert.equal(incompleteRecheckResponse.json().error.code, 'RECHECK_TODOS_NOT_READY');
+
 const updateTodoResponse = await app.inject({
   method: 'PATCH',
   url: `/api/recheck-plans/${recheckPlan.id}/todos/${recheckPlan.todos[0].id}`,

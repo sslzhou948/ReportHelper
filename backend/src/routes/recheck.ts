@@ -282,6 +282,20 @@ export async function registerRecheckRoutes(app: FastifyInstance) {
       });
     }
 
+    const unfinishedTodos = (plan.todos || []).filter((todo) => !todo.isDone);
+    if (unfinishedTodos.length) {
+      return reply.status(409).send({
+        error: {
+          code: 'RECHECK_TODOS_NOT_READY',
+          message: '请先完成全部复查待办',
+          details: {
+            unfinishedTodoIds: unfinishedTodos.map((todo) => todo.id)
+          }
+        },
+        requestId
+      });
+    }
+
     const updated = await app.prisma.recheckPlan.update({
       where: { id: plan.id },
       data: { status: 'done' },
