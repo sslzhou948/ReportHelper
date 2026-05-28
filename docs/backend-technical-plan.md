@@ -28,7 +28,7 @@
 ### Runtime
 
 - API service: Node.js + TypeScript.
-- Database: PostgreSQL.
+- Database: PostgreSQL. Schema and SQL should remain Supabase-compatible, but v1 runs on self-managed/local PostgreSQL.
 - ORM/migration: Prisma or Drizzle. v1 推荐 Prisma，迁移和类型生成更直观。
 - Object storage: 抽象 `StorageProvider`，v1 可先只保存 object key，不直接接真实上传。
 - Background jobs: v1 可先用 API 内同步重算快照；后续接队列处理 OCR、回填、导出。
@@ -42,6 +42,18 @@
 - `MetricService`: 指标归一、异常判断、快照和历史。
 - `RecheckService`: 复查计划和待办。
 - `MappingService`: 主数据和映射规则读取；v1 使用静态 seed。
+
+### Supabase Compatibility Decision
+
+v1 不直接依赖 Supabase Auth。原因是微信小程序登录链路是 `wx.login -> code -> 后端 code2Session -> openid/unionid -> 自有 token`，和标准 OAuth/OIDC 社交登录不同；医疗健康数据的档案权限、审计和管理员流程也需要后端强控制。
+
+当前决策：
+
+- v1 本地部署自有后端和 PostgreSQL。
+- PostgreSQL schema 保持 Supabase-compatible，避免使用难迁移的数据库特性。
+- 认证由自有 `AuthService` 基于微信 code2Session 完成。
+- Supabase 可作为未来数据库/存储迁移目标，但不是当前认证主依赖。
+- 如果未来迁移 Supabase，优先迁移 database/storage；Auth 仍可保留自有 JWT，或再评估 custom JWT/RLS 方案。
 
 ## 3. Data Ownership
 
@@ -170,10 +182,11 @@ v1 强重复核心：
 ## 7. Security And Compliance Baseline
 
 - 全量 HTTPS。
-- JWT access token + refresh token。
+- 微信小程序登录必须走后端 `code2Session`，AppSecret 只放服务端环境变量。
+- 自有 JWT access token + refresh token。
 - 对象存储只返回短期签名 URL。
 - 日志不输出完整报告指标、身份证、手机号、AppSecret。
-- AppSecret 只放服务端环境变量，永不进入小程序端和仓库。
+- AppSecret 永不进入小程序端和仓库。
 - 生产环境关闭 fixture OCR 入口。
 
 ## 8. Acceptance Gates
@@ -199,3 +212,21 @@ v1 强重复核心：
 4. 实现 profiles、ocr tasks、reports batch-create、duplicate-check。
 5. 写 API contract tests，直接用 realcase fixture 验证保存两次。
 
+## 10. Migration Path To Supabase
+
+为了未来可迁移 Supabase，v1 需要遵守：
+
+- 数据库使用标准 PostgreSQL 类型和索引。
+- 主键使用 UUID，不依赖本地自增序列作为业务含义。
+- 所有权限判断先集中在 API service，不把业务权限散落在页面端。
+- 文件引用保存 object key，不保存绑定本地磁盘的绝对路径。
+- migration 文件保持可重复执行、可审计。
+
+未来迁移步骤：
+
+1. 在 Supabase 创建 Postgres 项目。
+2. 执行 Prisma migration 或导出 SQL schema。
+3. 导入业务数据。
+4. 切换 API service 的 `DATABASE_URL`。
+5. 逐步迁移 object storage。
+6. 认证体系继续由自有后端签发 token；如需使用 Supabase RLS，再单独设计 JWT claims。
