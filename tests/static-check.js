@@ -116,9 +116,11 @@ assert.ok(!healthWxml.includes('<button wx:for="{{item.items}}"'), 'health repor
 assert.ok(!metricRowWxml.includes('<button class="metric-row"'), 'metric row component must not use native button layout');
 
 const recheckWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'recheck', 'index.wxml'), 'utf8');
+const recheckJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'recheck', 'index.js'), 'utf8');
 assert.ok(!recheckWxml.includes('<button wx:for="{{nextPlan.todos}}"'), 'recheck todo rows must not use native button layout');
 assert.ok(!recheckWxml.includes('<button wx:for="{{otherPlans}}"'), 'recheck plan rows must not use native button layout');
 assert.ok(!recheckWxml.includes('<button class="row add-row"'), 'recheck add row must not use native button layout');
+assert.ok(recheckWxml.includes('bindtap="goNextDetail"') && recheckJs.includes('goNextDetail()'), 'next recheck plan must expose detail/cancel entry');
 
 const profileWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'index.wxml'), 'utf8');
 assert.ok(!profileWxml.includes('<button class="row"'), 'profile menu rows must not use native button layout');

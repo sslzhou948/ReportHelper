@@ -66,6 +66,10 @@ Page({
   goDetail(event) {
     wx.navigateTo({ url: `/pages/recheck/detail?planId=${event.currentTarget.dataset.id}` });
   },
+  goNextDetail() {
+    if (!this.data.nextPlan) return;
+    wx.navigateTo({ url: `/pages/recheck/detail?planId=${this.data.nextPlan.id}` });
+  },
   toggleTodo(event) {
     const index = event.currentTarget.dataset.index;
     const nextPlan = { ...this.data.nextPlan, todos: this.data.nextPlan.todos.slice() };

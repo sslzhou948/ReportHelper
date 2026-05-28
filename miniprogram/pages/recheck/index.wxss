@@ -36,6 +36,17 @@
   background: var(--primary);
 }
 
+.plan-actions {
+  margin-top: 24rpx;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16rpx;
+}
+
+.plan-actions.single {
+  grid-template-columns: 1fr;
+}
+
 .todo-box {
   width: 44rpx;
   height: 44rpx;

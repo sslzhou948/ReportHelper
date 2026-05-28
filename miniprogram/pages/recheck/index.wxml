@@ -18,7 +18,10 @@
           <view class="progress"><view style="width: {{progressPercent}}%;"></view></view>
           <view class="sub">{{readyCount}}/{{nextPlan.todos.length}} 准备就绪</view>
         </view>
-        <view wx:if="{{allReady}}" class="btn mt-16" bindtap="completePlan">标记为已完成</view>
+        <view class="plan-actions {{allReady ? '' : 'single'}}">
+          <view class="btn secondary" bindtap="goNextDetail">查看详情</view>
+          <view wx:if="{{allReady}}" class="btn" bindtap="completePlan">标记为已完成</view>
+        </view>
       </view>
     </view>
     <view class="section-title">待办事项</view>
