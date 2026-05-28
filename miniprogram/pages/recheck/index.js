@@ -94,7 +94,33 @@ Page({
     });
   },
   addTodo() {
-    wx.showToast({ title: '\u6253\u5f00\u5f85\u529e\u8f93\u5165\u6846', icon: 'none' });
+    if (!this.data.nextPlan) return;
+    wx.showModal({
+      title: '\u6dfb\u52a0\u5f85\u529e',
+      editable: true,
+      placeholderText: '\u4f8b\u5982\uff1a\u51c6\u5907\u68c0\u67e5\u5355',
+      confirmText: '\u6dfb\u52a0',
+      success: (res) => {
+        if (!res.confirm) return;
+        const text = String(res.content || '').trim();
+        if (!text) {
+          wx.showToast({ title: '\u8bf7\u8f93\u5165\u5f85\u529e\u5185\u5bb9', icon: 'none' });
+          return;
+        }
+        api.addRecheckTodo(this.data.nextPlan.id, {
+          text,
+          isDone: false,
+          isTemplate: false
+        }, {
+          idempotencyKey: `todo_${this.data.nextPlan.id}_${Date.now()}`
+        }).then(() => {
+          wx.showToast({ title: '\u5df2\u6dfb\u52a0', icon: 'success' });
+          this.load();
+        }).catch(() => {
+          wx.showToast({ title: '\u6dfb\u52a0\u5f85\u529e\u5931\u8d25', icon: 'none' });
+        });
+      }
+    });
   },
   completePlan() {
     if (!this.data.allReady) {

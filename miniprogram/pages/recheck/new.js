@@ -49,6 +49,31 @@ Page({
     this.setData({ todos });
   },
 
+  addTodo() {
+    wx.showModal({
+      title: '\u81ea\u5b9a\u4e49\u5f85\u529e',
+      editable: true,
+      placeholderText: '\u4f8b\u5982\uff1a\u5e26\u4e0a\u65e7\u62a5\u544a',
+      confirmText: '\u6dfb\u52a0',
+      success: (res) => {
+        if (!res.confirm) return;
+        const text = String(res.content || '').trim();
+        if (!text) {
+          wx.showToast({ title: '\u8bf7\u8f93\u5165\u5f85\u529e\u5185\u5bb9', icon: 'none' });
+          return;
+        }
+        const todos = this.data.todos.concat({
+          id: `todo_custom_${Date.now()}`,
+          text,
+          isDone: false,
+          isTemplate: false,
+          sortOrder: this.data.todos.length + 1
+        });
+        this.setData({ todos });
+      }
+    });
+  },
+
   save() {
     if (this.data.saving) return;
     const result = validateRecheckPlan(this.data.form);

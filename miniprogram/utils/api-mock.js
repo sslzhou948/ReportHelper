@@ -523,6 +523,21 @@ function createMockApi() {
       return ok(plan);
     },
 
+    addRecheckTodo(planId, payload) {
+      const plan = findRecheckPlan(planId);
+      if (!plan) return ok(null);
+      const sortOrder = payload.sortOrder || ((plan.todos || []).reduce((max, todo) => Math.max(max, todo.sortOrder || 0), 0) + 1);
+      const todo = {
+        id: `todo_mock_${planId}_${sortOrder}`,
+        text: payload.text,
+        isDone: !!payload.isDone,
+        isTemplate: payload.isTemplate === true,
+        sortOrder
+      };
+      plan.todos = (plan.todos || []).concat(todo);
+      return ok(plan);
+    },
+
     completeRecheckPlan(planId) {
       const plan = findRecheckPlan(planId);
       if (!plan) return ok(null);

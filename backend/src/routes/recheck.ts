@@ -24,6 +24,13 @@ const updateTodoSchema = z.object({
   isDone: z.boolean()
 });
 
+const addTodoSchema = z.object({
+  text: z.string().trim().min(1).max(256),
+  isDone: z.boolean().optional(),
+  isTemplate: z.boolean().optional(),
+  sortOrder: z.number().int().positive().optional()
+});
+
 type RecheckPlanShape = {
   id: string;
   profileId: string;
@@ -128,7 +135,7 @@ export async function registerRecheckRoutes(app: FastifyInstance) {
     const profile = await ensureProfile(app, request.params.profileId, user.id);
     if (!profile) {
       return reply.status(404).send({
-        error: { code: 'NOT_FOUND', message: '档案不存在' },
+        error: { code: 'NOT_FOUND', message: 'Profile not found' },
         requestId
       });
     }
@@ -165,7 +172,7 @@ export async function registerRecheckRoutes(app: FastifyInstance) {
       return reply.status(400).send({
         error: {
           code: 'VALIDATION_FAILED',
-          message: '复查计划参数无效',
+          message: 'Invalid recheck plan parameters',
           details: parsed.error.flatten()
         },
         requestId
@@ -194,7 +201,7 @@ export async function registerRecheckRoutes(app: FastifyInstance) {
     const profile = await ensureProfile(app, request.params.profileId, user.id);
     if (!profile) {
       return reply.status(404).send({
-        error: { code: 'NOT_FOUND', message: '档案不存在' },
+        error: { code: 'NOT_FOUND', message: 'Profile not found' },
         requestId
       });
     }
@@ -239,7 +246,7 @@ export async function registerRecheckRoutes(app: FastifyInstance) {
       return reply.status(400).send({
         error: {
           code: 'VALIDATION_FAILED',
-          message: '复查待办参数无效',
+          message: 'Invalid recheck todo parameters',
           details: parsed.error.flatten()
         },
         requestId
@@ -252,7 +259,7 @@ export async function registerRecheckRoutes(app: FastifyInstance) {
     const plan = await findPlanForUser(app, request.params.planId, user.id);
     if (!plan || !(plan.todos || []).some((todo) => todo.id === request.params.todoId)) {
       return reply.status(404).send({
-        error: { code: 'NOT_FOUND', message: '复查计划不存在' },
+        error: { code: 'NOT_FOUND', message: 'Recheck plan not found' },
         requestId
       });
     }
@@ -260,6 +267,49 @@ export async function registerRecheckRoutes(app: FastifyInstance) {
     await app.prisma.recheckTodo.update({
       where: { id: request.params.todoId },
       data: { isDone: parsed.data.isDone }
+    });
+
+    const updated = await findPlanForUser(app, request.params.planId, user.id);
+    return {
+      data: serializePlan(updated as unknown as RecheckPlanShape),
+      requestId
+    };
+  });
+
+  app.post<{ Params: { planId: string } }>('/api/recheck-plans/:planId/todos', async (request, reply) => {
+    const requestId = getRequestId(request);
+    const parsed = addTodoSchema.safeParse(request.body || {});
+    if (!parsed.success) {
+      return reply.status(400).send({
+        error: {
+          code: 'VALIDATION_FAILED',
+          message: 'Invalid recheck todo parameters',
+          details: parsed.error.flatten()
+        },
+        requestId
+      });
+    }
+
+    const session = await requireSession(app, request, reply);
+    if (!session) return;
+    const { user } = session;
+    const plan = await findPlanForUser(app, request.params.planId, user.id);
+    if (!plan) {
+      return reply.status(404).send({
+        error: { code: 'NOT_FOUND', message: 'Recheck plan not found' },
+        requestId
+      });
+    }
+
+    const nextSortOrder = parsed.data.sortOrder || ((plan.todos || []).reduce((max, todo) => Math.max(max, todo.sortOrder), 0) + 1);
+    await app.prisma.recheckTodo.create({
+      data: {
+        planId: plan.id,
+        text: parsed.data.text,
+        sortOrder: nextSortOrder,
+        isDone: !!parsed.data.isDone,
+        isTemplate: parsed.data.isTemplate === true
+      }
     });
 
     const updated = await findPlanForUser(app, request.params.planId, user.id);
@@ -277,7 +327,7 @@ export async function registerRecheckRoutes(app: FastifyInstance) {
     const plan = await findPlanForUser(app, request.params.planId, user.id);
     if (!plan) {
       return reply.status(404).send({
-        error: { code: 'NOT_FOUND', message: '复查计划不存在' },
+        error: { code: 'NOT_FOUND', message: 'Recheck plan not found' },
         requestId
       });
     }
@@ -287,7 +337,7 @@ export async function registerRecheckRoutes(app: FastifyInstance) {
       return reply.status(409).send({
         error: {
           code: 'RECHECK_TODOS_NOT_READY',
-          message: '请先完成全部复查待办',
+          message: 'Please complete all recheck todos first',
           details: {
             unfinishedTodoIds: unfinishedTodos.map((todo) => todo.id)
           }
@@ -320,7 +370,7 @@ export async function registerRecheckRoutes(app: FastifyInstance) {
     const plan = await findPlanForUser(app, request.params.planId, user.id);
     if (!plan) {
       return reply.status(404).send({
-        error: { code: 'NOT_FOUND', message: '复查计划不存在' },
+        error: { code: 'NOT_FOUND', message: 'Recheck plan not found' },
         requestId
       });
     }

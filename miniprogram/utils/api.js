@@ -116,6 +116,9 @@ function createBackendApi(client) {
     updateRecheckTodo(planId, todoId, payload) {
       return client.patch(`/api/recheck-plans/${planId}/todos/${todoId}`, payload);
     },
+    addRecheckTodo(planId, payload, config) {
+      return client.post(`/api/recheck-plans/${planId}/todos`, payload, config);
+    },
     completeRecheckPlan(planId, config) {
       return client.post(`/api/recheck-plans/${planId}/complete`, {}, config);
     },
@@ -236,6 +239,10 @@ function createHybridUploadApi(options = {}) {
     updateRecheckTodo(planId, todoId, payload) {
       if (!hasBackendProfile()) return mockApi.updateRecheckTodo(planId, todoId, payload);
       return backendApi.updateRecheckTodo(planId, todoId, payload);
+    },
+    addRecheckTodo(planId, payload, config) {
+      if (!hasBackendProfile()) return mockApi.addRecheckTodo(planId, payload, config);
+      return backendApi.addRecheckTodo(planId, payload, config);
     },
     completeRecheckPlan(planId, config) {
       if (!hasBackendProfile()) return mockApi.completeRecheckPlan(planId, config);

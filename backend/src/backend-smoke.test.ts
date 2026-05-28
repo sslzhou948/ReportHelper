@@ -453,6 +453,16 @@ class MemoryPrisma {
   };
 
   recheckTodo = {
+    create: async ({ data }: any) => {
+      const todo = {
+        id: randomUUID(),
+        ...data,
+        createdAt: now(),
+        updatedAt: now()
+      };
+      this.recheckTodos.push(todo);
+      return todo;
+    },
     update: async ({ where, data }: any) => {
       const todo = this.recheckTodos.find((item) => item.id === where.id);
       if (!todo) throw new Error('recheck todo not found');
@@ -810,6 +820,19 @@ const listRecheckResponse = await app.inject({
 assert.equal(listRecheckResponse.statusCode, 200);
 assert.equal(listRecheckResponse.json().data.nextPlan.id, recheckPlan.id);
 
+const addTodoResponse = await app.inject({
+  method: 'POST',
+  url: `/api/recheck-plans/${recheckPlan.id}/todos`,
+  payload: {
+    text: '准备影像资料'
+  }
+});
+assert.equal(addTodoResponse.statusCode, 200);
+assert.equal(addTodoResponse.json().data.todos.length, 3);
+const customTodo = addTodoResponse.json().data.todos.find((todo: Row) => todo.text === '准备影像资料');
+assert.ok(customTodo);
+assert.equal(customTodo.isDone, false);
+
 const incompleteRecheckResponse = await app.inject({
   method: 'POST',
   url: `/api/recheck-plans/${recheckPlan.id}/complete`
@@ -824,6 +847,13 @@ const updateTodoResponse = await app.inject({
 });
 assert.equal(updateTodoResponse.statusCode, 200);
 assert.equal(updateTodoResponse.json().data.todos[0].isDone, true);
+
+const updateCustomTodoResponse = await app.inject({
+  method: 'PATCH',
+  url: `/api/recheck-plans/${recheckPlan.id}/todos/${customTodo.id}`,
+  payload: { isDone: true }
+});
+assert.equal(updateCustomTodoResponse.statusCode, 200);
 
 const completeRecheckResponse = await app.inject({
   method: 'POST',

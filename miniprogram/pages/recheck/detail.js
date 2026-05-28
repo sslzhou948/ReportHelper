@@ -32,6 +32,35 @@ Page({
   showPicker() {
     wx.showToast({ title: '\u7f16\u8f91\u5b57\u6bb5', icon: 'none' });
   },
+  addTodo() {
+    if (!this.data.plan) return;
+    wx.showModal({
+      title: '\u6dfb\u52a0\u5f85\u529e',
+      editable: true,
+      placeholderText: '\u4f8b\u5982\uff1a\u51c6\u5907\u68c0\u67e5\u5355',
+      confirmText: '\u6dfb\u52a0',
+      success: (res) => {
+        if (!res.confirm) return;
+        const text = String(res.content || '').trim();
+        if (!text) {
+          wx.showToast({ title: '\u8bf7\u8f93\u5165\u5f85\u529e\u5185\u5bb9', icon: 'none' });
+          return;
+        }
+        api.addRecheckTodo(this.data.plan.id, {
+          text,
+          isDone: false,
+          isTemplate: false
+        }, {
+          idempotencyKey: `todo_${this.data.plan.id}_${Date.now()}`
+        }).then(() => {
+          wx.showToast({ title: '\u5df2\u6dfb\u52a0', icon: 'success' });
+          this.load();
+        }).catch(() => {
+          wx.showToast({ title: '\u6dfb\u52a0\u5f85\u529e\u5931\u8d25', icon: 'none' });
+        });
+      }
+    });
+  },
   cancelPlan() {
     wx.showModal({
       title: '\u53d6\u6d88\u6b64\u6b21\u590d\u67e5\uff1f',

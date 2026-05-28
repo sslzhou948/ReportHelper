@@ -966,6 +966,21 @@ Idempotency-Key: <uuid>
 
 响应：更新后的 RecheckPlan。
 
+### POST `/api/recheck-plans/{planId}/todos`
+
+新增一条复查待办。
+
+请求：
+```json
+{
+  "text": "准备影像资料",
+  "isDone": false,
+  "isTemplate": false
+}
+```
+
+响应：更新后的 RecheckPlan。
+
 ### POST `/api/recheck-plans/{planId}/complete`
 
 标记完成。

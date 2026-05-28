@@ -705,6 +705,7 @@ asyncChecks.push(mockApi.listRecheckPlans('profile_mom').then((recheck) => {
   assert.ok(Array.isArray(recheck.otherPlans), 'mock api should expose other recheck plans');
   assert.strictEqual(typeof recheck.doneCount, 'number');
 }));
+let customTodoId = '';
 asyncChecks.push(mockApi.createRecheckPlan('profile_mom', {
   type: '常规复查',
   date: '2026-06-20',
@@ -714,6 +715,12 @@ asyncChecks.push(mockApi.createRecheckPlan('profile_mom', {
 }).then((plan) => {
   assert.strictEqual(plan.status, 'pending');
   assert.strictEqual(plan.todos.length, 5);
+  return mockApi.addRecheckTodo(plan.id, { text: '自定义待办' });
+}).then((plan) => {
+  assert.strictEqual(plan.todos.length, 6);
+  const customTodo = plan.todos.find((todo) => todo.text === '自定义待办');
+  assert.ok(customTodo);
+  customTodoId = customTodo.id;
   return mockApi.updateRecheckTodo(plan.id, plan.todos[0].id, { isDone: false }).then(() => mockApi.listRecheckPlans('profile_mom'));
 }).then((recheck) => {
   const created = [recheck.nextPlan].concat(recheck.otherPlans).filter(Boolean).find((plan) => plan.date === '2026-06-20');
@@ -723,7 +730,8 @@ asyncChecks.push(mockApi.createRecheckPlan('profile_mom', {
     () => assert.fail('incomplete recheck todos should block completion'),
     (error) => {
       assert.strictEqual(error.code, 'RECHECK_TODOS_NOT_READY');
-      return mockApi.updateRecheckTodo(created.id, created.todos[0].id, { isDone: true });
+      return mockApi.updateRecheckTodo(created.id, created.todos[0].id, { isDone: true })
+        .then(() => mockApi.updateRecheckTodo(created.id, customTodoId, { isDone: true }));
     }
   ).then(() => mockApi.completeRecheckPlan(created.id)).then(() => mockApi.listRecheckPlans('profile_mom'));
 }).then((recheck) => {

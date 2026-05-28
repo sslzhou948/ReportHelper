@@ -21,7 +21,7 @@
         <view class="todo-box {{item.isDone ? 'done' : ''}}">{{item.isDone ? '✓' : ''}}</view>
         <view class="flex">{{item.text}}</view>
       </view>
-      <view class="row add-row">+ 添加待办</view>
+      <view class="row add-row" bindtap="addTodo">+ 添加待办</view>
     </view>
   </view>
   <view class="section-title">提醒</view>
