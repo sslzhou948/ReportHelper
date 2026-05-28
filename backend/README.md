@@ -39,6 +39,12 @@ npm run prisma:migrate
 npm run dev
 ```
 
+Before committing schema changes, verify that the initial migration still matches the Prisma schema:
+
+```bash
+npm run migration:check
+```
+
 The backend contract must stay aligned with:
 
 - `../docs/api-contract.md`

@@ -19,12 +19,15 @@ Updated: 2026-05-29
 - Hybrid-upload DevTools smoke now runs without local Docker/Postgres by starting an in-memory Fastify backend, saving seven realcase fixture reports through backend APIs, and reading them back from the mini program health page.
 - Backend OCR task creation now goes through an OCR provider boundary, so the real OCR provider can replace the fixture provider without changing route contracts.
 - Backend upload signing now goes through a storage provider boundary, so object storage signing can replace the local upload provider without changing mini program API contracts.
+- Login onboarding now exposes tappable user agreement and privacy policy pages, with a clear medical disclaimer before account/profile creation.
+- Prisma now has an initial PostgreSQL migration and a drift check that compares the committed migration against the current schema without requiring a running database.
 
 ## Verified Commands
 
 - `npm.cmd test`
 - `npm.cmd run visual:check`
 - `npm.cmd run fixtures:check`
+- `npm.cmd --prefix backend run migration:check`
 - `npm.cmd run check:all`
 - `npm.cmd run devtools:flow`
 - `npm.cmd run devtools:hybrid-flow`
@@ -36,7 +39,7 @@ Updated: 2026-05-29
 - Real OCR provider integration and golden comparison against `realtestcase/`.
 - Production upload storage, signed object URLs, legal HTTPS domain configuration, and WeChat allowed-domain setup.
 - WeChat subscription message template ID and production reminder delivery.
-- User agreement, privacy policy, medical disclaimer, and mini program category/qualification confirmation.
+- Mini program category/qualification confirmation and final legal review of user agreement/privacy copy.
 - Admin portal for mapping review, conflict handling, mapping publish/rollback, audit logs, system health, API status, and future billing.
 - Mapping backfill job after admin approval, with dry-run and no overwrite of OCR raw text or user-edited values.
 - Senior / large text display mode as a backlog display setting, implemented by global style variables rather than duplicate pages.

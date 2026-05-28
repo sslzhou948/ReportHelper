@@ -5,7 +5,7 @@
   "description": "我的病例夹微信小程序工程",
   "scripts": {
     "test": "node tests/run-unit-tests.js && node tests/static-check.js && node --check tests/devtools-flow.js && node --check tests/devtools-hybrid-flow.js",
-    "check:all": "npm run test && npm run visual:check && npm run fixtures:check && npm --prefix backend run build && npm --prefix backend test",
+    "check:all": "npm run test && npm run visual:check && npm run fixtures:check && npm --prefix backend run migration:check && npm --prefix backend run build && npm --prefix backend test",
     "static:check": "node tests/static-check.js",
     "visual:check": "node tests/check-visual-contracts.js",
     "fixtures:check": "node tests/check-fixtures.js",

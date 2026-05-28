@@ -9,6 +9,7 @@
     "build": "tsc -p tsconfig.json",
     "test": "tsx src/backend-smoke.test.ts",
     "start": "node dist/server.js",
+    "migration:check": "node scripts/check-migration.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio"
