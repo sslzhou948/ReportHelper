@@ -10,6 +10,11 @@ const createOcrTaskSchema = z.object({
   fixtureCaseIds: z.array(z.string()).optional()
 });
 
+const listOcrTasksSchema = z.object({
+  profileId: z.string().uuid().optional(),
+  status: z.string().optional()
+});
+
 const updateDraftSchema = z.object({
   draft: z.object({
     basicInfo: z.unknown().optional(),
@@ -206,6 +211,51 @@ export async function registerOcrRoutes(app: FastifyInstance) {
     };
   });
 
+  app.get<{ Querystring: { profileId?: string; status?: string } }>('/api/ocr/tasks', async (request, reply) => {
+    const requestId = getRequestId(request);
+    const parsed = listOcrTasksSchema.safeParse(request.query || {});
+    if (!parsed.success) {
+      return reply.status(400).send({
+        error: {
+          code: 'VALIDATION_FAILED',
+          message: 'OCR task query is invalid',
+          details: parsed.error.flatten()
+        },
+        requestId
+      });
+    }
+
+    const { user } = await ensureDevSession(app.prisma);
+    const statuses = (parsed.data.status || '')
+      .split(',')
+      .map((status) => status.trim())
+      .filter(Boolean);
+    const tasks = await app.prisma.ocrTask.findMany({
+      where: {
+        ...(parsed.data.profileId ? { profileId: parsed.data.profileId } : {}),
+        ...(statuses.length ? { status: { in: statuses } } : {}),
+        profile: {
+          userId: user.id,
+          deletedAt: null
+        }
+      },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        drafts: {
+          orderBy: { createdAt: 'asc' }
+        }
+      }
+    });
+
+    return {
+      data: tasks.map((task) => serializeTask({
+        ...task,
+        drafts: task.drafts.map(serializeDraft)
+      })),
+      requestId
+    };
+  });
+
   app.get<{ Params: { taskId: string } }>('/api/ocr/tasks/:taskId', async (request, reply) => {
     const requestId = getRequestId(request);
     const { user } = await ensureDevSession(app.prisma);
@@ -225,6 +275,56 @@ export async function registerOcrRoutes(app: FastifyInstance) {
       data: serializeTask({
         ...task,
         drafts: task.drafts.map(serializeDraft)
+      }),
+      requestId
+    };
+  });
+
+  app.post<{ Params: { taskId: string } }>('/api/ocr/tasks/:taskId/cancel', async (request, reply) => {
+    const requestId = getRequestId(request);
+    const { user } = await ensureDevSession(app.prisma);
+    const task = await findTaskForUser(app, request.params.taskId, user.id);
+
+    if (!task) {
+      return reply.status(404).send({
+        error: {
+          code: 'NOT_FOUND',
+          message: 'OCR task not found'
+        },
+        requestId
+      });
+    }
+
+    if (task.status === 'confirmed') {
+      return reply.status(409).send({
+        error: {
+          code: 'CONFLICT',
+          message: 'Confirmed OCR task cannot be cancelled'
+        },
+        requestId
+      });
+    }
+
+    const updatedTask = await app.prisma.$transaction(async (tx) => {
+      await tx.recognizedReportDraft.updateMany({
+        where: { ocrTaskId: task.id },
+        data: { status: 'cancelled' }
+      });
+      return tx.ocrTask.update({
+        where: { id: task.id },
+        data: { status: 'cancelled' },
+        include: {
+          drafts: {
+            orderBy: { createdAt: 'asc' }
+          }
+        }
+      });
+    });
+
+    return {
+      data: serializeTask({
+        ...updatedTask,
+        drafts: updatedTask.drafts.map(serializeDraft)
       }),
       requestId
     };

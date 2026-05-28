@@ -13,11 +13,13 @@ This is the self-managed backend for the mini program. v1 uses local PostgreSQL 
 ## First Loop
 
 1. Create OCR task from fixture drafts.
-2. Confirm/edit drafts.
-3. Run duplicate check.
-4. Save reports with replace/skip decisions.
-5. Query reports, details, metric snapshots, and metric history.
-6. Edit reports and recompute snapshots.
+2. List or cancel unfinished OCR tasks.
+3. Confirm/edit drafts.
+4. Run duplicate check.
+5. Save reports with replace/skip decisions.
+6. Query reports, details, metric snapshots, and metric history.
+7. Edit reports and recompute snapshots.
+8. Create/update/complete/cancel recheck plans.
 
 ## Local Setup
 
@@ -42,11 +44,11 @@ The backend contract must stay aligned with:
 
 ## Mini Program Fixture Link
 
-During local mini program debugging, keep the app in mock mode by default and enable the upload-to-report loop against the backend:
+During local mini program debugging, keep the app in mock mode by default for visual checks. To enable the upload-to-report loop against the backend:
 
 ```js
 wx.setStorageSync('healthhelperApiMode', 'hybrid-upload')
 wx.setStorageSync('healthhelperBackendBaseUrl', 'http://127.0.0.1:8787')
 ```
 
-In this mode, fixture OCR task creation, duplicate check, batch save, report list/detail, metric snapshots, metric history, and metric pinning use the backend. Profiles and recheck plans still use the mock adapter until those backend routes are implemented.
+In this mode, fixture OCR task creation/list/cancel, duplicate check, batch save, report list/detail/edit/delete, metric snapshots/history/pinning, and recheck plans use the backend after a backend profile is established. Full `backend` mode also routes profiles through the backend.

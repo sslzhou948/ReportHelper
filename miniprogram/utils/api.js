@@ -23,6 +23,14 @@ function toBackendBatchCreatePayload(payload = {}) {
   };
 }
 
+function toQuery(params = {}) {
+  const query = Object.keys(params)
+    .filter((key) => params[key] !== undefined && params[key] !== null && params[key] !== '')
+    .map((key) => `${key}=${encodeURIComponent(params[key])}`)
+    .join('&');
+  return query ? `?${query}` : '';
+}
+
 function createHybridStorage(options = {}) {
   if (options.storage) return options.storage;
   return {
@@ -105,8 +113,14 @@ function createBackendApi(client) {
     createOcrTask(payload, config) {
       return client.post('/api/ocr/tasks', payload, config);
     },
+    listOcrTasks(params = {}) {
+      return client.get(`/api/ocr/tasks${toQuery(params)}`);
+    },
     getOcrTask(taskId) {
       return client.get(`/api/ocr/tasks/${taskId}`);
+    },
+    cancelOcrTask(taskId, config) {
+      return client.post(`/api/ocr/tasks/${taskId}/cancel`, {}, config);
     },
     resolveOcrConflict(payload, config) {
       return client.patch(`/api/ocr/tasks/${payload.taskId}/drafts/${payload.draftId}/conflicts/${payload.metricKey}`, payload, config);
@@ -138,8 +152,17 @@ function createHybridUploadApi(options = {}) {
     createOcrTask(payload, config) {
       return backendApi.createOcrTask(toBackendCreateOcrTaskPayload(payload), config).then(rememberProfile);
     },
+    listOcrTasks(params = {}) {
+      return backendApi.listOcrTasks({
+        ...params,
+        profileId: params.profileId ? backendProfileId(params.profileId) : params.profileId
+      });
+    },
     getOcrTask(taskId) {
       return backendApi.getOcrTask(taskId).then(rememberProfile);
+    },
+    cancelOcrTask(taskId, config) {
+      return backendApi.cancelOcrTask(taskId, config);
     },
     resolveOcrConflict(payload, config) {
       return backendApi.resolveOcrConflict(payload, config);

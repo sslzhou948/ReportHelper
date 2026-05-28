@@ -563,6 +563,21 @@ function createMockApi() {
       return ok(task);
     },
 
+    listOcrTasks(params = {}) {
+      const statuses = String(params.status || '')
+        .split(',')
+        .map((status) => status.trim())
+        .filter(Boolean);
+      const tasks = Object.values(ocrTasks)
+        .filter((task) => {
+          if (params.profileId && task.profileId !== params.profileId) return false;
+          if (statuses.length && !statuses.includes(task.status)) return false;
+          return true;
+        })
+        .sort((a, b) => String(b.id).localeCompare(String(a.id)));
+      return ok(tasks);
+    },
+
     getOcrTask(taskId) {
       if (!ocrTasks[taskId] && typeof wx !== 'undefined') {
         const photos = wx.getStorageSync('uploadPhotos') || [];
@@ -587,6 +602,17 @@ function createMockApi() {
         reportCount: 0,
         drafts: []
       });
+    },
+
+    cancelOcrTask(taskId) {
+      const task = ocrTasks[taskId];
+      if (!task) return ok({ id: taskId, status: 'cancelled', drafts: [] });
+      task.status = 'cancelled';
+      task.drafts = (task.drafts || []).map((draft) => ({
+        ...draft,
+        status: 'cancelled'
+      }));
+      return ok(task);
     },
 
     resolveOcrConflict({ taskId, draftId, metricKey, selectedCandidateIndex = 0 }) {

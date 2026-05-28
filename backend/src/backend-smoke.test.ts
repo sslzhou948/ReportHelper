@@ -98,6 +98,8 @@ class MemoryPrisma {
     findFirst: async ({ where, include }: any) => {
       const task = this.ocrTasks.find((item) => {
         if (where.id && item.id !== where.id) return false;
+        if (where.profileId && item.profileId !== where.profileId) return false;
+        if (where.status?.in && !where.status.in.includes(item.status)) return false;
         if (where.profile) {
           const profile = this.profiles.find((profileRow) => profileRow.id === item.profileId);
           if (!profile || profile.userId !== where.profile.userId) return false;
@@ -107,11 +109,27 @@ class MemoryPrisma {
       });
       return task ? this.withTaskIncludes(task, include) : null;
     },
-    update: async ({ where, data }: any) => {
+    findMany: async ({ where, include, orderBy }: any) => {
+      const rows = this.ocrTasks.filter((item) => {
+        if (where.profileId && item.profileId !== where.profileId) return false;
+        if (where.status?.in && !where.status.in.includes(item.status)) return false;
+        if (where.profile) {
+          const profile = this.profiles.find((profileRow) => profileRow.id === item.profileId);
+          if (!profile || profile.userId !== where.profile.userId) return false;
+          if (where.profile.deletedAt === null && profile.deletedAt) return false;
+        }
+        return true;
+      });
+      if (orderBy?.createdAt === 'desc') {
+        rows.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+      }
+      return rows.map((task) => this.withTaskIncludes(task, include));
+    },
+    update: async ({ where, data, include }: any) => {
       const task = this.ocrTasks.find((item) => item.id === where.id);
       if (!task) throw new Error('task not found');
       Object.assign(task, data, { updatedAt: now() });
-      return task;
+      return this.withTaskIncludes(task, include);
     }
   };
 
@@ -148,6 +166,14 @@ class MemoryPrisma {
       }
       Object.assign(draft, nextData, { updatedAt: now() });
       return draft;
+    },
+    updateMany: async ({ where, data }: any) => {
+      const rows = this.drafts.filter((draft) => {
+        if (where.ocrTaskId && draft.ocrTaskId !== where.ocrTaskId) return false;
+        return true;
+      });
+      rows.forEach((draft) => Object.assign(draft, data, { updatedAt: now() }));
+      return { count: rows.length };
     }
   };
 
@@ -559,6 +585,30 @@ const getTaskPayload = getTaskResponse.json();
 assert.equal(getTaskPayload.data.id, createTaskPayload.data.id);
 assert.equal(getTaskPayload.data.drafts.length, 7);
 
+const listTasksResponse = await app.inject({
+  method: 'GET',
+  url: `/api/ocr/tasks?profileId=${profileId}&status=needs_confirmation,ready_to_save`
+});
+assert.equal(listTasksResponse.statusCode, 200);
+assert.ok(listTasksResponse.json().data.some((task: Row) => task.id === createTaskPayload.data.id));
+
+const cancelTaskSeedResponse = await app.inject({
+  method: 'POST',
+  url: '/api/ocr/tasks',
+  payload: {
+    profileId,
+    fixtureCaseIds: ['acth']
+  }
+});
+assert.equal(cancelTaskSeedResponse.statusCode, 200);
+const cancelTaskResponse = await app.inject({
+  method: 'POST',
+  url: `/api/ocr/tasks/${cancelTaskSeedResponse.json().data.id}/cancel`
+});
+assert.equal(cancelTaskResponse.statusCode, 200);
+assert.equal(cancelTaskResponse.json().data.status, 'cancelled');
+assert.ok(cancelTaskResponse.json().data.drafts.every((draft: Row) => draft.status === 'cancelled'));
+
 const editableDraft = getTaskPayload.data.drafts[0];
 const updatedDraftResponse = await app.inject({
   method: 'PATCH',
@@ -761,4 +811,4 @@ assert.ok(!afterDeleteListResponse.json().data.some((report: Row) => report.id =
 
 await app.close();
 
-console.log('Backend smoke passed: auth, profile CRUD, recheck plans, fixture OCR draft edit, report save/read/edit/delete, and duplicate check routes');
+console.log('Backend smoke passed: auth, profile CRUD, recheck plans, OCR task list/cancel, fixture OCR draft edit, report save/read/edit/delete, and duplicate check routes');
