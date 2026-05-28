@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import type { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { getRealcaseOcrDrafts, type RealcaseDraft } from '../fixtures/realcase.js';
-import { ensureDevSession } from '../services/dev-user.js';
+import { requireSession } from '../services/dev-user.js';
 import { getRequestId } from '../utils/request-id.js';
 
 const createOcrTaskSchema = z.object({
@@ -146,7 +146,9 @@ export async function registerOcrRoutes(app: FastifyInstance) {
       });
     }
 
-    const { user, profile: defaultProfile } = await ensureDevSession(app.prisma);
+    const session = await requireSession(app, request, reply);
+    if (!session) return;
+    const { user, profile: defaultProfile } = session;
     const profileId = parsed.data.profileId || defaultProfile.id;
     const profile = await app.prisma.profile.findFirst({
       where: {
@@ -225,7 +227,9 @@ export async function registerOcrRoutes(app: FastifyInstance) {
       });
     }
 
-    const { user } = await ensureDevSession(app.prisma);
+    const session = await requireSession(app, request, reply);
+    if (!session) return;
+    const { user } = session;
     const statuses = (parsed.data.status || '')
       .split(',')
       .map((status) => status.trim())
@@ -258,7 +262,9 @@ export async function registerOcrRoutes(app: FastifyInstance) {
 
   app.get<{ Params: { taskId: string } }>('/api/ocr/tasks/:taskId', async (request, reply) => {
     const requestId = getRequestId(request);
-    const { user } = await ensureDevSession(app.prisma);
+    const session = await requireSession(app, request, reply);
+    if (!session) return;
+    const { user } = session;
     const task = await findTaskForUser(app, request.params.taskId, user.id);
 
     if (!task) {
@@ -282,7 +288,9 @@ export async function registerOcrRoutes(app: FastifyInstance) {
 
   app.post<{ Params: { taskId: string } }>('/api/ocr/tasks/:taskId/cancel', async (request, reply) => {
     const requestId = getRequestId(request);
-    const { user } = await ensureDevSession(app.prisma);
+    const session = await requireSession(app, request, reply);
+    if (!session) return;
+    const { user } = session;
     const task = await findTaskForUser(app, request.params.taskId, user.id);
 
     if (!task) {
@@ -344,7 +352,9 @@ export async function registerOcrRoutes(app: FastifyInstance) {
       });
     }
 
-    const { user } = await ensureDevSession(app.prisma);
+    const session = await requireSession(app, request, reply);
+    if (!session) return;
+    const { user } = session;
     const task = await findTaskForUser(app, request.params.taskId, user.id);
     const existingDraft = task?.drafts.find((draft) => draft.id === request.params.draftId);
     if (!task || !existingDraft) {
@@ -382,7 +392,9 @@ export async function registerOcrRoutes(app: FastifyInstance) {
       });
     }
 
-    const { user } = await ensureDevSession(app.prisma);
+    const session = await requireSession(app, request, reply);
+    if (!session) return;
+    const { user } = session;
     const task = await findTaskForUser(app, request.params.taskId, user.id);
     const existingDraft = task?.drafts.find((draft) => draft.id === request.params.draftId);
     if (!task || !existingDraft) {

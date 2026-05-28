@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { getRequestId } from '../utils/request-id.js';
-import { ensureDevSession } from '../services/dev-user.js';
+import { requireSession } from '../services/dev-user.js';
 
 type ProfileShape = {
   id: string;
@@ -86,8 +86,10 @@ function serializeProfileListItem(profile: ProfileShape) {
 }
 
 export async function registerProfileRoutes(app: FastifyInstance) {
-  app.get('/api/profiles', async (request) => {
-    const { user } = await ensureDevSession(app.prisma);
+  app.get('/api/profiles', async (request, reply) => {
+    const session = await requireSession(app, request, reply);
+    if (!session) return;
+    const { user } = session;
     const profiles = await app.prisma.profile.findMany({
       where: {
         userId: user.id,
@@ -116,7 +118,9 @@ export async function registerProfileRoutes(app: FastifyInstance) {
       });
     }
 
-    const { user } = await ensureDevSession(app.prisma);
+    const session = await requireSession(app, request, reply);
+    if (!session) return;
+    const { user } = session;
     const profile = await app.prisma.profile.create({
       data: {
         ...profileData(parsed.data),
@@ -131,7 +135,9 @@ export async function registerProfileRoutes(app: FastifyInstance) {
   });
 
   app.get<{ Params: { profileId: string } }>('/api/profiles/:profileId', async (request, reply) => {
-    const { user } = await ensureDevSession(app.prisma);
+    const session = await requireSession(app, request, reply);
+    if (!session) return;
+    const { user } = session;
     const profile = await app.prisma.profile.findFirst({
       where: {
         id: request.params.profileId,
@@ -170,7 +176,9 @@ export async function registerProfileRoutes(app: FastifyInstance) {
       });
     }
 
-    const { user } = await ensureDevSession(app.prisma);
+    const session = await requireSession(app, request, reply);
+    if (!session) return;
+    const { user } = session;
     const profile = await app.prisma.profile.findFirst({
       where: {
         id: request.params.profileId,
@@ -202,7 +210,9 @@ export async function registerProfileRoutes(app: FastifyInstance) {
 
   app.delete<{ Params: { profileId: string } }>('/api/profiles/:profileId', async (request, reply) => {
     const requestId = getRequestId(request);
-    const { user } = await ensureDevSession(app.prisma);
+    const session = await requireSession(app, request, reply);
+    if (!session) return;
+    const { user } = session;
     const profile = await app.prisma.profile.findFirst({
       where: {
         id: request.params.profileId,

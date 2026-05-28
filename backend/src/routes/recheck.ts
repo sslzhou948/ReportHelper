@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { Prisma } from '@prisma/client';
 import { z } from 'zod';
-import { ensureDevSession } from '../services/dev-user.js';
+import { requireSession } from '../services/dev-user.js';
 import { getRequestId } from '../utils/request-id.js';
 
 const createRecheckPlanSchema = z.object({
@@ -111,7 +111,9 @@ async function findPlanForUser(app: FastifyInstance, planId: string, userId: str
 export async function registerRecheckRoutes(app: FastifyInstance) {
   app.get<{ Params: { profileId: string } }>('/api/profiles/:profileId/recheck-plans', async (request, reply) => {
     const requestId = getRequestId(request);
-    const { user } = await ensureDevSession(app.prisma);
+    const session = await requireSession(app, request, reply);
+    if (!session) return;
+    const { user } = session;
     const profile = await ensureProfile(app, request.params.profileId, user.id);
     if (!profile) {
       return reply.status(404).send({
@@ -159,7 +161,9 @@ export async function registerRecheckRoutes(app: FastifyInstance) {
       });
     }
 
-    const { user } = await ensureDevSession(app.prisma);
+    const session = await requireSession(app, request, reply);
+    if (!session) return;
+    const { user } = session;
     const profile = await ensureProfile(app, request.params.profileId, user.id);
     if (!profile) {
       return reply.status(404).send({
@@ -215,7 +219,9 @@ export async function registerRecheckRoutes(app: FastifyInstance) {
       });
     }
 
-    const { user } = await ensureDevSession(app.prisma);
+    const session = await requireSession(app, request, reply);
+    if (!session) return;
+    const { user } = session;
     const plan = await findPlanForUser(app, request.params.planId, user.id);
     if (!plan || !(plan.todos || []).some((todo) => todo.id === request.params.todoId)) {
       return reply.status(404).send({
@@ -238,7 +244,9 @@ export async function registerRecheckRoutes(app: FastifyInstance) {
 
   app.post<{ Params: { planId: string } }>('/api/recheck-plans/:planId/complete', async (request, reply) => {
     const requestId = getRequestId(request);
-    const { user } = await ensureDevSession(app.prisma);
+    const session = await requireSession(app, request, reply);
+    if (!session) return;
+    const { user } = session;
     const plan = await findPlanForUser(app, request.params.planId, user.id);
     if (!plan) {
       return reply.status(404).send({
@@ -265,7 +273,9 @@ export async function registerRecheckRoutes(app: FastifyInstance) {
 
   app.post<{ Params: { planId: string } }>('/api/recheck-plans/:planId/cancel', async (request, reply) => {
     const requestId = getRequestId(request);
-    const { user } = await ensureDevSession(app.prisma);
+    const session = await requireSession(app, request, reply);
+    if (!session) return;
+    const { user } = session;
     const plan = await findPlanForUser(app, request.params.planId, user.id);
     if (!plan) {
       return reply.status(404).send({

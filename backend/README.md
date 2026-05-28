@@ -9,6 +9,7 @@ This is the self-managed backend for the mini program. v1 uses local PostgreSQL 
 - WeChat AppSecret must stay in backend environment variables only.
 - Real upload/OCR is deferred; the first loop uses structured fixture OCR drafts.
 - Auth routes use a local-development `code -> openid` mapping outside production. In production they call WeChat `jscode2session` with `WECHAT_APP_ID` and `WECHAT_APP_SECRET` from backend environment variables, then issue backend JWTs.
+- Business routes require `Authorization: Bearer <token>` in production. Development and test keep a dev-session fallback so fixture smoke tests remain fast.
 
 ## First Loop
 

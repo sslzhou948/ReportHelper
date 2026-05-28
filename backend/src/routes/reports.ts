@@ -10,7 +10,7 @@ import {
   setMetricPinned,
   updateReportDetail
 } from '../services/report-query-service.js';
-import { ensureDevSession } from '../services/dev-user.js';
+import { requireSession } from '../services/dev-user.js';
 import { getRequestId } from '../utils/request-id.js';
 
 const duplicateCheckSchema = z.object({
@@ -63,7 +63,9 @@ export async function registerReportRoutes(app: FastifyInstance) {
       });
     }
 
-    const { user } = await ensureDevSession(app.prisma);
+    const session = await requireSession(app, request, reply);
+    if (!session) return;
+    const { user } = session;
     const reports = await listReportsForProfile(app.prisma, request.params.profileId, user.id, parsed.data.limit);
     if (!reports) {
       return reply.status(404).send({
@@ -77,7 +79,9 @@ export async function registerReportRoutes(app: FastifyInstance) {
 
   app.get<{ Params: { reportId: string } }>('/api/reports/:reportId', async (request, reply) => {
     const requestId = getRequestId(request);
-    const { user } = await ensureDevSession(app.prisma);
+    const session = await requireSession(app, request, reply);
+    if (!session) return;
+    const { user } = session;
     const detail = await getReportDetail(app.prisma, request.params.reportId, user.id);
     if (!detail) {
       return reply.status(404).send({
@@ -103,7 +107,9 @@ export async function registerReportRoutes(app: FastifyInstance) {
       });
     }
 
-    const { user } = await ensureDevSession(app.prisma);
+    const session = await requireSession(app, request, reply);
+    if (!session) return;
+    const { user } = session;
     const detail = await updateReportDetail(app.prisma, request.params.reportId, user.id, parsed.data);
     if (!detail) {
       return reply.status(404).send({
@@ -117,7 +123,9 @@ export async function registerReportRoutes(app: FastifyInstance) {
 
   app.delete<{ Params: { reportId: string } }>('/api/reports/:reportId', async (request, reply) => {
     const requestId = getRequestId(request);
-    const { user } = await ensureDevSession(app.prisma);
+    const session = await requireSession(app, request, reply);
+    if (!session) return;
+    const { user } = session;
     const result = await deleteReportForUser(app.prisma, request.params.reportId, user.id);
     if (!result) {
       return reply.status(404).send({
@@ -143,7 +151,9 @@ export async function registerReportRoutes(app: FastifyInstance) {
       });
     }
 
-    const { user } = await ensureDevSession(app.prisma);
+    const session = await requireSession(app, request, reply);
+    if (!session) return;
+    const { user } = session;
     const snapshots = await listMetricSnapshots(app.prisma, request.params.profileId, user.id, parsed.data);
     if (!snapshots) {
       return reply.status(404).send({
@@ -157,7 +167,9 @@ export async function registerReportRoutes(app: FastifyInstance) {
 
   app.get<{ Params: { profileId: string; metricKey: string } }>('/api/profiles/:profileId/metrics/:metricKey/history', async (request, reply) => {
     const requestId = getRequestId(request);
-    const { user } = await ensureDevSession(app.prisma);
+    const session = await requireSession(app, request, reply);
+    if (!session) return;
+    const { user } = session;
     const history = await getMetricHistory(app.prisma, request.params.profileId, user.id, request.params.metricKey);
     if (!history) {
       return reply.status(404).send({
@@ -183,7 +195,9 @@ export async function registerReportRoutes(app: FastifyInstance) {
       });
     }
 
-    const { user } = await ensureDevSession(app.prisma);
+    const session = await requireSession(app, request, reply);
+    if (!session) return;
+    const { user } = session;
     const snapshot = await setMetricPinned(app.prisma, request.params.profileId, user.id, request.params.metricKey, parsed.data.isPinned);
     if (!snapshot) {
       return reply.status(404).send({
@@ -209,7 +223,9 @@ export async function registerReportRoutes(app: FastifyInstance) {
       });
     }
 
-    const { user } = await ensureDevSession(app.prisma);
+    const session = await requireSession(app, request, reply);
+    if (!session) return;
+    const { user } = session;
     const profile = await app.prisma.profile.findFirst({
       where: {
         id: parsed.data.profileId,
@@ -251,7 +267,9 @@ export async function registerReportRoutes(app: FastifyInstance) {
       });
     }
 
-    const { user, profile: defaultProfile } = await ensureDevSession(app.prisma);
+    const session = await requireSession(app, request, reply);
+    if (!session) return;
+    const { user, profile: defaultProfile } = session;
     const profileId = parsed.data.profileId || defaultProfile.id;
     const profile = await app.prisma.profile.findFirst({
       where: {

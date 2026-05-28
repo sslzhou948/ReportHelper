@@ -449,6 +449,30 @@ assert.ok(loginPayload.data.token);
 assert.ok(loginPayload.data.refreshToken);
 assert.ok(loginPayload.data.userId);
 
+const prodApp = buildApp({
+  env: {
+    ...env,
+    NODE_ENV: 'production'
+  },
+  prisma: prisma as any
+});
+const prodNoTokenResponse = await prodApp.inject({
+  method: 'GET',
+  url: '/api/profiles'
+});
+assert.equal(prodNoTokenResponse.statusCode, 401);
+const prodAccessToken = prodApp.jwt.sign({ sub: loginPayload.data.userId, typ: 'access' }, { expiresIn: '2h' });
+const prodProfilesResponse = await prodApp.inject({
+  method: 'GET',
+  url: '/api/profiles',
+  headers: {
+    Authorization: `Bearer ${prodAccessToken}`
+  }
+});
+assert.equal(prodProfilesResponse.statusCode, 200);
+assert.ok(prodProfilesResponse.json().data.length >= 1);
+await prodApp.close();
+
 const refreshResponse = await app.inject({
   method: 'POST',
   url: '/api/auth/refresh',
