@@ -236,11 +236,41 @@ export async function checkDuplicateReports(prisma: PrismaClient, profileId: str
   );
 }
 
+async function savedReportsForTask(prisma: PrismaClient, profileId: string, ocrTaskId: string) {
+  const reports = await prisma.report.findMany({
+    where: {
+      profileId,
+      ocrTaskId,
+      deletedAt: null
+    },
+    orderBy: [
+      { reportDate: 'desc' },
+      { createdAt: 'desc' }
+    ]
+  });
+  return reports.map((report) => ({
+    draftId: report.draftId || '',
+    reportId: report.id,
+    action: report.replacedByReportId ? 'replaced' : 'created',
+    replacedReportId: report.replacedByReportId || null
+  }));
+}
+
 export async function batchCreateReports(prisma: PrismaClient, input: BatchCreateReportsInput) {
   const duplicateDecisions = input.duplicateDecisions || [];
   const decisionByDraft = new Map(duplicateDecisions.map((decision) => [decision.draftId, decision]));
 
   return prisma.$transaction(async (tx) => {
+    const task = await tx.ocrTask.findFirst({
+      where: {
+        id: input.ocrTaskId,
+        profileId: input.profileId
+      }
+    });
+    if (task?.status === 'confirmed') {
+      return savedReportsForTask(tx as PrismaClient, input.profileId, input.ocrTaskId);
+    }
+
     const drafts = await getDraftsForTask(tx as PrismaClient, input.profileId, input.ocrTaskId);
     const candidates = await checkDuplicateReports(tx as PrismaClient, input.profileId, drafts);
     const unresolved = candidates.filter((candidate) => !candidate.draftId || !decisionByDraft.has(candidate.draftId));

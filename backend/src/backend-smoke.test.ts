@@ -192,6 +192,7 @@ class MemoryPrisma {
     findMany: async ({ where, include, orderBy, take }: any) => {
       const rows = this.reports.filter((report) => {
         if (where.profileId && report.profileId !== where.profileId) return false;
+        if (where.ocrTaskId && report.ocrTaskId !== where.ocrTaskId) return false;
         if (where.deletedAt === null && report.deletedAt) return false;
         if (where.analysisPolicy?.not && report.analysisPolicy === where.analysisPolicy.not) return false;
         return true;
@@ -928,6 +929,18 @@ const saveResponse = await app.inject({
 assert.equal(saveResponse.statusCode, 200);
 const savePayload = saveResponse.json();
 assert.equal(savePayload.data.reports.length, 7);
+assert.equal(prisma.reports.filter((report) => !report.deletedAt).length, 7);
+
+const repeatSaveResponse = await app.inject({
+  method: 'POST',
+  url: '/api/reports/batch-create',
+  payload: {
+    profileId,
+    ocrTaskId: createTaskPayload.data.id
+  }
+});
+assert.equal(repeatSaveResponse.statusCode, 200);
+assert.equal(repeatSaveResponse.json().data.reports.length, 7);
 assert.equal(prisma.reports.filter((report) => !report.deletedAt).length, 7);
 
 const listReportsResponse = await app.inject({
