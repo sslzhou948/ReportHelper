@@ -2,14 +2,35 @@ const { api } = require('../../utils/api');
 const { requestWxLoginCode } = require('../../utils/auth');
 const { showApiErrorToast } = require('../../utils/error');
 
+function selectionState(relation, agreed) {
+  return {
+    selectedRelation: relation,
+    selfSelectedClass: relation === '\u6211\u81ea\u5df1' ? 'selected' : '',
+    familySelectedClass: relation === '\u5988\u5988' ? 'selected' : '',
+    continueDisabledClass: agreed && relation ? '' : 'disabled'
+  };
+}
+
 Page({
   data: {
     agreed: false,
-    loggingIn: false
+    loggingIn: false,
+    selectedRelation: '',
+    selfSelectedClass: '',
+    familySelectedClass: '',
+    continueDisabledClass: 'disabled'
   },
 
   toggleAgree() {
-    this.setData({ agreed: !this.data.agreed });
+    const agreed = !this.data.agreed;
+    this.setData({
+      agreed,
+      ...selectionState(this.data.selectedRelation, agreed)
+    });
+  },
+
+  selectRelation(event) {
+    this.setData(selectionState(event.currentTarget.dataset.relation || '', this.data.agreed));
   },
 
   openAgreement() {
@@ -42,10 +63,15 @@ Page({
     });
   },
 
-  goAdd(event) {
+  continueCreate() {
+    if (!this.data.selectedRelation) {
+      wx.showToast({ title: '\u8bf7\u5148\u9009\u62e9\u4e3a\u8c01\u521b\u5efa\u6863\u6848', icon: 'none' });
+      return;
+    }
+
     this.login().then((ok) => {
       if (!ok) return;
-      wx.navigateTo({ url: `/pages/profile/add?relation=${event.currentTarget.dataset.relation || ''}` });
+      wx.navigateTo({ url: `/pages/profile/add?relation=${this.data.selectedRelation}` });
     });
   }
 });

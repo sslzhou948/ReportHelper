@@ -68,6 +68,7 @@ const uploadEditDetailJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', '
 const uploadConflictJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'upload', 'conflict.js'), 'utf8');
 const profileOnboardJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'onboard.js'), 'utf8');
 const profileOnboardWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'onboard.wxml'), 'utf8');
+const profileOnboardWxss = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'onboard.wxss'), 'utf8');
 const profileAgreementWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'agreement.wxml'), 'utf8');
 const profilePrivacyWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'privacy.wxml'), 'utf8');
 const profileIndexJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'index.js'), 'utf8');
@@ -160,7 +161,14 @@ assert.ok(app.pages.includes('pages/profile/agreement'), 'onboard agreement page
 assert.ok(app.pages.includes('pages/profile/privacy'), 'onboard privacy page must be registered');
 assert.ok(profileOnboardJs.includes('openAgreement()') && profileOnboardJs.includes('/pages/profile/agreement'), 'onboard must expose a user agreement entry');
 assert.ok(profileOnboardJs.includes('openPrivacy()') && profileOnboardJs.includes('/pages/profile/privacy'), 'onboard must expose a privacy policy entry');
-assert.ok(profileOnboardWxml.includes('bindtap="openAgreement"') && profileOnboardWxml.includes('bindtap="openPrivacy"'), 'onboard agreement and privacy text must be tappable');
+assert.ok(profileOnboardJs.includes('selectRelation(event)') && profileOnboardJs.includes('continueCreate()'), 'onboard must separate relation selection from login continuation');
+assert.ok(profileOnboardJs.includes('selectionState(relation, agreed)'), 'onboard selected and disabled states must be precomputed in page JS');
+assert.ok(profileOnboardWxml.includes('微信登录并继续'), 'onboard must show an explicit WeChat login continuation CTA');
+assert.ok(profileOnboardWxml.includes('创建第一份档案') && profileOnboardWxml.includes('为我自己') && profileOnboardWxml.includes('为我的亲属'), 'onboard must clearly frame first archive creation and relation choice');
+assert.ok(profileOnboardWxml.includes('catchtap="openAgreement"') && profileOnboardWxml.includes('catchtap="openPrivacy"'), 'onboard agreement and privacy text must be tappable without toggling the checkbox');
+assert.ok(profileOnboardWxml.includes('agreement-row') && profileOnboardWxml.includes('checkbox'), 'onboard agreement must use a compact checkbox row');
+assert.ok(!profileOnboardWxml.includes('bindtap="toggleAgree">\n      <view class="choice-icon'), 'onboard agreement must not be presented as a large choice card');
+assert.ok(profileOnboardWxss.includes('.checkbox') && !profileOnboardWxss.includes('.choice-icon.muted'), 'onboard agreement checkbox must use compact checkbox styling');
 assert.ok(profileAgreementWxml.includes('\u4e0d\u63d0\u4f9b\u8bca\u65ad'), 'agreement must state the product is not a diagnosis service');
 assert.ok(profilePrivacyWxml.includes('OCR') && profilePrivacyWxml.includes('\u7b2c\u4e09\u65b9\u670d\u52a1'), 'privacy policy must disclose OCR and third-party service handling');
 assert.ok(homeIndexJs.includes('isProfileRequiredError(error)'), 'home must treat empty profile as a create-profile transition');

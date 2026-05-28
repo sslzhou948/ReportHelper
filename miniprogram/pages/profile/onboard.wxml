@@ -1,29 +1,36 @@
-﻿<view class="page">
+<view class="page">
   <view class="banner onboard-banner">
     <view class="title">欢迎使用病例夹</view>
-    <view class="sub white">创建第一份档案</view>
+    <view class="sub white">微信登录后创建第一份健康档案</view>
   </view>
   <view class="pad mt-16">
-    <view class="sub">这份档案是谁的？后续可以创建更多档案，同时管理自己和亲属的健康数据。</view>
-    <view class="choice card card-pad mt-12" bindtap="toggleAgree">
-      <view class="choice-icon {{agreed ? '' : 'muted'}}">{{agreed ? '✓' : ''}}</view>
-      <view class="flex"><view class="body strong">我已阅读并同意</view><view class="tiny">仅用于健康数据管理，不提供诊断或治疗建议</view></view>
+    <view class="intro-card">
+      <view class="body strong">创建第一份档案</view>
+      <view class="sub mt-8">请先选择这份档案是为自己还是为亲属创建。后续可以继续新增多份档案，分别管理报告、指标和复查计划。</view>
     </view>
-    <view class="agreement-links mt-8">
-      <text bindtap="openAgreement">用户协议</text>
-      <text class="link-sep">和</text>
-      <text bindtap="openPrivacy">隐私政策</text>
-    </view>
-    <view class="choice card card-pad mt-12" data-relation="我自己" bindtap="goAdd">
+    <view class="choice card card-pad mt-12 {{selfSelectedClass}}" data-relation="我自己" bindtap="selectRelation">
       <view class="choice-icon">我</view>
       <view class="flex"><view class="body strong">为我自己</view><view class="tiny">管理自己的健康数据</view></view>
       <view class="arrow">›</view>
     </view>
-    <view class="choice card card-pad mt-12" data-relation="妈妈" bindtap="goAdd">
+    <view class="choice card card-pad mt-12 {{familySelectedClass}}" data-relation="妈妈" bindtap="selectRelation">
       <view class="choice-icon warm">亲</view>
       <view class="flex"><view class="body strong">为我的亲属</view><view class="tiny">帮父母 / 长辈管理报告与复查</view></view>
       <view class="arrow">›</view>
     </view>
-    <view class="tiny center mt-16">所有档案的数据归患者本人所有，本应用严格保护隐私</view>
+    <view class="onboard-footer">
+      <view class="agreement-row" bindtap="toggleAgree">
+        <view class="checkbox {{agreed ? 'checked' : ''}}">{{agreed ? '✓' : ''}}</view>
+        <view class="agreement-copy">
+          <text>我已阅读并同意</text>
+          <text class="agreement-link" catchtap="openAgreement">用户协议</text>
+          <text>和</text>
+          <text class="agreement-link" catchtap="openPrivacy">隐私政策</text>
+        </view>
+      </view>
+      <view class="tiny mt-8">微信登录仅用于创建和同步档案；本应用用于健康数据管理，不提供诊断或治疗建议。</view>
+      <view class="btn mt-12 {{continueDisabledClass}}" bindtap="continueCreate">{{loggingIn ? '登录中...' : '微信登录并继续'}}</view>
+      <view class="tiny center mt-12">所有档案的数据归患者本人所有，本应用严格保护隐私</view>
+    </view>
   </view>
 </view>
