@@ -2,9 +2,11 @@ const { api } = require('../../utils/api');
 const { buildProfileFields } = require('../../utils/profile');
 
 function refreshFields(page, profile) {
+  const medications = Array.isArray(profile && profile.medications) ? profile.medications : [];
   page.setData({
     profile,
-    fields: buildProfileFields(profile || {})
+    fields: buildProfileFields(profile || {}),
+    medications
   });
 }
 
@@ -12,6 +14,7 @@ Page({
   data: {
     profile: null,
     fields: [],
+    medications: [],
     loading: false
   },
   onLoad(query) {
@@ -45,10 +48,7 @@ Page({
   editField(event) {
     const key = event.currentTarget.dataset.key;
     const label = event.currentTarget.dataset.label || '\u5b57\u6bb5';
-    if (!key) {
-      wx.showToast({ title: '\u7528\u836f\u7f16\u8f91\u540e\u7eed\u63a5\u5165', icon: 'none' });
-      return;
-    }
+    if (!key) return;
     if (key === 'gender') {
       wx.showActionSheet({
         itemList: ['\u5973', '\u7537'],

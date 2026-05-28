@@ -127,8 +127,10 @@ assert.ok(!recheckWxml.includes('<button class="row add-row"'), 'recheck add row
 assert.ok(recheckWxml.includes('bindtap="goNextDetail"') && recheckJs.includes('goNextDetail()'), 'next recheck plan must expose detail/cancel entry');
 
 const profileWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'index.wxml'), 'utf8');
+const profileArchiveWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'archive.wxml'), 'utf8');
 assert.ok(!profileWxml.includes('<button class="row"'), 'profile menu rows must not use native button layout');
 assert.ok(!profileWxml.includes('<button class="row danger"'), 'profile danger rows must not use native button layout');
 assert.ok(!profileWxml.includes('<button class="btn secondary logout"'), 'profile logout control must not use native button layout');
+assert.ok(!profileArchiveWxml.includes('他莫昔芬'), 'profile archive must not show hardcoded medication records');
 
 console.log(`Static checks passed: ${app.pages.length} pages, ${wxmlFiles.length} WXML files`);

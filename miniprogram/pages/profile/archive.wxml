@@ -19,16 +19,20 @@
   </view>
   <view class="section-title">
     <view>用药记录</view>
-    <view class="section-action" bindtap="editField">+ 添加</view>
   </view>
   <view class="pad">
     <view class="card">
-      <view class="row" bindtap="editField">
+      <view wx:for="{{medications}}" wx:key="id" class="row">
         <view class="flex">
-          <view class="body strong">他莫昔芬</view>
-          <view class="tiny">10mg · 每日 2 次 · 2024 年 5 月起</view>
+          <view class="body strong">{{item.name}}</view>
+          <view class="tiny">{{item.dose}} · {{item.frequency}} · {{item.startedAt}}</view>
         </view>
-        <view class="arrow">›</view>
+      </view>
+      <view wx:if="{{medications.length === 0}}" class="row">
+        <view class="flex">
+          <view class="body strong">暂无用药记录</view>
+          <view class="tiny">如需记录，可先写入备注或病情信息</view>
+        </view>
       </view>
     </view>
   </view>
