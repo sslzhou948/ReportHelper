@@ -1,9 +1,16 @@
 function normalizePhotos(photos) {
-  return (photos || []).map((photo, index) => ({
-    ...photo,
-    id: photo.id || index + 1,
-    group: Number(photo.group) || 0
-  }));
+  const seen = new Set();
+  return (photos || []).reduce((acc, photo, index) => {
+    const id = photo.id || index + 1;
+    if (seen.has(id)) return acc;
+    seen.add(id);
+    acc.push({
+      ...photo,
+      id,
+      group: Number(photo.group) || 0
+    });
+    return acc;
+  }, []);
 }
 
 function buildPhotoBatches(photos) {

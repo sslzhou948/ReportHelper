@@ -71,6 +71,11 @@ const uploadReports = buildRecognitionReports(uploadPhotos);
 assert.strictEqual(uploadReports.length, 3);
 assert.deepStrictEqual(uploadReports.map((report) => report.pageCount), [2, 1, 1]);
 assert.strictEqual(uploadReports.filter((report) => report.isMerged).length, 1, 'only the grouped photos should produce a merged report');
+assert.deepStrictEqual(
+  buildPhotoBatches([{ id: 1, group: 1 }, { id: 1, group: 1 }, { id: 2, group: 1 }]).map((batch) => batch.photoIds),
+  [[1, 2]],
+  'duplicate photo ids should only be counted once in a report group'
+);
 
 assert.strictEqual(realcaseOcrDrafts.length, 7, 'realcase OCR baseline should cover all provided images');
 assert.ok(realcaseOcrDrafts.some((draft) => (draft.metrics || []).some((metric) => metric.tone === 'high')), 'realcase baseline should include abnormal metrics');
