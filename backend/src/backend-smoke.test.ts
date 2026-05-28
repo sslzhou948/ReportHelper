@@ -14,6 +14,8 @@ class MemoryPrisma {
   profiles: Row[] = [];
   ocrTasks: Row[] = [];
   drafts: Row[] = [];
+  reports: Row[] = [];
+  reportMetricValues: Row[] = [];
 
   user = {
     upsert: async ({ where, create }: any) => {
@@ -88,6 +90,12 @@ class MemoryPrisma {
         return true;
       });
       return task ? this.withTaskIncludes(task, include) : null;
+    },
+    update: async ({ where, data }: any) => {
+      const task = this.ocrTasks.find((item) => item.id === where.id);
+      if (!task) throw new Error('task not found');
+      Object.assign(task, data, { updatedAt: now() });
+      return task;
     }
   };
 
@@ -98,6 +106,63 @@ class MemoryPrisma {
           id: randomUUID(),
           ...item,
           version: 1,
+          createdAt: now(),
+          updatedAt: now()
+        });
+      }
+      return { count: data.length };
+    },
+    findMany: async ({ where, orderBy }: any) => {
+      const rows = this.drafts.filter((draft) => {
+        if (where.ocrTaskId && draft.ocrTaskId !== where.ocrTaskId) return false;
+        if (where.profileId && draft.profileId !== where.profileId) return false;
+        return true;
+      });
+      if (orderBy?.createdAt === 'asc') {
+        return rows.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+      }
+      return rows;
+    }
+  };
+
+  report = {
+    findMany: async ({ where, include }: any) => {
+      const rows = this.reports.filter((report) => {
+        if (where.profileId && report.profileId !== where.profileId) return false;
+        if (where.deletedAt === null && report.deletedAt) return false;
+        return true;
+      });
+      if (!include?.metrics) return rows;
+      return rows.map((report) => ({
+        ...report,
+        metrics: this.reportMetricValues.filter((metric) => metric.reportId === report.id)
+      }));
+    },
+    create: async ({ data }: any) => {
+      const report = {
+        id: randomUUID(),
+        ...data,
+        createdAt: now(),
+        updatedAt: now(),
+        deletedAt: null
+      };
+      this.reports.push(report);
+      return report;
+    },
+    update: async ({ where, data }: any) => {
+      const report = this.reports.find((item) => item.id === where.id);
+      if (!report) throw new Error('report not found');
+      Object.assign(report, data, { updatedAt: now() });
+      return report;
+    }
+  };
+
+  reportMetricValue = {
+    createMany: async ({ data }: any) => {
+      for (const item of data) {
+        this.reportMetricValues.push({
+          id: randomUUID(),
+          ...item,
           createdAt: now(),
           updatedAt: now()
         });
@@ -165,6 +230,71 @@ const getTaskPayload = getTaskResponse.json();
 assert.equal(getTaskPayload.data.id, createTaskPayload.data.id);
 assert.equal(getTaskPayload.data.drafts.length, 7);
 
+const saveResponse = await app.inject({
+  method: 'POST',
+  url: '/api/reports/batch-create',
+  payload: {
+    profileId,
+    ocrTaskId: createTaskPayload.data.id
+  }
+});
+assert.equal(saveResponse.statusCode, 200);
+const savePayload = saveResponse.json();
+assert.equal(savePayload.data.reports.length, 7);
+assert.equal(prisma.reports.filter((report) => !report.deletedAt).length, 7);
+
+const secondTaskResponse = await app.inject({
+  method: 'POST',
+  url: '/api/ocr/tasks',
+  payload: {
+    profileId,
+    fixtureCaseIds: ['acth', 'thyroid', 'cortisol', 'liver_function', 'uric_electrolyte_lipid', 'chest_ct_plain', 'abdomen_pelvis_ct_plain']
+  }
+});
+assert.equal(secondTaskResponse.statusCode, 200);
+const secondTaskPayload = secondTaskResponse.json();
+
+const duplicateResponse = await app.inject({
+  method: 'POST',
+  url: '/api/reports/duplicate-check',
+  payload: {
+    profileId,
+    ocrTaskId: secondTaskPayload.data.id
+  }
+});
+assert.equal(duplicateResponse.statusCode, 200);
+const duplicatePayload = duplicateResponse.json();
+assert.equal(duplicatePayload.data.hasDuplicates, true);
+assert.equal(duplicatePayload.data.candidates.length, 7);
+
+const blockedSaveResponse = await app.inject({
+  method: 'POST',
+  url: '/api/reports/batch-create',
+  payload: {
+    profileId,
+    ocrTaskId: secondTaskPayload.data.id
+  }
+});
+assert.equal(blockedSaveResponse.statusCode, 409);
+assert.equal(blockedSaveResponse.json().error.code, 'DUPLICATE_REPORT_REQUIRES_DECISION');
+
+const skipSaveResponse = await app.inject({
+  method: 'POST',
+  url: '/api/reports/batch-create',
+  payload: {
+    profileId,
+    ocrTaskId: secondTaskPayload.data.id,
+    duplicateDecisions: duplicatePayload.data.candidates.map((candidate: Row) => ({
+      draftId: candidate.draftId,
+      decision: 'skip',
+      existingReportId: candidate.existingReportId
+    }))
+  }
+});
+assert.equal(skipSaveResponse.statusCode, 200);
+assert.equal(skipSaveResponse.json().data.reports.length, 0);
+assert.equal(prisma.reports.filter((report) => !report.deletedAt).length, 7);
+
 await app.close();
 
-console.log('Backend smoke passed: profiles and fixture OCR task routes');
+console.log('Backend smoke passed: fixture OCR, duplicate check, and batch save routes');
