@@ -1,5 +1,6 @@
 const { api } = require('../../utils/api');
 const { daysBetween, formatMonthDay } = require('../../utils/date');
+const { isProfileRequiredError } = require('../../utils/profile');
 
 function decoratePlan(plan) {
   const date = new Date(`${plan.date}T00:00:00`);
@@ -55,8 +56,9 @@ Page({
     const app = getApp();
     app.ensureCurrentProfileId(api).then((profileId) => api.listRecheckPlans(profileId)).then((recheck) => {
       this.setData({ ...buildPlanState(recheck), loading: false });
-    }).catch(() => {
+    }).catch((error) => {
       this.setData({ loading: false });
+      if (isProfileRequiredError(error)) return;
       wx.showToast({ title: '\u52a0\u8f7d\u590d\u67e5\u8ba1\u5212\u5931\u8d25', icon: 'none' });
     });
   },

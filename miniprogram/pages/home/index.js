@@ -1,5 +1,6 @@
 const { api } = require('../../utils/api');
 const { formatMonthDay, daysBetween } = require('../../utils/date');
+const { isProfileRequiredError } = require('../../utils/profile');
 
 const ACTIVE_OCR_STATUSES = ['queued', 'processing', 'needs_confirmation', 'ready_to_save', 'failed'];
 
@@ -116,8 +117,9 @@ Page({
         recognizing: pendingOcrTask ? this.data.recognizing : false,
         loading: false
       });
-    }).catch(() => {
+    }).catch((error) => {
       this.setData({ loading: false });
+      if (isProfileRequiredError(error)) return;
       wx.showToast({ title: '\u52a0\u8f7d\u9996\u9875\u6570\u636e\u5931\u8d25', icon: 'none' });
     });
   },

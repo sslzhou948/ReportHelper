@@ -13,7 +13,7 @@ const {
   inferMimeType,
   validateUploadFiles
 } = require('../miniprogram/utils/upload');
-const { validateProfile } = require('../miniprogram/utils/profile');
+const { isProfileRequiredError, validateProfile } = require('../miniprogram/utils/profile');
 const { buildDefaultTodos, validateRecheckPlan } = require('../miniprogram/utils/recheck');
 const { isRecognizingTaskStatus, shouldShowRecognitionSlow } = require('../miniprogram/utils/ocr-task');
 const { requestWxLoginCode } = require('../miniprogram/utils/auth');
@@ -457,6 +457,8 @@ assert.strictEqual(validateRecheckPlan({
 }, new Date('2026-05-27T00:00:00')).ok, false);
 assert.strictEqual(validateProfile({ relation: '妈妈', realName: '王芬' }).ok, true);
 assert.strictEqual(validateProfile({ relation: '', realName: '' }).ok, false);
+assert.strictEqual(isProfileRequiredError({ code: 'PROFILE_REQUIRED' }), true);
+assert.strictEqual(isProfileRequiredError({ code: 'NETWORK_ERROR' }), false);
 
 const storage = createMemoryStorage({ token: 'token_1' });
 let capturedRequest = null;

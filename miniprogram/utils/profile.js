@@ -47,11 +47,16 @@ function validateProfile(profile) {
   };
 }
 
+function isProfileRequiredError(error) {
+  return !!error && error.code === 'PROFILE_REQUIRED';
+}
+
 module.exports = {
   avatarText,
   buildProfileFields,
   formatProfileSummary,
   genderText,
+  isProfileRequiredError,
   treatmentText,
   validateProfile
 };

@@ -63,6 +63,7 @@ const uploadPickJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'upload
 const uploadConfirmJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'upload', 'confirm.js'), 'utf8');
 const uploadEditDetailJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'upload', 'edit-detail.js'), 'utf8');
 const profileOnboardJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'onboard.js'), 'utf8');
+const profileIndexJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'index.js'), 'utf8');
 const profileExportJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'export.js'), 'utf8');
 const profileExportWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'export.wxml'), 'utf8');
 const reportDetailJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'health', 'report-detail.js'), 'utf8');
@@ -120,6 +121,10 @@ assert.ok(!profileExportWxml.includes('暂不创建导出任务'), 'profile expo
 
 assert.ok(profileOnboardJs.includes('requestWxLoginCode()'), 'onboard login must use the native wx.login result');
 assert.ok(!profileOnboardJs.includes('mock_code'), 'onboard login must not continue with a mock code after wx.login failure');
+assert.ok(fs.readFileSync(path.join(miniprogramRoot, 'pages', 'home', 'index.js'), 'utf8').includes('isProfileRequiredError(error)'), 'home must treat empty profile as a create-profile transition');
+assert.ok(fs.readFileSync(path.join(miniprogramRoot, 'pages', 'health', 'index.js'), 'utf8').includes('isProfileRequiredError(error)'), 'health must treat empty profile as a create-profile transition');
+assert.ok(fs.readFileSync(path.join(miniprogramRoot, 'pages', 'recheck', 'index.js'), 'utf8').includes('isProfileRequiredError(error)'), 'recheck must treat empty profile as a create-profile transition');
+assert.ok(profileIndexJs.includes('isProfileRequiredError(error)'), 'profile must treat empty profile as a create-profile transition');
 
 const healthWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'health', 'index.wxml'), 'utf8');
 const metricRowWxml = fs.readFileSync(path.join(miniprogramRoot, 'components', 'metric-row', 'metric-row.wxml'), 'utf8');

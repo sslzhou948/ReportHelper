@@ -1,4 +1,5 @@
 const { api } = require('../../utils/api');
+const { isProfileRequiredError } = require('../../utils/profile');
 
 const ROUTE_MAP = {
   '\u6570\u636e\u5bfc\u51fa': '/pages/profile/export',
@@ -40,8 +41,9 @@ Page({
         recheckCount: (recheck.nextPlan ? 1 : 0) + (recheck.otherPlans || []).length,
         loading: false
       });
-    }).catch(() => {
+    }).catch((error) => {
       this.setData({ loading: false });
+      if (isProfileRequiredError(error)) return;
       wx.showToast({ title: '\u52a0\u8f7d\u6211\u7684\u9875\u9762\u5931\u8d25', icon: 'none' });
     });
   },

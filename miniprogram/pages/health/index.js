@@ -1,5 +1,6 @@
 const { api } = require('../../utils/api');
 const { formatMonthDay } = require('../../utils/date');
+const { isProfileRequiredError } = require('../../utils/profile');
 
 const FILTER_ALL = '\u5168\u90e8';
 const FILTER_ABNORMAL = '\u5f02\u5e38';
@@ -100,8 +101,9 @@ Page({
         reportsByMonth: buildReportsByMonth(reports),
         loading: false
       });
-    }).catch(() => {
+    }).catch((error) => {
       this.setData({ loading: false });
+      if (isProfileRequiredError(error)) return;
       wx.showToast({ title: '\u52a0\u8f7d\u5065\u5eb7\u6570\u636e\u5931\u8d25', icon: 'none' });
     });
   },
