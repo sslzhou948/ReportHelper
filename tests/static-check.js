@@ -67,6 +67,9 @@ const uploadConfirmJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'upl
 const uploadEditDetailJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'upload', 'edit-detail.js'), 'utf8');
 const uploadConflictJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'upload', 'conflict.js'), 'utf8');
 const profileOnboardJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'onboard.js'), 'utf8');
+const profileOnboardWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'onboard.wxml'), 'utf8');
+const profileAgreementWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'agreement.wxml'), 'utf8');
+const profilePrivacyWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'privacy.wxml'), 'utf8');
 const profileIndexJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'index.js'), 'utf8');
 const profileExportJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'export.js'), 'utf8');
 const profileExportWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'export.wxml'), 'utf8');
@@ -153,6 +156,13 @@ assert.ok(backendUploadStorageTs.includes('signUpload'), 'backend upload storage
 
 assert.ok(profileOnboardJs.includes('requestWxLoginCode()'), 'onboard login must use the native wx.login result');
 assert.ok(!profileOnboardJs.includes('mock_code'), 'onboard login must not continue with a mock code after wx.login failure');
+assert.ok(app.pages.includes('pages/profile/agreement'), 'onboard agreement page must be registered');
+assert.ok(app.pages.includes('pages/profile/privacy'), 'onboard privacy page must be registered');
+assert.ok(profileOnboardJs.includes('openAgreement()') && profileOnboardJs.includes('/pages/profile/agreement'), 'onboard must expose a user agreement entry');
+assert.ok(profileOnboardJs.includes('openPrivacy()') && profileOnboardJs.includes('/pages/profile/privacy'), 'onboard must expose a privacy policy entry');
+assert.ok(profileOnboardWxml.includes('bindtap="openAgreement"') && profileOnboardWxml.includes('bindtap="openPrivacy"'), 'onboard agreement and privacy text must be tappable');
+assert.ok(profileAgreementWxml.includes('\u4e0d\u63d0\u4f9b\u8bca\u65ad'), 'agreement must state the product is not a diagnosis service');
+assert.ok(profilePrivacyWxml.includes('OCR') && profilePrivacyWxml.includes('\u7b2c\u4e09\u65b9\u670d\u52a1'), 'privacy policy must disclose OCR and third-party service handling');
 assert.ok(homeIndexJs.includes('isProfileRequiredError(error)'), 'home must treat empty profile as a create-profile transition');
 assert.ok(healthIndexJs.includes('isProfileRequiredError(error)'), 'health must treat empty profile as a create-profile transition');
 assert.ok(fs.readFileSync(path.join(miniprogramRoot, 'pages', 'recheck', 'index.js'), 'utf8').includes('isProfileRequiredError(error)'), 'recheck must treat empty profile as a create-profile transition');

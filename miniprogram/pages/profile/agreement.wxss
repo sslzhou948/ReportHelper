@@ -1,0 +1,28 @@
+.legal-card {
+  margin-bottom: 20rpx;
+  padding: 28rpx;
+  border-radius: 28rpx;
+  background: #FFFFFF;
+  box-shadow: 0 10rpx 28rpx rgba(77, 70, 61, 0.06);
+}
+
+.legal-title {
+  color: var(--ink-1);
+  font-size: 32rpx;
+  font-weight: 800;
+  line-height: 44rpx;
+}
+
+.legal-body {
+  margin-top: 12rpx;
+  color: var(--ink-2);
+  font-size: 28rpx;
+  line-height: 46rpx;
+}
+
+.legal-note {
+  margin: 6rpx 8rpx 40rpx;
+  color: var(--ink-3);
+  font-size: 24rpx;
+  line-height: 38rpx;
+}

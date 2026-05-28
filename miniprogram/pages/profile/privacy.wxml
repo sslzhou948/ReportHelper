@@ -1,0 +1,30 @@
+<view class="page">
+  <view class="nav">
+    <view class="nav-side left" bindtap="goBack">‹ 返回</view>
+    <view class="nav-title">隐私政策</view>
+    <view class="nav-side right"></view>
+  </view>
+  <view class="pad mt-12">
+    <view class="legal-card">
+      <view class="legal-title">我们收集的信息</view>
+      <view class="legal-body">为提供病例夹服务，我们会处理用户主动上传的报告图片、识别后的报告信息、指标记录、复查计划、档案关系和微信登录所需的身份标识。</view>
+    </view>
+    <view class="legal-card">
+      <view class="legal-title">使用目的</view>
+      <view class="legal-body">相关信息仅用于报告识别、档案归档、趋势展示、复查提醒、异常提示、导出和必要的系统安全审计。</view>
+    </view>
+    <view class="legal-card">
+      <view class="legal-title">存储与保护</view>
+      <view class="legal-body">我们会按最小必要原则保存数据，并通过访问控制、接口校验和日志审计降低泄露、误用和越权访问风险。</view>
+    </view>
+    <view class="legal-card">
+      <view class="legal-title">第三方服务</view>
+      <view class="legal-body">微信登录、图片上传和 OCR 识别可能依赖微信或经授权的服务提供方。正式上线前会在本政策中列明具体服务名称、用途和数据范围。</view>
+    </view>
+    <view class="legal-card">
+      <view class="legal-title">用户权利</view>
+      <view class="legal-body">用户可以查看、更正、删除自己的档案和报告数据。代亲属管理档案时，应确保已取得相应授权。</view>
+    </view>
+    <view class="legal-note">本页面为产品内基础隐私说明，正式上线前应由法务或合规人员完成最终审阅。</view>
+  </view>
+</view>

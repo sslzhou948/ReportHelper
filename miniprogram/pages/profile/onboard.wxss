@@ -45,6 +45,20 @@
   font-size: 40rpx;
 }
 
+.agreement-links {
+  padding: 0 12rpx;
+  color: var(--primary);
+  font-size: 26rpx;
+  font-weight: 700;
+  line-height: 40rpx;
+}
+
+.link-sep {
+  margin: 0 10rpx;
+  color: var(--ink-3);
+  font-weight: 500;
+}
+
 .center {
   text-align: center;
 }

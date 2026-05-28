@@ -12,6 +12,14 @@ Page({
     this.setData({ agreed: !this.data.agreed });
   },
 
+  openAgreement() {
+    wx.navigateTo({ url: '/pages/profile/agreement' });
+  },
+
+  openPrivacy() {
+    wx.navigateTo({ url: '/pages/profile/privacy' });
+  },
+
   login() {
     if (this.data.loggingIn) return Promise.resolve(false);
     if (!this.data.agreed) {

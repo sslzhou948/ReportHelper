@@ -7,7 +7,12 @@
     <view class="sub">这份档案是谁的？后续可以创建更多档案，同时管理自己和亲属的健康数据。</view>
     <view class="choice card card-pad mt-12" bindtap="toggleAgree">
       <view class="choice-icon {{agreed ? '' : 'muted'}}">{{agreed ? '✓' : ''}}</view>
-      <view class="flex"><view class="body strong">同意用户协议与隐私政策</view><view class="tiny">仅用于健康数据管理，不提供诊断或治疗建议</view></view>
+      <view class="flex"><view class="body strong">我已阅读并同意</view><view class="tiny">仅用于健康数据管理，不提供诊断或治疗建议</view></view>
+    </view>
+    <view class="agreement-links mt-8">
+      <text bindtap="openAgreement">用户协议</text>
+      <text class="link-sep">和</text>
+      <text bindtap="openPrivacy">隐私政策</text>
     </view>
     <view class="choice card card-pad mt-12" data-relation="我自己" bindtap="goAdd">
       <view class="choice-icon">我</view>

@@ -1,0 +1,26 @@
+<view class="page">
+  <view class="nav">
+    <view class="nav-side left" bindtap="goBack">‹ 返回</view>
+    <view class="nav-title">用户协议</view>
+    <view class="nav-side right"></view>
+  </view>
+  <view class="pad mt-12">
+    <view class="legal-card">
+      <view class="legal-title">服务说明</view>
+      <view class="legal-body">我的病例夹用于帮助用户整理检查报告、追踪复查事项和管理健康资料。应用不提供诊断、治疗建议或医疗决策替代。</view>
+    </view>
+    <view class="legal-card">
+      <view class="legal-title">用户责任</view>
+      <view class="legal-body">请确认上传、编辑和保存的信息真实、合法，并已获得被管理亲属的授权。因用户主动修改导致的信息偏差，需要用户自行校对确认。</view>
+    </view>
+    <view class="legal-card">
+      <view class="legal-title">健康信息说明</view>
+      <view class="legal-body">识别结果可能受图片质量、报告格式和 OCR 能力影响。所有异常提示、趋势图和复查提醒仅用于辅助整理，应以医院正式报告和医生意见为准。</view>
+    </view>
+    <view class="legal-card">
+      <view class="legal-title">数据与账号</view>
+      <view class="legal-body">用户可创建、编辑、删除档案和报告。删除操作会影响相关指标记录、趋势展示和复查参考，请在操作前自行确认。</view>
+    </view>
+    <view class="legal-note">本页面为产品内基础协议展示，正式上线前应由法务或合规人员完成最终审阅。</view>
+  </view>
+</view>
