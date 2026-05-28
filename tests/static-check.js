@@ -125,10 +125,13 @@ assert.ok(!metricRowWxml.includes('<button class="metric-row"'), 'metric row com
 
 const recheckWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'recheck', 'index.wxml'), 'utf8');
 const recheckJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'recheck', 'index.js'), 'utf8');
+const recheckNewJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'recheck', 'new.js'), 'utf8');
 assert.ok(!recheckWxml.includes('<button wx:for="{{nextPlan.todos}}"'), 'recheck todo rows must not use native button layout');
 assert.ok(!recheckWxml.includes('<button wx:for="{{otherPlans}}"'), 'recheck plan rows must not use native button layout');
 assert.ok(!recheckWxml.includes('<button class="row add-row"'), 'recheck add row must not use native button layout');
 assert.ok(recheckWxml.includes('bindtap="goNextDetail"') && recheckJs.includes('goNextDetail()'), 'next recheck plan must expose detail/cancel entry');
+assert.ok(recheckNewJs.includes('wx.requestSubscribeMessage'), 'new recheck plan should request subscription messages when a template id is configured');
+assert.ok(recheckNewJs.includes('subscribeAccepted: subscribe.subscribeAccepted'), 'new recheck plan must persist subscription rejection without blocking save');
 
 const profileWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'index.wxml'), 'utf8');
 const profileArchiveWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'archive.wxml'), 'utf8');

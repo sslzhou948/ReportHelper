@@ -1,6 +1,8 @@
 const { api } = require('../../utils/api');
 const { buildDefaultTodos, validateRecheckPlan } = require('../../utils/recheck');
 
+const RECHECK_TEMPLATE_ID_KEY = 'recheckSubscribeTemplateId';
+
 function buildFields(form, errors) {
   return [
     { key: 'type', label: '\u68c0\u67e5\u7c7b\u578b', value: form.type, error: errors.type || '' },
@@ -8,6 +10,33 @@ function buildFields(form, errors) {
     { key: 'hospital', label: '\u533b\u9662', value: form.hospital, error: errors.hospital || '' },
     { key: 'department', label: '\u79d1\u5ba4', value: form.department || '\u672a\u6307\u5b9a', error: '' }
   ];
+}
+
+function getSubscribeTemplateId() {
+  try {
+    return wx.getStorageSync(RECHECK_TEMPLATE_ID_KEY) || '';
+  } catch (error) {
+    return '';
+  }
+}
+
+function requestRecheckSubscribe() {
+  const templateId = getSubscribeTemplateId();
+  if (!templateId || !wx.requestSubscribeMessage) {
+    return Promise.resolve({ subscribeAccepted: false, templateId: '' });
+  }
+  return new Promise((resolve) => {
+    wx.requestSubscribeMessage({
+      tmplIds: [templateId],
+      success: (res) => {
+        resolve({
+          subscribeAccepted: res && res[templateId] === 'accept',
+          templateId
+        });
+      },
+      fail: () => resolve({ subscribeAccepted: false, templateId })
+    });
+  });
 }
 
 Page({
@@ -86,7 +115,7 @@ Page({
 
     const profileId = getApp().getCurrentProfileId();
     this.setData({ saving: true });
-    api.createRecheckPlan(profileId, {
+    return requestRecheckSubscribe().then((subscribe) => api.createRecheckPlan(profileId, {
       ...this.data.form,
       todos: this.data.todos.map((todo, index) => ({
         text: todo.text,
@@ -96,12 +125,16 @@ Page({
       })),
       reminderConfig: {
         advanceDays: [3, 1, 0],
-        subscribeAccepted: false
+        subscribeAccepted: subscribe.subscribeAccepted,
+        templateId: subscribe.templateId
       }
     }, {
       idempotencyKey: `recheck_${profileId}_${this.data.form.date}_${this.data.form.type}`
-    }).then(() => {
-      wx.showToast({ title: '\u5df2\u4fdd\u5b58', icon: 'success' });
+    }).then(() => subscribe)).then((subscribe) => {
+      wx.showToast({
+        title: subscribe.subscribeAccepted ? '\u5df2\u4fdd\u5b58' : '\u5df2\u4fdd\u5b58\uff0c\u672a\u5f00\u542f\u5fae\u4fe1\u63d0\u9192',
+        icon: subscribe.subscribeAccepted ? 'success' : 'none'
+      });
       setTimeout(() => wx.navigateBack(), 500);
     }).catch(() => {
       this.setData({ saving: false });
