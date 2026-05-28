@@ -16,6 +16,7 @@ const {
 const { validateProfile } = require('../miniprogram/utils/profile');
 const { buildDefaultTodos, validateRecheckPlan } = require('../miniprogram/utils/recheck');
 const { isRecognizingTaskStatus, shouldShowRecognitionSlow } = require('../miniprogram/utils/ocr-task');
+const { requestWxLoginCode } = require('../miniprogram/utils/auth');
 const { ApiError, DEFAULT_REQUEST_TIMEOUT_MS, createApiClient, createMemoryStorage, isTimeoutError } = require('../miniprogram/utils/api-client');
 const { getApiErrorMessage, getApiErrorToastTitle } = require('../miniprogram/utils/error');
 const { createApi } = require('../miniprogram/utils/api');
@@ -50,6 +51,37 @@ assert.strictEqual(isTimeoutError({ errMsg: 'request:fail' }), false);
 assert.strictEqual(getApiErrorMessage({ code: 'NETWORK_ERROR' }, '保存失败'), '网络连接失败，请重试');
 assert.strictEqual(getApiErrorMessage({ statusCode: 500, message: 'raw' }, '保存失败'), '服务暂时不可用，请稍后重试');
 assert.strictEqual(getApiErrorToastTitle({ code: 'REQUEST_TIMEOUT', requestId: 'req_1234567890' }, '保存失败'), '请求超时，请稍后重试 34567890');
+assert.strictEqual(getApiErrorMessage({ code: 'WX_LOGIN_FAILED' }, '登录失败'), '微信登录失败，请重试');
+
+asyncChecks.push(requestWxLoginCode({
+  login({ success }) {
+    success({ code: 'wx_code_ok' });
+  }
+}).then((code) => {
+  assert.strictEqual(code, 'wx_code_ok');
+}));
+
+asyncChecks.push(requestWxLoginCode({
+  login({ fail }) {
+    fail({ errMsg: 'login:fail' });
+  }
+}).then(
+  () => assert.fail('wx.login failure should reject'),
+  (error) => {
+    assert.strictEqual(error.code, 'WX_LOGIN_FAILED');
+  }
+));
+
+asyncChecks.push(requestWxLoginCode({
+  login({ success }) {
+    success({});
+  }
+}).then(
+  () => assert.fail('wx.login success without code should reject'),
+  (error) => {
+    assert.strictEqual(error.code, 'WX_LOGIN_NO_CODE');
+  }
+));
 
 assert.strictEqual(calculateTone(2.9, 3.5, 9.5, 'quantitative'), 'low');
 assert.strictEqual(calculateTone(10.2, 3.5, 9.5, 'quantitative'), 'high');

@@ -1,4 +1,6 @@
 const { api } = require('../../utils/api');
+const { requestWxLoginCode } = require('../../utils/auth');
+const { showApiErrorToast } = require('../../utils/error');
 
 Page({
   data: {
@@ -18,21 +20,16 @@ Page({
     }
 
     this.setData({ loggingIn: true });
-    return new Promise((resolve) => {
-      wx.login({
-        success: (res) => resolve(res.code || 'mock_code'),
-        fail: () => resolve('mock_code')
-      });
-    }).then((code) => api.authWxLogin({ code })).then((session) => {
+    return requestWxLoginCode().then((code) => api.authWxLogin({ code })).then((session) => {
       wx.setStorageSync('token', session.token);
       wx.setStorageSync('refreshToken', session.refreshToken);
       wx.setStorageSync('userId', session.userId);
       wx.setStorageSync('agreementAccepted', true);
       this.setData({ loggingIn: false });
       return true;
-    }).catch(() => {
+    }).catch((error) => {
       this.setData({ loggingIn: false });
-      wx.showToast({ title: '\u767b\u5f55\u5931\u8d25\uff0c\u8bf7\u91cd\u8bd5', icon: 'none' });
+      showApiErrorToast(error, '\u767b\u5f55\u5931\u8d25\uff0c\u8bf7\u91cd\u8bd5');
       return false;
     });
   },
