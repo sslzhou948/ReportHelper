@@ -53,6 +53,17 @@ function normalizeErrorPayload(payload, statusCode) {
   };
 }
 
+function clearAuthSession(storage) {
+  storage.remove('token');
+  storage.remove('refreshToken');
+  storage.remove('userId');
+}
+
+function redirectToLogin() {
+  if (typeof wx === 'undefined' || !wx.reLaunch) return;
+  wx.reLaunch({ url: '/pages/profile/onboard' });
+}
+
 function createApiClient(options = {}) {
   const baseUrl = options.baseUrl || '';
   const storage = options.storage || (typeof wx !== 'undefined' ? createWxStorage() : createMemoryStorage());
@@ -83,9 +94,7 @@ function createApiClient(options = {}) {
     const statusCode = response.statusCode || 0;
     const payload = response.data || {};
     if (statusCode < 200 || statusCode >= 300 || !payload.data || !payload.data.token) {
-      storage.remove('token');
-      storage.remove('refreshToken');
-      storage.remove('userId');
+      clearAuthSession(storage);
       return false;
     }
 
@@ -106,12 +115,23 @@ function createApiClient(options = {}) {
       ...(config.headers || {})
     };
 
-    const response = await request({
-      url: `${baseUrl}${path}`,
-      method,
-      data,
-      header: headers
-    });
+    let response;
+    try {
+      response = await request({
+        url: `${baseUrl}${path}`,
+        method,
+        data,
+        header: headers
+      });
+    } catch (error) {
+      throw new ApiError({
+        code: 'NETWORK_ERROR',
+        message: '\u7f51\u7edc\u8fde\u63a5\u5931\u8d25\uff0c\u8bf7\u91cd\u8bd5',
+        statusCode: 0,
+        details: { errMsg: error && error.errMsg },
+        requestId
+      });
+    }
 
     const statusCode = response.statusCode || 0;
     const payload = response.data || {};
@@ -123,11 +143,24 @@ function createApiClient(options = {}) {
       && !config.skipAuthRefresh
       && path !== '/api/auth/refresh'
       && path !== '/api/auth/wx-login';
-    if (canRefresh && await refreshAccessToken()) {
-      return requestJson(method, path, data, {
-        ...config,
-        skipAuthRefresh: true
-      });
+    if (canRefresh) {
+      let refreshed = false;
+      try {
+        refreshed = await refreshAccessToken();
+      } catch (error) {
+        refreshed = false;
+      }
+      if (refreshed) {
+        return requestJson(method, path, data, {
+          ...config,
+          skipAuthRefresh: true
+        });
+      }
+    }
+
+    if (statusCode === 401) {
+      clearAuthSession(storage);
+      if (!config.skipUnauthorizedRedirect) redirectToLogin();
     }
 
     throw new ApiError(normalizeErrorPayload(payload, statusCode));

@@ -179,6 +179,49 @@ asyncChecks.push(refreshClient.get('/api/profiles').then((data) => {
   assert.strictEqual(refreshStorage.get('userId'), 'user_new');
 }));
 
+const expiredStorage = createMemoryStorage({
+  token: 'expired_token',
+  refreshToken: 'bad_refresh',
+  userId: 'user_old'
+});
+const expiredClient = createApiClient({
+  baseUrl: 'https://api.example.test',
+  storage: expiredStorage,
+  createRequestId: () => 'req_expired',
+  request(config) {
+    return Promise.resolve({
+      statusCode: 401,
+      data: {
+        error: { code: 'UNAUTHORIZED', message: config.url.endsWith('/api/auth/refresh') ? 'refresh expired' : 'expired' },
+        requestId: config.header['X-Request-Id']
+      }
+    });
+  }
+});
+asyncChecks.push(expiredClient.get('/api/profiles', { skipUnauthorizedRedirect: true }).then(
+  () => assert.fail('expired refresh token should reject'),
+  (error) => {
+    assert.strictEqual(error.code, 'UNAUTHORIZED');
+    assert.strictEqual(expiredStorage.get('token'), undefined);
+    assert.strictEqual(expiredStorage.get('refreshToken'), undefined);
+    assert.strictEqual(expiredStorage.get('userId'), undefined);
+  }
+));
+
+const networkClient = createApiClient({
+  baseUrl: 'https://api.example.test',
+  request() {
+    return Promise.reject({ errMsg: 'request:fail timeout' });
+  }
+});
+asyncChecks.push(networkClient.get('/api/profiles').then(
+  () => assert.fail('network failure should reject as ApiError'),
+  (error) => {
+    assert.strictEqual(error.code, 'NETWORK_ERROR');
+    assert.strictEqual(error.requestId.startsWith('req_'), true);
+  }
+));
+
 const hybridRequests = [];
 const hybridStorage = createMemoryStorage();
 const hybridApi = createApi({
@@ -325,6 +368,68 @@ asyncChecks.push(mockApi.getProfiles().then((profiles) => {
   assert.ok(profiles.length >= 1, 'mock api should return profiles');
   assert.ok(profiles[0].id && profiles[0].realName, 'profile list items should match API contract');
 }));
+
+asyncChecks.push((async () => {
+  const appPath = path.resolve(__dirname, '..', 'miniprogram', 'app.js');
+  const appModulePath = require.resolve(appPath);
+  const savedWx = global.wx;
+  const savedApp = global.App;
+  const storageState = {
+    lastProfileId: 'missing_profile',
+    healthhelperBackendProfileId: 'stale_backend_profile',
+    healthhelperApiMode: 'mock'
+  };
+  let navigatedTo = '';
+  let appConfig = null;
+  try {
+    global.wx = {
+      getStorageSync: (key) => storageState[key],
+      setStorageSync: (key, value) => { storageState[key] = value; },
+      removeStorageSync: (key) => { delete storageState[key]; },
+      getSystemInfoSync: () => ({ windowWidth: 375, statusBarHeight: 44 }),
+      getMenuButtonBoundingClientRect: () => ({ bottom: 88 }),
+      navigateTo: ({ url }) => { navigatedTo = url; }
+    };
+    global.App = (config) => { appConfig = config; };
+    delete require.cache[appModulePath];
+    require(appPath);
+    appConfig.onLaunch();
+    const resolved = await appConfig.ensureCurrentProfileId({
+      getProfiles: () => Promise.resolve([{ id: 'profile_a' }, { id: 'profile_b' }])
+    });
+    assert.strictEqual(resolved, 'profile_a', 'missing current profile should fall back to first profile');
+    assert.strictEqual(storageState.lastProfileId, 'profile_a');
+    assert.strictEqual(storageState.healthhelperBackendProfileId, undefined, 'mock mode should clear stale backend profile id');
+
+    storageState.healthhelperApiMode = 'hybrid-upload';
+    storageState.lastProfileId = 'missing_hybrid_profile';
+    storageState.healthhelperBackendProfileId = 'backend_profile_existing';
+    appConfig.globalData.currentProfileId = 'missing_hybrid_profile';
+    const hybridResolved = await appConfig.ensureCurrentProfileId({
+      getProfiles: () => Promise.resolve([{ id: 'profile_a' }, { id: 'profile_b' }])
+    });
+    assert.strictEqual(hybridResolved, 'profile_a', 'hybrid mode should still fall back to a valid local profile');
+    assert.strictEqual(storageState.lastProfileId, 'profile_a');
+    assert.strictEqual(
+      storageState.healthhelperBackendProfileId,
+      'backend_profile_existing',
+      'hybrid mode should not overwrite backend profile mapping with a local profile id'
+    );
+
+    let profileRequired = false;
+    try {
+      await appConfig.ensureCurrentProfileId({ getProfiles: () => Promise.resolve([]) });
+    } catch (error) {
+      profileRequired = error.code === 'PROFILE_REQUIRED';
+    }
+    assert.strictEqual(profileRequired, true, 'empty profile list should require profile creation');
+    assert.strictEqual(navigatedTo, '/pages/profile/add');
+  } finally {
+    global.wx = savedWx;
+    global.App = savedApp;
+    delete require.cache[appModulePath];
+  }
+})());
 asyncChecks.push(mockApi.authWxLogin({ code: 'code_1' }).then((session) => {
   assert.ok(session.token);
   assert.ok(session.refreshToken);

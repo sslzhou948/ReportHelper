@@ -39,24 +39,36 @@ App({
   },
 
   getCurrentProfileId() {
-    return wx.getStorageSync('healthhelperBackendProfileId') || this.globalData.currentProfileId || wx.getStorageSync('lastProfileId') || store.mock.profiles[0].id;
+    const mode = getRuntimeApiOptions().mode;
+    const backendProfileId = wx.getStorageSync('healthhelperBackendProfileId');
+    if (mode === 'backend' && backendProfileId) return backendProfileId;
+    return this.globalData.currentProfileId || wx.getStorageSync('lastProfileId') || store.mock.profiles[0].id;
   },
 
   setCurrentProfileId(profileId) {
     this.globalData.currentProfileId = profileId;
     wx.setStorageSync('lastProfileId', profileId);
-    if (getRuntimeApiOptions().mode === 'backend' || wx.getStorageSync('healthhelperBackendProfileId')) {
+    const mode = getRuntimeApiOptions().mode;
+    if (mode === 'backend') {
       wx.setStorageSync('healthhelperBackendProfileId', profileId);
+    } else if (mode === 'mock') {
+      wx.removeStorageSync('healthhelperBackendProfileId');
     }
   },
 
   ensureCurrentProfileId(api) {
-    const mode = getRuntimeApiOptions().mode;
-    if (mode !== 'backend') return Promise.resolve(this.getCurrentProfileId());
     const current = this.getCurrentProfileId();
     return api.getProfiles().then((profiles) => {
+      if (!profiles || profiles.length === 0) {
+        wx.removeStorageSync('lastProfileId');
+        wx.removeStorageSync('healthhelperBackendProfileId');
+        wx.navigateTo({ url: '/pages/profile/add' });
+        const error = new Error('PROFILE_REQUIRED');
+        error.code = 'PROFILE_REQUIRED';
+        throw error;
+      }
       const matched = (profiles || []).find((profile) => profile.id === current);
-      const profileId = (matched || profiles[0] || {}).id || current;
+      const profileId = (matched || profiles[0]).id;
       if (profileId) this.setCurrentProfileId(profileId);
       return profileId;
     });
