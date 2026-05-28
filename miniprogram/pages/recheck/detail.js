@@ -1,12 +1,6 @@
 const { api } = require('../../utils/api');
 const { daysBetween } = require('../../utils/date');
-
-function todayString(now = new Date()) {
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
+const { todayString } = require('../../utils/recheck');
 
 function daysToPlan(plan) {
   return plan ? Math.max(0, daysBetween(new Date(), plan.date)) : 0;
@@ -76,6 +70,10 @@ Page({
         }
         if (key === 'date' && !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
           wx.showToast({ title: '\u8bf7\u8f93\u5165 YYYY-MM-DD', icon: 'none' });
+          return;
+        }
+        if (key === 'date' && value < todayString()) {
+          wx.showToast({ title: '\u590d\u67e5\u65e5\u671f\u4e0d\u80fd\u65e9\u4e8e\u4eca\u5929', icon: 'none' });
           return;
         }
         api.updateRecheckPlan(this.data.plan.id, {

@@ -141,6 +141,7 @@ assert.ok(!metricRowWxml.includes('<button class="metric-row"'), 'metric row com
 const recheckWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'recheck', 'index.wxml'), 'utf8');
 const recheckJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'recheck', 'index.js'), 'utf8');
 const recheckNewJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'recheck', 'new.js'), 'utf8');
+const recheckDetailJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'recheck', 'detail.js'), 'utf8');
 assert.ok(!recheckWxml.includes('<button wx:for="{{nextPlan.todos}}"'), 'recheck todo rows must not use native button layout');
 assert.ok(!recheckWxml.includes('<button wx:for="{{otherPlans}}"'), 'recheck plan rows must not use native button layout');
 assert.ok(!recheckWxml.includes('<button class="row add-row"'), 'recheck add row must not use native button layout');
@@ -149,6 +150,7 @@ assert.ok(recheckNewJs.includes('wx.requestSubscribeMessage'), 'new recheck plan
 assert.ok(recheckNewJs.includes('subscribeAccepted: subscribe.subscribeAccepted'), 'new recheck plan must persist subscription rejection without blocking save');
 assert.ok(recheckNewJs.includes('defaultRecheckDate()'), 'new recheck plan default date must stay valid over time');
 assert.ok(!recheckNewJs.includes("date: '2026-06-01'"), 'new recheck plan must not ship a stale fixed default date');
+assert.ok(recheckDetailJs.includes("value < todayString()"), 'recheck detail must block editing the plan date into the past');
 
 const profileWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'index.wxml'), 'utf8');
 const profileArchiveWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'archive.wxml'), 'utf8');
