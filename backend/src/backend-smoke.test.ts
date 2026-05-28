@@ -138,6 +138,16 @@ class MemoryPrisma {
         return rows.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
       }
       return rows;
+    },
+    update: async ({ where, data }: any) => {
+      const draft = this.drafts.find((item) => item.id === where.id);
+      if (!draft) throw new Error('draft not found');
+      const nextData = { ...data };
+      if (nextData.version?.increment) {
+        nextData.version = (draft.version || 1) + nextData.version.increment;
+      }
+      Object.assign(draft, nextData, { updatedAt: now() });
+      return draft;
     }
   };
 
@@ -549,6 +559,46 @@ const getTaskPayload = getTaskResponse.json();
 assert.equal(getTaskPayload.data.id, createTaskPayload.data.id);
 assert.equal(getTaskPayload.data.drafts.length, 7);
 
+const editableDraft = getTaskPayload.data.drafts[0];
+const updatedDraftResponse = await app.inject({
+  method: 'PATCH',
+  url: `/api/ocr/tasks/${createTaskPayload.data.id}/drafts/${editableDraft.draftId}`,
+  payload: {
+    draft: {
+      ...editableDraft,
+      basicInfo: {
+        ...editableDraft.basicInfo,
+        hospital: '用户校准医院',
+        hospitalSource: 'user_edited'
+      },
+      conflicts: [{
+        metricKey: 'acth',
+        metricName: 'ACTH',
+        candidates: []
+      }]
+    }
+  }
+});
+assert.equal(updatedDraftResponse.statusCode, 200);
+assert.equal(updatedDraftResponse.json().data.basicInfo.hospital, '用户校准医院');
+
+const resolveConflictResponse = await app.inject({
+  method: 'PATCH',
+  url: `/api/ocr/tasks/${createTaskPayload.data.id}/drafts/${editableDraft.draftId}/conflicts/acth`,
+  payload: {
+    selectedCandidateIndex: 0
+  }
+});
+assert.equal(resolveConflictResponse.statusCode, 200);
+assert.equal(resolveConflictResponse.json().data.status, 'resolved');
+
+const afterResolveTaskResponse = await app.inject({
+  method: 'GET',
+  url: `/api/ocr/tasks/${createTaskPayload.data.id}`
+});
+assert.equal(afterResolveTaskResponse.statusCode, 200);
+assert.equal(afterResolveTaskResponse.json().data.drafts[0].conflicts.length, 0);
+
 const saveResponse = await app.inject({
   method: 'POST',
   url: '/api/reports/batch-create',
@@ -711,4 +761,4 @@ assert.ok(!afterDeleteListResponse.json().data.some((report: Row) => report.id =
 
 await app.close();
 
-console.log('Backend smoke passed: auth, profile CRUD, recheck plans, fixture OCR, report save/read/edit/delete, and duplicate check routes');
+console.log('Backend smoke passed: auth, profile CRUD, recheck plans, fixture OCR draft edit, report save/read/edit/delete, and duplicate check routes');

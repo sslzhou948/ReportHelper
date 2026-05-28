@@ -141,6 +141,12 @@ function createHybridUploadApi(options = {}) {
     getOcrTask(taskId) {
       return backendApi.getOcrTask(taskId).then(rememberProfile);
     },
+    resolveOcrConflict(payload, config) {
+      return backendApi.resolveOcrConflict(payload, config);
+    },
+    updateOcrDraft(payload, config) {
+      return backendApi.updateOcrDraft(payload, config);
+    },
     listReports(profileId, params) {
       return backendApi.listReports(backendProfileId(profileId), params);
     },
