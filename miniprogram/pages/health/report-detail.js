@@ -28,26 +28,12 @@ Page({
   },
   showEdit() {
     if (!this.data.report) return;
-    const metrics = (this.data.report.metrics || []).map((metric, index) => {
-      if (index !== 0 || metric.valueType !== 'quantitative') return metric;
-      return {
-        ...metric,
-        valueNumeric: metric.refRangeHigh !== undefined ? metric.refRangeHigh + 1 : metric.valueNumeric,
-        isManuallyEdited: true
-      };
-    });
-    api.updateReport(this.reportId, {
-      basicInfo: {
-        note: '\u5df2\u624b\u52a8\u6838\u5bf9'
-      },
-      metrics
-    }, {
-      idempotencyKey: `edit_report_${this.reportId}`
-    }).then(({ report, groups }) => {
-      this.setData({ report, groups });
-      wx.showToast({ title: '\u5df2\u4fdd\u5b58\u7f16\u8f91', icon: 'success' });
-    }).catch(() => {
-      wx.showToast({ title: '\u4fdd\u5b58\u7f16\u8f91\u5931\u8d25', icon: 'none' });
+    wx.showModal({
+      title: '编辑报告',
+      content: '正式报告编辑页正在接入中，当前不会自动修改或保存报告数据。',
+      showCancel: false,
+      confirmText: '知道了',
+      confirmColor: '#5F815F'
     });
   },
   showDelete() {
