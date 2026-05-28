@@ -15,6 +15,7 @@ const {
 } = require('../miniprogram/utils/upload');
 const { validateProfile } = require('../miniprogram/utils/profile');
 const { buildDefaultTodos, validateRecheckPlan } = require('../miniprogram/utils/recheck');
+const { isRecognizingTaskStatus, shouldShowRecognitionSlow } = require('../miniprogram/utils/ocr-task');
 const { ApiError, createApiClient, createMemoryStorage } = require('../miniprogram/utils/api-client');
 const { createApi } = require('../miniprogram/utils/api');
 const { realcaseOcrDrafts } = require('../miniprogram/data/ocr-fixtures');
@@ -37,6 +38,12 @@ assert.strictEqual(formatMonthDay('2026-05-07'), '5月7日');
 assert.strictEqual(daysBetween('2026-05-01', '2026-05-03'), 2);
 assert.strictEqual(relativeFromToday('2026-05-26', '2026-05-27'), '1 天前');
 assert.strictEqual(relativeFromToday('2026-05-29', '2026-05-27'), '2 天后');
+
+assert.strictEqual(isRecognizingTaskStatus('queued'), true);
+assert.strictEqual(isRecognizingTaskStatus('processing'), true);
+assert.strictEqual(isRecognizingTaskStatus('needs_confirmation'), false);
+assert.strictEqual(shouldShowRecognitionSlow(1000, 10999, 10000), false);
+assert.strictEqual(shouldShowRecognitionSlow(1000, 11000, 10000), true);
 
 assert.strictEqual(calculateTone(2.9, 3.5, 9.5, 'quantitative'), 'low');
 assert.strictEqual(calculateTone(10.2, 3.5, 9.5, 'quantitative'), 'high');

@@ -99,6 +99,11 @@ assert.ok(uploadConfirmJs.includes('profileId: this.data.profileId'), 'upload co
 assert.ok(uploadConfirmJs.includes('profileNoticeText'), 'upload confirm must explain when the OCR task belongs to another profile');
 assert.ok(uploadConfirmJs.includes('goManualFill'), 'upload confirm must offer manual fill for empty or non-report OCR drafts');
 assert.ok(uploadConfirmJs.includes('needsManualInput'), 'upload confirm must block unresolved empty OCR drafts before saving');
+assert.ok(uploadConfirmJs.includes('isRecognizingTaskStatus(task.status)'), 'upload confirm must keep polling while OCR tasks are queued or processing');
+assert.ok(uploadConfirmJs.includes('scheduleRecognitionPoll()'), 'upload confirm must schedule OCR status polling');
+assert.ok(uploadConfirmJs.includes('clearRecognitionTimer()'), 'upload confirm must clear OCR polling timers on exit');
+assert.ok(uploadConfirmJs.includes('shouldShowRecognitionSlow'), 'upload confirm must show a slow-recognition state before the user can save');
+assert.ok(uploadConfirmJs.includes('if (this.data.recognizing)'), 'upload confirm must block saving while OCR is still running');
 assert.ok(uploadEditDetailJs.includes('api.getOcrTask(this.taskId)'), 'upload edit detail must load the selected OCR draft');
 assert.ok(uploadEditDetailJs.includes('addManualMetric()'), 'upload edit detail must allow manual metric entry');
 assert.ok(uploadEditDetailJs.includes('addFinding()'), 'upload edit detail must allow manual imaging finding entry');

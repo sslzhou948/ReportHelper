@@ -1,4 +1,8 @@
 const { api } = require('../../utils/api');
+const { isRecognizingTaskStatus, shouldShowRecognitionSlow } = require('../../utils/ocr-task');
+
+const RECOGNITION_POLL_INTERVAL_MS = 1500;
+const RECOGNITION_SLOW_MS = 10000;
 
 function buildReportTitle(index, draft) {
   const pageCount = draft.pageCount || (draft.sourcePhotoIds || []).length || 1;
@@ -80,10 +84,16 @@ function buildProfileLabel(profile) {
 Page({
   taskId: '',
   drafts: [],
+  recognitionTimer: null,
+  recognitionStartedAt: 0,
 
   data: {
     loading: false,
     saving: false,
+    recognizing: false,
+    slowRecognition: false,
+    recognitionTitle: '正在识别报告',
+    recognitionMessage: '系统正在读取图片内容，请稍候。',
     profileId: '',
     reports: [],
     reportCount: 0,
@@ -96,10 +106,66 @@ Page({
 
   onLoad(query = {}) {
     this.taskId = query.taskId || '';
+    this.recognitionStartedAt = query.recognizing ? Date.now() : 0;
   },
 
   onShow() {
     this.loadTask();
+  },
+
+  onUnload() {
+    this.clearRecognitionTimer();
+  },
+
+  clearRecognitionTimer() {
+    if (!this.recognitionTimer) return;
+    clearTimeout(this.recognitionTimer);
+    this.recognitionTimer = null;
+  },
+
+  scheduleRecognitionPoll() {
+    this.clearRecognitionTimer();
+    this.recognitionTimer = setTimeout(() => {
+      this.loadTask();
+    }, RECOGNITION_POLL_INTERVAL_MS);
+  },
+
+  syncPendingTask(task) {
+    const pending = wx.getStorageSync('pendingOcrTasks') || [];
+    const next = pending.map((item) => {
+      if (item.taskId !== task.id) return item;
+      return {
+        ...item,
+        status: task.status,
+        reportCount: task.reportCount,
+        photoCount: task.photoCount
+      };
+    });
+    wx.setStorageSync('pendingOcrTasks', next);
+  },
+
+  showRecognizingTask(task) {
+    if (!this.recognitionStartedAt) this.recognitionStartedAt = Date.now();
+    const slowRecognition = shouldShowRecognitionSlow(this.recognitionStartedAt, Date.now(), RECOGNITION_SLOW_MS);
+    this.drafts = [];
+    this.setData({
+      loading: false,
+      recognizing: true,
+      slowRecognition,
+      recognitionTitle: slowRecognition ? '识别时间比预期更久' : '正在识别报告',
+      recognitionMessage: slowRecognition
+        ? '真实 OCR 可能需要更长时间。你可以稍后从首页继续查看，也可以取消本次任务。'
+        : '系统正在读取图片内容，请保持网络通畅。',
+      profileId: task.profileId || '',
+      reports: [],
+      reportCount: task.reportCount || 0,
+      unresolvedConflictCount: 0,
+      taskStatus: task.status || '',
+      errorMessage: ''
+    });
+    this.updateProfileNotice(task.profileId || '');
+    this.syncPendingTask(task);
+    this.scheduleRecognitionPoll();
   },
 
   loadTask() {
@@ -110,11 +176,18 @@ Page({
 
     this.setData({ loading: true });
     api.getOcrTask(this.taskId).then((task) => {
+      if (isRecognizingTaskStatus(task.status)) {
+        this.showRecognizingTask(task);
+        return;
+      }
+      this.clearRecognitionTimer();
       this.drafts = task.drafts || [];
       const reports = this.drafts.map(toDisplayReport);
       const failed = task.status === 'failed';
       this.setData({
         loading: false,
+        recognizing: false,
+        slowRecognition: false,
         profileId: task.profileId || '',
         reports: failed ? [] : reports,
         reportCount: task.reportCount || reports.length,
@@ -123,8 +196,10 @@ Page({
         errorMessage: task.errorMessage || '\u8bc6\u522b\u670d\u52a1\u6682\u65f6\u672a\u8fd4\u56de\u7ed3\u679c\uff0c\u8bf7\u91cd\u8bd5'
       });
       this.updateProfileNotice(task.profileId || '');
+      this.syncPendingTask(task);
       if (task.profileId) wx.setStorageSync('healthhelperBackendProfileId', task.profileId);
     }).catch(() => {
+      this.clearRecognitionTimer();
       this.setData({ loading: false });
       wx.showToast({ title: '\u52a0\u8f7d\u8bc6\u522b\u7ed3\u679c\u5931\u8d25', icon: 'none' });
     });
@@ -165,6 +240,7 @@ Page({
   },
 
   cancelTaskAndLeave() {
+    this.clearRecognitionTimer();
     api.cancelOcrTask(this.taskId).catch(() => null).then(() => {
       const pending = wx.getStorageSync('pendingOcrTasks') || [];
       wx.setStorageSync('pendingOcrTasks', pending.filter((item) => item.taskId !== this.taskId));
@@ -173,6 +249,11 @@ Page({
         fail: () => wx.switchTab({ url: '/pages/home/index' })
       });
     });
+  },
+
+  goHomeWhileRecognizing() {
+    this.clearRecognitionTimer();
+    wx.switchTab({ url: '/pages/home/index' });
   },
 
   goEdit(event) {
@@ -204,6 +285,7 @@ Page({
         createdAt: Date.now()
       }].concat(pending.filter((item) => item.taskId !== task.id)));
       wx.showToast({ title: '\u5df2\u91cd\u65b0\u53d1\u8d77\u8bc6\u522b', icon: 'success' });
+      this.clearRecognitionTimer();
       setTimeout(() => wx.switchTab({ url: '/pages/home/index' }), 500);
       return task;
     }).catch(() => {
@@ -251,6 +333,10 @@ Page({
 
   saveAll() {
     if (this.data.saving) return Promise.resolve(false);
+    if (this.data.recognizing) {
+      wx.showToast({ title: '识别完成后再保存', icon: 'none' });
+      return Promise.resolve(false);
+    }
     if (this.data.taskStatus === 'failed') {
       wx.showToast({ title: '\u8bf7\u5148\u91cd\u8bd5\u8bc6\u522b', icon: 'none' });
       return Promise.resolve(false);

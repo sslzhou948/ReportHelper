@@ -59,6 +59,41 @@
   border-left: 8rpx solid var(--high);
 }
 
+.recognition-card {
+  border-left: 8rpx solid var(--primary);
+}
+
+.recognition-card.slow {
+  border-left-color: var(--warn);
+}
+
+.recognition-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 20rpx;
+}
+
+.recognition-spinner {
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: 22rpx;
+  border: 6rpx solid var(--primary-soft);
+  border-top-color: var(--primary);
+}
+
+.recognition-title {
+  font-size: 32rpx;
+  font-weight: 800;
+  color: var(--ink-1);
+}
+
+.recognition-actions {
+  margin-top: 28rpx;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20rpx;
+}
+
 .profile-notice {
   margin-top: 16rpx;
   padding: 18rpx 22rpx;

@@ -5,8 +5,24 @@
     <view class="nav-side right"></view>
   </view>
   <view class="pad mt-12">
-    <view class="sub">共识别出 {{reportCount}} 份报告。请逐份查看详情核对，有冲突的请优先处理。</view>
+    <view wx:if="{{recognizing}}" class="sub">预计将识别为 {{reportCount}} 份报告，完成后会进入核对流程。</view>
+    <view wx:else class="sub">共识别出 {{reportCount}} 份报告。请逐份查看详情核对，有冲突的请优先处理。</view>
     <view wx:if="{{profileNoticeText}}" class="profile-notice">{{profileNoticeText}}</view>
+  </view>
+  <view wx:if="{{recognizing}}" class="pad mt-12">
+    <view class="card card-pad recognition-card {{slowRecognition ? 'slow' : ''}}">
+      <view class="recognition-head">
+        <view class="recognition-spinner"></view>
+        <view class="flex">
+          <view class="recognition-title">{{recognitionTitle}}</view>
+          <view class="sub mt-8">{{recognitionMessage}}</view>
+        </view>
+      </view>
+      <view class="recognition-actions">
+        <view class="btn secondary" bindtap="goHomeWhileRecognizing">稍后查看</view>
+        <view class="btn danger" bindtap="goBack">取消识别</view>
+      </view>
+    </view>
   </view>
   <view wx:if="{{taskStatus === 'failed'}}" class="pad mt-12">
     <view class="card card-pad failed-card">
@@ -54,6 +70,6 @@
     </view>
   </view>
   <view class="bottom-action">
-    <view class="btn {{saving || taskStatus === 'failed' ? 'disabled' : ''}}" bindtap="saveAll">全部保存到病例夹（{{reportCount}} 份）</view>
+    <view class="btn {{saving || recognizing || taskStatus === 'failed' ? 'disabled' : ''}}" bindtap="saveAll">全部保存到病例夹（{{reportCount}} 份）</view>
   </view>
 </view>
