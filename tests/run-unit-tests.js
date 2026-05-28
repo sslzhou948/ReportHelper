@@ -119,6 +119,54 @@ asyncChecks.push(client.get('/api/profiles').then((data) => {
   assert.strictEqual(capturedRequest.header['X-Request-Id'], 'req_test');
 }));
 
+const hybridRequests = [];
+const hybridApi = createApi({
+  mode: 'hybrid-upload',
+  baseUrl: 'http://127.0.0.1:8787',
+  storage: createMemoryStorage(),
+  createRequestId: () => `req_hybrid_${hybridRequests.length + 1}`,
+  request(config) {
+    hybridRequests.push(config);
+    return Promise.resolve({
+      statusCode: 200,
+      data: {
+        data: config.url.includes('/duplicate-check')
+          ? { hasDuplicates: false, candidates: [] }
+          : { id: 'task_1', reports: [] },
+        requestId: config.header['X-Request-Id']
+      }
+    });
+  }
+});
+
+asyncChecks.push(hybridApi.createOcrTask({
+  profileId: 'profile_mock',
+  photos: [{ photoId: 'photo_1' }],
+  fixtureCaseIds: ['acth']
+}).then(() => hybridApi.checkDuplicateReports({
+  profileId: '11111111-1111-4111-8111-111111111111',
+  ocrTaskId: '22222222-2222-4222-8222-222222222222',
+  reports: [{ draftId: 'draft_mock' }]
+})).then(() => hybridApi.batchCreateReports({
+  ocrTaskId: '22222222-2222-4222-8222-222222222222',
+  reports: [{ draftId: 'draft_mock' }],
+  duplicateDecisions: [{ draftId: 'draft_mock', decision: 'skip' }]
+})).then(() => {
+  assert.strictEqual(hybridRequests[0].url, 'http://127.0.0.1:8787/api/ocr/tasks');
+  assert.deepStrictEqual(hybridRequests[0].data, { fixtureCaseIds: ['acth'] });
+  assert.strictEqual(hybridRequests[1].url, 'http://127.0.0.1:8787/api/reports/duplicate-check');
+  assert.deepStrictEqual(hybridRequests[1].data, {
+    profileId: '11111111-1111-4111-8111-111111111111',
+    ocrTaskId: '22222222-2222-4222-8222-222222222222'
+  });
+  assert.strictEqual(hybridRequests[2].url, 'http://127.0.0.1:8787/api/reports/batch-create');
+  assert.deepStrictEqual(hybridRequests[2].data, {
+    profileId: undefined,
+    ocrTaskId: '22222222-2222-4222-8222-222222222222',
+    duplicateDecisions: [{ draftId: 'draft_mock', decision: 'skip' }]
+  });
+}));
+
 const errorClient = createApiClient({
   storage: createMemoryStorage(),
   createRequestId: () => 'req_error',

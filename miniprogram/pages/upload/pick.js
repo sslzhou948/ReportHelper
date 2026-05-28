@@ -146,7 +146,7 @@ Page({
       profileId,
       fixtureCaseIds
     }, {
-      idempotencyKey: `ocr_fixture_${profileId}`
+      idempotencyKey: `ocr_fixture_${profileId}_${Date.now()}`
     }).then((task) => {
       const pending = wx.getStorageSync('pendingOcrTasks') || [];
       const url = `/pages/upload/confirm?taskId=${task.id}&fixture=realcase`;

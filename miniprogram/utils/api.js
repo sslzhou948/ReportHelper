@@ -1,5 +1,27 @@
 const { createApiClient } = require('./api-client');
 const { createMockApi } = require('./api-mock');
+const { getRuntimeApiOptions } = require('./api-config');
+
+function toBackendCreateOcrTaskPayload(payload = {}) {
+  return {
+    fixtureCaseIds: payload.fixtureCaseIds
+  };
+}
+
+function toBackendDuplicatePayload(payload = {}) {
+  return {
+    profileId: payload.profileId,
+    ocrTaskId: payload.ocrTaskId
+  };
+}
+
+function toBackendBatchCreatePayload(payload = {}) {
+  return {
+    profileId: payload.profileId,
+    ocrTaskId: payload.ocrTaskId,
+    duplicateDecisions: payload.duplicateDecisions || []
+  };
+}
 
 function createBackendApi(client) {
   return {
@@ -88,9 +110,33 @@ function createBackendApi(client) {
   };
 }
 
+function createHybridUploadApi(options = {}) {
+  const mockApi = createMockApi();
+  const backendApi = createBackendApi(createApiClient(options));
+  return {
+    ...mockApi,
+    createOcrTask(payload, config) {
+      return backendApi.createOcrTask(toBackendCreateOcrTaskPayload(payload), config);
+    },
+    getOcrTask(taskId) {
+      return backendApi.getOcrTask(taskId);
+    },
+    checkDuplicateReports(payload, config) {
+      return backendApi.checkDuplicateReports(toBackendDuplicatePayload(payload), config);
+    },
+    batchCreateReports(payload, config) {
+      return backendApi.batchCreateReports(toBackendBatchCreatePayload(payload), config);
+    }
+  };
+}
+
 function createApi(options = {}) {
-  if (options.mode === 'backend') {
-    return createBackendApi(createApiClient(options));
+  const runtimeOptions = getRuntimeApiOptions(options);
+  if (runtimeOptions.mode === 'backend') {
+    return createBackendApi(createApiClient(runtimeOptions));
+  }
+  if (runtimeOptions.mode === 'hybrid-upload') {
+    return createHybridUploadApi(runtimeOptions);
   }
   return createMockApi();
 }
@@ -100,5 +146,6 @@ const api = createApi();
 module.exports = {
   api,
   createApi,
-  createBackendApi
+  createBackendApi,
+  createHybridUploadApi
 };
