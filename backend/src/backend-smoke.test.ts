@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import assert from 'node:assert/strict';
 import { buildApp } from './app.js';
 import type { Env } from './config/env.js';
+import { resolveWxLoginSession } from './routes/auth.js';
 
 type Row = Record<string, any>;
 
@@ -412,6 +413,28 @@ const env: Env = {
 
 const prisma = new MemoryPrisma();
 const app = buildApp({ env, prisma: prisma as any });
+
+const productionWxSession = await resolveWxLoginSession({
+  ...env,
+  NODE_ENV: 'production'
+}, 'wx_code_for_test', async (url) => {
+  const parsedUrl = new URL(url);
+  assert.equal(parsedUrl.hostname, 'api.weixin.qq.com');
+  assert.equal(parsedUrl.searchParams.get('appid'), env.WECHAT_APP_ID);
+  assert.equal(parsedUrl.searchParams.get('secret'), env.WECHAT_APP_SECRET);
+  assert.equal(parsedUrl.searchParams.get('js_code'), 'wx_code_for_test');
+  assert.equal(parsedUrl.searchParams.get('grant_type'), 'authorization_code');
+  return {
+    ok: true,
+    status: 200,
+    json: async () => ({
+      openid: 'wx_openid_from_tencent',
+      unionid: 'wx_unionid_from_tencent'
+    })
+  };
+});
+assert.equal(productionWxSession.wxOpenid, 'wx_openid_from_tencent');
+assert.equal(productionWxSession.wxUnionid, 'wx_unionid_from_tencent');
 
 const loginResponse = await app.inject({
   method: 'POST',

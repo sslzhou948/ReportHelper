@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
+import type { Env } from '../config/env.js';
 import { getRequestId } from '../utils/request-id.js';
 
 const wxLoginSchema = z.object({
@@ -12,6 +13,42 @@ const refreshSchema = z.object({
 
 function devOpenidFromCode(code: string) {
   return `dev_wx_${code.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 48) || 'anonymous'}`;
+}
+
+type FetchLike = (url: string) => Promise<{
+  ok: boolean;
+  status: number;
+  json: () => Promise<Record<string, unknown>>;
+}>;
+
+export async function resolveWxLoginSession(env: Env, code: string, fetcher: FetchLike = fetch) {
+  if (env.NODE_ENV !== 'production') {
+    return {
+      wxOpenid: devOpenidFromCode(code),
+      wxUnionid: undefined
+    };
+  }
+
+  const url = new URL('https://api.weixin.qq.com/sns/jscode2session');
+  url.searchParams.set('appid', env.WECHAT_APP_ID);
+  url.searchParams.set('secret', env.WECHAT_APP_SECRET);
+  url.searchParams.set('js_code', code);
+  url.searchParams.set('grant_type', 'authorization_code');
+
+  const response = await fetcher(url.toString());
+  const payload = await response.json();
+  const errcode = payload.errcode;
+  if (!response.ok || errcode) {
+    throw new Error(`WECHAT_CODE2SESSION_FAILED:${errcode || response.status}`);
+  }
+  if (!payload.openid || typeof payload.openid !== 'string') {
+    throw new Error('WECHAT_CODE2SESSION_MISSING_OPENID');
+  }
+
+  return {
+    wxOpenid: payload.openid,
+    wxUnionid: typeof payload.unionid === 'string' ? payload.unionid : undefined
+  };
 }
 
 function defaultProfileData(userId: string) {
@@ -66,15 +103,29 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       });
     }
 
-    const wxOpenid = devOpenidFromCode(parsed.data.code);
+    let wxSession: Awaited<ReturnType<typeof resolveWxLoginSession>>;
+    try {
+      wxSession = await resolveWxLoginSession(app.env, parsed.data.code);
+    } catch (error) {
+      return reply.status(401).send({
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'WeChat login failed'
+        },
+        requestId
+      });
+    }
+
+    const { wxOpenid, wxUnionid } = wxSession;
     const existing = await app.prisma.user.findUnique({
       where: { wxOpenid }
     });
     const user = await app.prisma.user.upsert({
       where: { wxOpenid },
-      update: { status: 'active' },
+      update: { status: 'active', wxUnionid },
       create: {
         wxOpenid,
+        wxUnionid,
         status: 'active'
       }
     });

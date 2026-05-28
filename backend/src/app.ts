@@ -21,6 +21,7 @@ export function buildApp({ env, prisma }: BuildAppOptions) {
   });
 
   app.decorate('prisma', prisma);
+  app.decorate('env', env);
 
   app.register(cors, {
     origin: env.NODE_ENV === 'production' ? false : true
@@ -62,5 +63,6 @@ export function buildApp({ env, prisma }: BuildAppOptions) {
 declare module 'fastify' {
   interface FastifyInstance {
     prisma: PrismaClient;
+    env: Env;
   }
 }
