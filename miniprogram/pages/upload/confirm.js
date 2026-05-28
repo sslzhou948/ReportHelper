@@ -1,4 +1,5 @@
 const { api } = require('../../utils/api');
+const { showApiErrorToast } = require('../../utils/error');
 const { isRecognizingTaskStatus, shouldShowRecognitionSlow } = require('../../utils/ocr-task');
 
 const RECOGNITION_POLL_INTERVAL_MS = 1500;
@@ -379,7 +380,7 @@ Page({
       }
       this.setData({ saving: false });
       if (!error || error.errMsg !== 'showActionSheet:fail cancel') {
-        wx.showToast({ title: '\u4fdd\u5b58\u62a5\u544a\u5931\u8d25', icon: 'none' });
+        showApiErrorToast(error, '\u4fdd\u5b58\u62a5\u544a\u5931\u8d25');
       }
     });
   }

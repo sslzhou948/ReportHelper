@@ -1,4 +1,5 @@
 const { api } = require('../../utils/api');
+const { showApiErrorToast } = require('../../utils/error');
 const { calculateTone } = require('../../utils/trend');
 
 function formatRef(metric) {
@@ -328,9 +329,9 @@ Page({
         wx.showToast({ title: '已保存修改', icon: 'success' });
         this.setData({ saving: false, editing: false });
         setTimeout(() => wx.navigateBack(), 500);
-      }).catch(() => {
+      }).catch((error) => {
         this.setData({ saving: false });
-        wx.showToast({ title: '保存修改失败', icon: 'none' });
+        showApiErrorToast(error, '保存修改失败');
       });
     }
     return api.updateOcrDraft({
@@ -343,9 +344,9 @@ Page({
       wx.showToast({ title: '已保存修改', icon: 'success' });
       this.setData({ saving: false, editing: false });
       this.loadDraft();
-    }).catch(() => {
+    }).catch((error) => {
       this.setData({ saving: false });
-      wx.showToast({ title: '保存修改失败', icon: 'none' });
+      showApiErrorToast(error, '保存修改失败');
     });
   }
 });

@@ -1,4 +1,5 @@
 const { api } = require('../../utils/api');
+const { showApiErrorToast } = require('../../utils/error');
 
 Page({
   data: {
@@ -18,9 +19,9 @@ Page({
     this.setData({ loading: true });
     api.getReportDetail(this.reportId).then(({ report, groups }) => {
       this.setData({ report, groups, findings: (report && report.findings) || [], loading: false });
-    }).catch(() => {
+    }).catch((error) => {
       this.setData({ loading: false });
-      wx.showToast({ title: '\u52a0\u8f7d\u62a5\u544a\u5931\u8d25', icon: 'none' });
+      showApiErrorToast(error, '\u52a0\u8f7d\u62a5\u544a\u5931\u8d25');
     });
   },
   goBack() {
@@ -46,8 +47,8 @@ Page({
         }).then(() => {
           wx.showToast({ title: '\u5df2\u5220\u9664', icon: 'success' });
           setTimeout(() => wx.navigateBack(), 500);
-        }).catch(() => {
-          wx.showToast({ title: '\u5220\u9664\u5931\u8d25', icon: 'none' });
+        }).catch((error) => {
+          showApiErrorToast(error, '\u5220\u9664\u5931\u8d25');
         });
       }
     });
