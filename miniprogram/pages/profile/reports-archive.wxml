@@ -5,7 +5,7 @@
     <view class="nav-side right"></view>
   </view>
   <view class="pad mt-12">
-    <view class="notice">按时间管理已归档报告。删除、恢复和批量移动会在接入后端后开放。</view>
+    <view class="notice">按时间查看已归档报告。单份删除请进入报告详情，恢复和批量移动后续开放。</view>
   </view>
   <view class="pad mt-12">
     <view class="card">
@@ -20,4 +20,3 @@
     </view>
   </view>
 </view>
-
