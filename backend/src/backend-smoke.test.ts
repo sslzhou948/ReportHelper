@@ -108,6 +108,8 @@ class MemoryPrisma {
       const task = this.ocrTasks.find((item) => {
         if (where.id && item.id !== where.id) return false;
         if (where.profileId && item.profileId !== where.profileId) return false;
+        if (where.userId && item.userId !== where.userId) return false;
+        if (where.idempotencyKey && item.idempotencyKey !== where.idempotencyKey) return false;
         if (where.status?.in && !where.status.in.includes(item.status)) return false;
         if (where.profile) {
           const profile = this.profiles.find((profileRow) => profileRow.id === item.profileId);
@@ -797,7 +799,7 @@ const cancelSeedResponse = await app.inject({
   url: `/api/profiles/${profileId}/recheck-plans`,
   payload: {
     type: 'CT 检查',
-    date: '2026-06-22',
+    date: offsetDateOnly(25),
     hospital: '肿瘤医院',
     todos: [{ text: '取号', sortOrder: 1 }]
   }
@@ -813,6 +815,9 @@ assert.equal(cancelRecheckResponse.json().data.status, 'cancelled');
 const createTaskResponse = await app.inject({
   method: 'POST',
   url: '/api/ocr/tasks',
+  headers: {
+    'Idempotency-Key': 'ocr_fixture_smoke'
+  },
   payload: {
     profileId,
     fixtureCaseIds: ['acth', 'thyroid', 'cortisol', 'liver_function', 'uric_electrolyte_lipid', 'chest_ct_plain', 'abdomen_pelvis_ct_plain']
@@ -823,6 +828,21 @@ const createTaskPayload = createTaskResponse.json();
 assert.equal(createTaskPayload.data.reportCount, 7);
 assert.equal(createTaskPayload.data.drafts.length, 7);
 assert.equal(createTaskPayload.data.drafts[0].basicInfo.typeKey, 'endocrine_acth');
+
+const repeatTaskResponse = await app.inject({
+  method: 'POST',
+  url: '/api/ocr/tasks',
+  headers: {
+    'Idempotency-Key': 'ocr_fixture_smoke'
+  },
+  payload: {
+    profileId,
+    fixtureCaseIds: ['acth']
+  }
+});
+assert.equal(repeatTaskResponse.statusCode, 200);
+assert.equal(repeatTaskResponse.json().data.id, createTaskPayload.data.id);
+assert.equal(prisma.ocrTasks.filter((task) => task.idempotencyKey === 'ocr_fixture_smoke').length, 1);
 
 const getTaskResponse = await app.inject({
   method: 'GET',

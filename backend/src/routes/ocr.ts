@@ -143,6 +143,18 @@ function draftUpdateData(draft: z.infer<typeof updateDraftSchema>['draft']) {
 export async function registerOcrRoutes(app: FastifyInstance) {
   app.post('/api/ocr/tasks', async (request, reply) => {
     const requestId = getRequestId(request);
+    const rawIdempotencyKey = request.headers['idempotency-key'];
+    const idempotencyKey = Array.isArray(rawIdempotencyKey) ? rawIdempotencyKey[0] : rawIdempotencyKey;
+    if (idempotencyKey && idempotencyKey.length > 128) {
+      return reply.status(400).send({
+        error: {
+          code: 'VALIDATION_FAILED',
+          message: 'Idempotency-Key is too long'
+        },
+        requestId
+      });
+    }
+
     const parsed = createOcrTaskSchema.safeParse(request.body || {});
     if (!parsed.success) {
       return reply.status(400).send({
@@ -158,6 +170,26 @@ export async function registerOcrRoutes(app: FastifyInstance) {
     const session = await requireSession(app, request, reply);
     if (!session) return;
     const { user, profile: defaultProfile } = session;
+    if (idempotencyKey) {
+      const existingTask = await app.prisma.ocrTask.findFirst({
+        where: {
+          userId: user.id,
+          idempotencyKey
+        },
+        include: {
+          drafts: {
+            orderBy: { createdAt: 'asc' }
+          }
+        }
+      });
+      if (existingTask) {
+        return {
+          data: serializeTask(existingTask as unknown as Parameters<typeof serializeTask>[0]),
+          requestId
+        };
+      }
+    }
+
     const profileId = parsed.data.profileId || defaultProfile.id;
     const profile = await app.prisma.profile.findFirst({
       where: {
@@ -237,6 +269,7 @@ export async function registerOcrRoutes(app: FastifyInstance) {
           profileId: profile.id,
           userId: user.id,
           status: isFixtureTask ? 'needs_confirmation' : 'queued',
+          idempotencyKey: idempotencyKey || null,
           photoCount: isFixtureTask ? drafts.reduce((sum, draft) => sum + (draft.sourcePhotoIds || []).length, 0) : photos.length,
           reportCount: isFixtureTask ? drafts.length : countReportGroups(photos)
         }
