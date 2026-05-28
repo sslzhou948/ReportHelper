@@ -19,6 +19,10 @@
       <view class="edit-row"><view class="sub label">检查日期</view><picker wx:if="{{editing}}" class="date-picker" mode="date" value="{{basicInfo.reportDate}}" bindchange="onDateChange"><view class="edit-picker">{{basicInfo.reportDate}}</view></picker><view wx:else class="flex right readonly">{{basicInfo.reportDate}}</view></view>
     </view>
     <view wx:if="{{basicInfo.hospitalSource === 'inferred_from_batch' || basicInfo.reportDateSource === 'inferred_from_batch'}}" class="source-note">部分基础信息根据同批报告推测，请核对。</view>
+    <view wx:if="{{editing}}" class="manual-actions">
+      <view class="btn secondary" bindtap="addManualMetric">添加指标</view>
+      <view class="btn secondary" bindtap="addFinding">添加影像所见</view>
+    </view>
   </view>
   <view wx:if="{{warnings.length}}">
     <view class="section-title">需要确认</view>
@@ -94,6 +98,10 @@
     <view class="empty-detail">
       <view class="body strong">暂无可展示的识别明细</view>
       <view class="tiny mt-8">请返回确认页检查报告来源，或稍后重新识别。</view>
+      <view wx:if="{{editing}}" class="manual-actions in-empty">
+        <view class="btn secondary" bindtap="addManualMetric">添加指标</view>
+        <view class="btn secondary" bindtap="addFinding">添加影像所见</view>
+      </view>
     </view>
   </view>
   <view class="bottom-action">

@@ -64,6 +64,7 @@ Page({
   draftId: '',
   draft: null,
   source: 'ocr',
+  manualMode: false,
 
   data: {
     loading: false,
@@ -90,6 +91,7 @@ Page({
     this.reportId = query.reportId || '';
     this.source = this.reportId ? 'report' : 'ocr';
     this.reportIdx = Number(query.reportIdx || 0);
+    this.manualMode = query.manual === '1';
     if (query.editing === '1') this.setData({ editing: true });
     if (this.source === 'report') this.loadReport();
     else this.loadDraft();
@@ -190,6 +192,7 @@ Page({
     };
     if (field === 'hospital') this.draft.basicInfo.hospitalSource = 'user_edited';
     if (field === 'reportDate') this.draft.basicInfo.reportDateSource = 'user_edited';
+    this.markManualReviewed();
     this.refreshData();
   },
 
@@ -200,6 +203,53 @@ Page({
       reportDate: event.detail.value,
       reportDateSource: 'user_edited'
     };
+    this.markManualReviewed();
+    this.refreshData();
+  },
+
+  markManualReviewed() {
+    if (!this.draft) return;
+    if (this.manualMode || ['needs_manual_input', 'not_report'].includes(this.draft.status)) {
+      this.draft.status = 'needs_review';
+      this.draft.basicInfo = {
+        ...(this.draft.basicInfo || {}),
+        reportLike: true
+      };
+    }
+  },
+
+  addManualMetric() {
+    if (!this.draft) return;
+    const metrics = this.draft.metrics || [];
+    this.draft.metrics = metrics.concat([{
+      metricKey: `manual_metric_${Date.now()}`,
+      metricName: '\u624b\u52a8\u8865\u5f55\u6307\u6807',
+      originalMetricName: '\u624b\u52a8\u8865\u5f55\u6307\u6807',
+      category: 'other',
+      categoryCn: '\u5176\u4ed6',
+      mappingStatus: 'pending',
+      valueType: 'quantitative',
+      valueNumeric: null,
+      unit: '',
+      refRangeLow: null,
+      refRangeHigh: null,
+      tone: 'unknown',
+      isManuallyEdited: true
+    }]);
+    this.markManualReviewed();
+    this.refreshData();
+  },
+
+  addFinding() {
+    if (!this.draft) return;
+    this.draft.findings = (this.draft.findings || []).concat(['']);
+    this.draft.basicInfo = {
+      ...(this.draft.basicInfo || {}),
+      modality: (this.draft.basicInfo && this.draft.basicInfo.modality) || 'imaging',
+      analysisPolicy: 'view_only'
+    };
+    this.draft.analysisPolicy = 'view_only';
+    this.markManualReviewed();
     this.refreshData();
   },
 
@@ -221,6 +271,7 @@ Page({
     const valueForTone = metric.valueType === 'qualitative' ? metric.valueQualitative : metric.valueNumeric;
     metric.tone = calculateTone(valueForTone, metric.refRangeLow, metric.refRangeHigh, metric.valueType || 'quantitative');
     this.draft.metrics[index] = metric;
+    this.markManualReviewed();
     this.refreshData();
   },
 
@@ -237,18 +288,33 @@ Page({
     };
     metric.tone = calculateTone(metric.valueQualitative, metric.refRangeLow, metric.refRangeHigh, 'qualitative');
     this.draft.metrics[index] = metric;
+    this.markManualReviewed();
     this.refreshData();
   },
 
   onFindingInput(event) {
     const index = Number(event.currentTarget.dataset.index);
-    if (!this.draft || !this.draft.findings || !this.draft.findings[index]) return;
+    if (!this.draft || !this.draft.findings || this.draft.findings[index] === undefined) return;
     this.draft.findings[index] = event.detail.value;
+    this.markManualReviewed();
     this.refreshData();
   },
 
   saveAndBack() {
     if (!this.draftId || this.data.saving) return Promise.resolve(false);
+    if (this.manualMode) {
+      const hasMetric = (this.draft.metrics || []).some((metric) => (
+        metric.valueType === 'qualitative'
+          ? String(metric.valueQualitative || '').trim()
+          : metric.valueNumeric !== null && metric.valueNumeric !== undefined && metric.valueNumeric !== ''
+      ));
+      const hasFinding = (this.draft.findings || []).some((item) => String(item || '').trim());
+      if (!hasMetric && !hasFinding) {
+        wx.showToast({ title: '\u8bf7\u5148\u8865\u5f55\u6307\u6807\u6216\u5f71\u50cf\u6240\u89c1', icon: 'none' });
+        return Promise.resolve(false);
+      }
+      this.markManualReviewed();
+    }
     this.setData({ saving: true });
     if (this.source === 'report') {
       return api.updateReport(this.reportId, {

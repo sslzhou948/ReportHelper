@@ -92,7 +92,11 @@ assert.ok(uploadConfirmJs.includes('retryTask()'), 'upload confirm must expose O
 assert.ok(uploadConfirmJs.includes('api.retryOcrTask(this.taskId'), 'upload confirm retry must call the retry OCR API');
 assert.ok(uploadConfirmJs.includes('profileId: this.data.profileId'), 'upload confirm save must keep reports scoped to the OCR task profile');
 assert.ok(uploadConfirmJs.includes('profileNoticeText'), 'upload confirm must explain when the OCR task belongs to another profile');
+assert.ok(uploadConfirmJs.includes('goManualFill'), 'upload confirm must offer manual fill for empty or non-report OCR drafts');
+assert.ok(uploadConfirmJs.includes('needsManualInput'), 'upload confirm must block unresolved empty OCR drafts before saving');
 assert.ok(uploadEditDetailJs.includes('api.getOcrTask(this.taskId)'), 'upload edit detail must load the selected OCR draft');
+assert.ok(uploadEditDetailJs.includes('addManualMetric()'), 'upload edit detail must allow manual metric entry');
+assert.ok(uploadEditDetailJs.includes('addFinding()'), 'upload edit detail must allow manual imaging finding entry');
 assert.ok(!uploadEditDetailJs.includes("value: '32'"), 'upload edit detail must not ship hardcoded metric fixtures');
 assert.ok(!reportDetailJs.includes('api.updateReport(this.reportId'), 'report detail edit entry must not auto-save report data');
 assert.ok(!reportDetailJs.includes('已保存编辑'), 'report detail edit entry must not show a saved toast before real edits');

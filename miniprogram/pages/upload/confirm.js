@@ -21,24 +21,34 @@ function toDisplayReport(draft, index) {
   const abnormalCount = metrics.filter((metric) => metric.tone && metric.tone !== 'ok').length;
   const pendingCount = metrics.filter((metric) => ['pending', 'conflicted'].includes(metric.mappingStatus)).length;
   const inferred = [info.hospitalSource, info.reportDateSource].includes('inferred_from_batch');
+  const reportLike = info.reportLike !== false;
+  const needsManualInput = ['needs_manual_input', 'not_report'].includes(draft.status) || !reportLike;
 
   return {
     draftId: draft.draftId,
     title: buildReportTitle(index, draft),
-    type: info.type || '\u5f85\u786e\u8ba4\u62a5\u544a',
+    type: !reportLike ? '\u672a\u8bc6\u522b\u5230\u68c0\u67e5\u62a5\u544a' : (info.type || '\u5f85\u786e\u8ba4\u62a5\u544a'),
     canonicalTypeName: info.canonicalTypeName || '',
     modality: info.modality || 'laboratory',
     examPart: info.examPart || '',
     analysisPolicy: draft.analysisPolicy || (info.modality === 'imaging' ? 'view_only' : 'metric_analysis'),
     meta: buildReportMeta(draft),
-    count: metrics.length ? `${metrics.length} \u9879\u6307\u6807` : (findings.length ? '\u5f71\u50cf\u6240\u89c1' : '\u5f85\u786e\u8ba4\u6307\u6807'),
+    count: !reportLike
+      ? '\u8bf7\u8df3\u8fc7\u6216\u91cd\u65b0\u9009\u62e9'
+      : (metrics.length ? `${metrics.length} \u9879\u6307\u6807` : (findings.length ? '\u5f71\u50cf\u6240\u89c1' : '\u672a\u8bc6\u522b\u5230\u5185\u5bb9')),
     abnormal: abnormalCount ? `${abnormalCount} \u9879\u5f02\u5e38` : '',
     pendingText: pendingCount ? `${pendingCount} \u9879\u5f85\u786e\u8ba4\u5f52\u7c7b` : '',
+    manualText: needsManualInput
+      ? (reportLike ? '\u672a\u8bc6\u522b\u5230\u53ef\u7528\u5185\u5bb9\uff0c\u53ef\u624b\u52a8\u8865\u5f55\u3002' : '\u8fd9\u5f20\u56fe\u4e0d\u50cf\u68c0\u67e5\u62a5\u544a\uff0c\u8bf7\u6838\u5bf9\u3002')
+      : '',
     inferredText: inferred ? '\u90e8\u5206\u57fa\u672c\u4fe1\u606f\u6765\u81ea\u540c\u6279\u63a8\u6d4b' : '',
     conflict: conflicts.length > 0,
     conflictCount: conflicts.length,
     metricKey: conflicts[0] && conflicts[0].metricKey,
-    sourcePhotoIds: draft.sourcePhotoIds || []
+    sourcePhotoIds: draft.sourcePhotoIds || [],
+    status: draft.status || '',
+    reportLike,
+    needsManualInput
   };
 }
 
@@ -169,6 +179,10 @@ Page({
     wx.navigateTo({ url: `/pages/upload/edit-detail?taskId=${this.taskId}&reportIdx=${event.currentTarget.dataset.index}` });
   },
 
+  goManualFill(event) {
+    wx.navigateTo({ url: `/pages/upload/edit-detail?taskId=${this.taskId}&reportIdx=${event.currentTarget.dataset.index}&editing=1&manual=1` });
+  },
+
   goConflict(event) {
     const report = this.data.reports[event.currentTarget.dataset.index] || {};
     wx.navigateTo({ url: `/pages/upload/conflict?taskId=${this.taskId}&reportIdx=${event.currentTarget.dataset.index}&metricKey=${report.metricKey || 'wbc'}` });
@@ -244,6 +258,14 @@ Page({
     if (this.data.unresolvedConflictCount > 0) {
       wx.showToast({
         title: `\u8bf7\u5148\u5904\u7406 ${this.data.unresolvedConflictCount} \u4e2a\u51b2\u7a81`,
+        icon: 'none'
+      });
+      return Promise.resolve(false);
+    }
+    const unresolvedManualCount = this.data.reports.filter((report) => report.needsManualInput).length;
+    if (unresolvedManualCount > 0) {
+      wx.showToast({
+        title: `\u8bf7\u5148\u5904\u7406 ${unresolvedManualCount} \u4efd\u672a\u8bc6\u522b\u62a5\u544a`,
         icon: 'none'
       });
       return Promise.resolve(false);

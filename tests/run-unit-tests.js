@@ -428,6 +428,14 @@ asyncChecks.push(mockApi.createOcrTask({
   assert.ok(tasks.length >= 1, 'cancelled OCR task should be listable by status');
 }));
 asyncChecks.push(mockApi.createOcrTask({
+  profileId: 'profile_mom',
+  fixtureCaseIds: ['empty_result', 'non_report_image']
+}).then((task) => {
+  assert.strictEqual(task.reportCount, 2);
+  assert.ok(task.drafts.some((draft) => draft.status === 'needs_manual_input' && draft.warnings.length > 0), 'empty OCR result should require manual input');
+  assert.ok(task.drafts.some((draft) => draft.status === 'not_report' && draft.basicInfo.reportLike === false), 'non-report image should be marked as not report-like');
+}));
+asyncChecks.push(mockApi.createOcrTask({
   profileId: 'profile_self',
   fixtureCaseIds: ['acth', 'thyroid', 'chest_ct_plain']
 }).then((task) => {

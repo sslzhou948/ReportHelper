@@ -91,6 +91,11 @@
   border-left: 8rpx solid #D89A5C;
 }
 
+.manual-needed {
+  border-left: 8rpx solid var(--warn);
+  background: #FFFDF8;
+}
+
 .conflict-bar {
   margin-top: 20rpx;
   padding: 18rpx 20rpx;

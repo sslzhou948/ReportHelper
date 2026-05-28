@@ -64,6 +64,17 @@
   font-size: 24rpx;
 }
 
+.manual-actions {
+  margin-top: 18rpx;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16rpx;
+}
+
+.manual-actions.in-empty {
+  margin-top: 24rpx;
+}
+
 .warn-dot {
   width: 28rpx;
   height: 28rpx;

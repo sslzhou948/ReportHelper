@@ -189,6 +189,44 @@ const rawRealcaseOcrDrafts = [
     conflicts: [],
     warnings: [],
     status: 'needs_review'
+  },
+  {
+    caseId: 'empty_result',
+    draftId: 'fixture_empty_result',
+    sourcePhotoIds: ['real_empty_result'],
+    pageCount: 1,
+    basicInfo: {
+      type: '\u5f85\u624b\u52a8\u8865\u5f55',
+      typeKey: 'manual_entry',
+      hospital: '',
+      reportDate: '',
+      confidence: 0.12,
+      reportLike: true
+    },
+    metrics: [],
+    findings: [],
+    conflicts: [],
+    warnings: [{ code: 'OCR_EMPTY_RESULT', message: '\u8fd9\u5f20\u56fe\u672a\u8bc6\u522b\u5230\u53ef\u7528\u5185\u5bb9\uff0c\u8bf7\u624b\u52a8\u8865\u5f55\u6216\u91cd\u65b0\u4e0a\u4f20\u3002' }],
+    status: 'needs_manual_input'
+  },
+  {
+    caseId: 'non_report_image',
+    draftId: 'fixture_non_report_image',
+    sourcePhotoIds: ['real_non_report_image'],
+    pageCount: 1,
+    basicInfo: {
+      type: '\u672a\u8bc6\u522b\u5230\u68c0\u67e5\u62a5\u544a',
+      typeKey: 'not_medical_report',
+      hospital: '',
+      reportDate: '',
+      confidence: 0.08,
+      reportLike: false
+    },
+    metrics: [],
+    findings: [],
+    conflicts: [],
+    warnings: [{ code: 'NOT_MEDICAL_REPORT', message: '\u8fd9\u5f20\u56fe\u4e0d\u50cf\u68c0\u67e5\u62a5\u544a\uff0c\u5efa\u8bae\u8df3\u8fc7\u6216\u91cd\u65b0\u9009\u62e9\u3002' }],
+    status: 'not_report'
   }
 ];
 
@@ -279,15 +317,18 @@ function enrichDraft(draft) {
   };
 }
 
-const realcaseOcrDrafts = rawRealcaseOcrDrafts.map(enrichDraft);
+const edgecaseCaseIds = ['empty_result', 'non_report_image'];
+const allOcrDrafts = rawRealcaseOcrDrafts.map(enrichDraft);
+const realcaseOcrDrafts = allOcrDrafts.filter((draft) => !edgecaseCaseIds.includes(draft.caseId));
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
 function getRealcaseOcrDrafts(caseIds) {
+  const source = caseIds && caseIds.length ? allOcrDrafts : realcaseOcrDrafts;
   const ids = caseIds && caseIds.length ? caseIds : realcaseOcrDrafts.map((item) => item.caseId);
-  return clone(realcaseOcrDrafts.filter((draft) => ids.includes(draft.caseId)));
+  return clone(source.filter((draft) => ids.includes(draft.caseId)));
 }
 
 function buildRealcaseOcrTask(profileId, caseIds) {
