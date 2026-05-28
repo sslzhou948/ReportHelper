@@ -85,12 +85,12 @@ Page({
   },
 
   load() {
-    const profileId = getApp().getCurrentProfileId();
+    const app = getApp();
     this.setData({ loading: true });
-    Promise.all([
+    app.ensureCurrentProfileId(api).then((profileId) => Promise.all([
       api.listMetricSnapshots(profileId),
       api.listReports(profileId)
-    ]).then(([metrics, reports]) => {
+    ])).then(([metrics, reports]) => {
       this.setData({
         metrics,
         metricCount: metrics.length,

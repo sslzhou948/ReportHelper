@@ -22,16 +22,15 @@ Page({
 
   load() {
     const app = getApp();
-    const profileId = app.getCurrentProfileId();
     this.setData({ loading: true, layout: app.getLayout() });
 
-    Promise.all([
+    app.ensureCurrentProfileId(api).then((profileId) => Promise.all([
       api.getProfile(profileId),
       api.getProfiles(),
       api.listReports(profileId),
       api.listMetricSnapshots(profileId),
       api.listRecheckPlans(profileId)
-    ]).then(([profile, profiles, reports, snapshots, recheck]) => {
+    ])).then(([profile, profiles, reports, snapshots, recheck]) => {
       const nextPlan = recheck.nextPlan || null;
       this.setData({
         profile,

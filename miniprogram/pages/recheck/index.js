@@ -52,7 +52,8 @@ Page({
   },
   load() {
     this.setData({ loading: true });
-    api.listRecheckPlans(getApp().getCurrentProfileId()).then((recheck) => {
+    const app = getApp();
+    app.ensureCurrentProfileId(api).then((profileId) => api.listRecheckPlans(profileId)).then((recheck) => {
       this.setData({ ...buildPlanState(recheck), loading: false });
     }).catch(() => {
       this.setData({ loading: false });
