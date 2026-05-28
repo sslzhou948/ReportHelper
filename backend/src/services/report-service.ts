@@ -101,6 +101,36 @@ function calculateTone(metric: JsonObject): string {
   return 'ok';
 }
 
+function metricValueSignature(metric: JsonObject): string {
+  const valueType = String(metric.valueType || 'quantitative');
+  const value = valueType === 'qualitative'
+    ? String(metric.valueQualitative || '').trim()
+    : String(metric.valueNumeric ?? '').trim();
+  return [
+    String(metric.metricKey || metric.metricName || 'unknown'),
+    valueType,
+    value,
+    String(metric.unit || '').trim()
+  ].join('|');
+}
+
+function metricConfidence(metric: JsonObject): number {
+  const value = toNumberOrNull(metric.ocrConfidence);
+  return value === null ? 0 : value;
+}
+
+function dedupeMetrics(metrics: JsonObject[]) {
+  const bySignature = new Map<string, JsonObject>();
+  for (const metric of metrics) {
+    const signature = metricValueSignature(metric);
+    const existing = bySignature.get(signature);
+    if (!existing || metricConfidence(metric) > metricConfidence(existing)) {
+      bySignature.set(signature, metric);
+    }
+  }
+  return [...bySignature.values()];
+}
+
 function analysisPolicy(info: JsonObject, draft: DraftLike): string {
   if (info.analysisPolicy) return String(info.analysisPolicy);
   const draftPolicy = (toPlainObject(draft.basicInfo).analysisPolicy || (draft as any).analysisPolicy) as string | undefined;
@@ -148,7 +178,7 @@ function reportIdentity(report: ReportLike): DuplicateReportIdentity {
 
 function reportCreateData(draft: DraftLike, userId: string) {
   const info = toPlainObject(draft.basicInfo);
-  const metrics = toArray<JsonObject>(draft.metrics);
+  const metrics = dedupeMetrics(toArray<JsonObject>(draft.metrics));
   const abnormalCount = metrics.filter((metric) => {
     const tone = calculateTone(metric);
     return tone !== 'ok' && tone !== 'unknown';
@@ -179,7 +209,7 @@ function reportCreateData(draft: DraftLike, userId: string) {
 }
 
 function metricCreateData(reportId: string, draft: DraftLike, reportDate: Date) {
-  return toArray<JsonObject>(draft.metrics).map((metric) => {
+  return dedupeMetrics(toArray<JsonObject>(draft.metrics)).map((metric) => {
     const valueType = String(metric.valueType || 'quantitative');
     return {
       reportId,

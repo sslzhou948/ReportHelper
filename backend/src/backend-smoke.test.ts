@@ -916,6 +916,14 @@ const updatedDraftResponse = await app.inject({
         hospital: '用户校准医院',
         hospitalSource: 'user_edited'
       },
+      metrics: [
+        ...(editableDraft.metrics || []),
+        {
+          ...(editableDraft.metrics || [])[0],
+          metricName: 'ACTH low confidence duplicate',
+          ocrConfidence: 0.1
+        }
+      ],
       conflicts: [{
         metricKey: 'acth',
         metricName: 'ACTH',
@@ -956,6 +964,9 @@ assert.equal(saveResponse.statusCode, 200);
 const savePayload = saveResponse.json();
 assert.equal(savePayload.data.reports.length, 7);
 assert.equal(prisma.reports.filter((report) => !report.deletedAt).length, 7);
+const editableReport = prisma.reports.find((report) => report.draftId === editableDraft.draftId);
+assert.ok(editableReport);
+assert.equal(prisma.reportMetricValues.filter((metric) => metric.reportId === editableReport.id && metric.metricKey === 'acth').length, 1);
 
 const deleteProfileWithReportsResponse = await app.inject({
   method: 'DELETE',
