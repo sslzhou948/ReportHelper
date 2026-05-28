@@ -144,6 +144,64 @@ assert.ok(uploadValidation.message.includes('JPG/PNG/HEIC'));
   }
 })();
 
+(() => {
+  const pagePath = path.resolve(__dirname, '..', 'miniprogram', 'pages', 'upload', 'pick.js');
+  const pageModulePath = require.resolve(pagePath);
+  const savedWx = global.wx;
+  const savedPage = global.Page;
+  const storageState = {};
+  const toasts = [];
+  let pageConfig = null;
+  try {
+    global.wx = {
+      getStorageSync: (key) => storageState[key],
+      setStorageSync: (key, value) => { storageState[key] = value; },
+      removeStorageSync: (key) => { delete storageState[key]; },
+      showToast: ({ title }) => { toasts.push(title); }
+    };
+    global.Page = (config) => { pageConfig = config; };
+    delete require.cache[pageModulePath];
+    require(pagePath);
+    const page = {
+      ...pageConfig,
+      data: {
+        ...JSON.parse(JSON.stringify(pageConfig.data)),
+        photos: [
+          { id: 1, group: 0 },
+          { id: 2, group: 0 },
+          { id: 3, group: 0 }
+        ],
+        selected: []
+      },
+      setData(update) {
+        this.data = {
+          ...this.data,
+          ...update
+        };
+      }
+    };
+    page.startGrouping({ currentTarget: { dataset: { id: 2 } } });
+    assert.deepStrictEqual(page.data.selected, [2], 'grouping should start from the tapped photo');
+    page.finishGrouping();
+    assert.ok(toasts.some((title) => title.includes('2')), 'single-photo grouping should be rejected');
+    page.setSelected([1, 2]);
+    page.finishGrouping();
+    assert.strictEqual(page.data.grouping, false);
+    assert.strictEqual(page.data.reportCount, 2, 'two linked photos plus one standalone should produce two reports');
+    const groupId = page.data.photos.find((photo) => photo.id === 1).group;
+    assert.ok(groupId > 0);
+    assert.strictEqual(page.data.photos.find((photo) => photo.id === 2).group, groupId);
+    page.splitGroup({ currentTarget: { dataset: { group: groupId } } });
+    assert.deepStrictEqual(page.data.photos.map((photo) => photo.group), [0, 0, 0]);
+    assert.strictEqual(page.data.reportCount, 3, 'splitting a group should restore independent report count');
+    assert.deepStrictEqual(storageState.uploadDraft.photos.map((photo) => photo.group), [0, 0, 0]);
+  } finally {
+    global.wx = savedWx;
+    global.Page = savedPage;
+    delete require.cache[pageModulePath];
+  }
+})();
+
 asyncChecks.push((async () => {
   const pagePath = path.resolve(__dirname, '..', 'miniprogram', 'pages', 'upload', 'pick.js');
   const apiPath = path.resolve(__dirname, '..', 'miniprogram', 'utils', 'api.js');

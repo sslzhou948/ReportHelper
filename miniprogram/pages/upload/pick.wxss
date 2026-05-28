@@ -120,6 +120,25 @@
   z-index: 2;
 }
 
+.split {
+  position: absolute;
+  right: 8rpx;
+  top: 8rpx;
+  min-width: 48rpx;
+  height: 48rpx;
+  padding: 0 12rpx;
+  border-radius: 24rpx;
+  background: #FFFFFF;
+  color: var(--primary);
+  box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22rpx;
+  font-weight: 800;
+  z-index: 2;
+}
+
 .notice {
   padding: 20rpx 24rpx;
   border-radius: 24rpx;

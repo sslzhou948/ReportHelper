@@ -333,15 +333,22 @@ Page({
     }
     wx.showToast({ title: '\u6682\u65e0\u53ef\u9884\u89c8\u56fe\u7247', icon: 'none' });
   },
-  startGrouping() {
+  startGrouping(event) {
     if (this.data.photos.length === 0) {
       wx.showToast({ title: '\u8bf7\u5148\u9009\u62e9\u62a5\u544a\u56fe\u7247', icon: 'none' });
       return;
     }
+    const initialId = event && event.currentTarget && event.currentTarget.dataset.id
+      ? Number(event.currentTarget.dataset.id)
+      : this.data.photos[0].id;
+    const current = this.data.photos.find((photo) => photo.id === initialId);
+    const selected = current && current.group
+      ? this.data.photos.filter((photo) => photo.group === current.group).map((photo) => photo.id)
+      : [initialId];
     this.setData({
       grouping: true,
-      selected: [this.data.photos[0].id],
-      photos: decoratePhotos(this.data.photos, [this.data.photos[0].id])
+      selected,
+      photos: decoratePhotos(this.data.photos, selected)
     });
   },
   toggleSelect(event) {
@@ -353,20 +360,29 @@ Page({
     this.setSelected(selected);
   },
   finishGrouping() {
+    if (this.data.selected.length < 2) {
+      wx.showToast({ title: '\u8bf7\u81f3\u5c11\u9009\u62e9 2 \u5f20', icon: 'none' });
+      return;
+    }
+    const nextGroup = this.data.photos.reduce((max, photo) => Math.max(max, Number(photo.group) || 0), 0) + 1;
     const photos = this.data.photos.map((photo) => ({
       ...photo,
-      group: this.data.selected.includes(photo.id) ? 1 : photo.group
+      group: this.data.selected.includes(photo.id) ? nextGroup : photo.group
     }));
-    persistUploadDraft(photos);
-    this.setData({
-      photos: decoratePhotos(photos, this.data.selected),
-      reportCount: getReportCount(photos),
-      grouping: false,
-      hasDraft: photos.length > 0
-    });
+    this.updatePhotos(photos, []);
+    this.setData({ grouping: false });
   },
   cancelGrouping() {
     this.setData({ grouping: false });
+  },
+  splitGroup(event) {
+    const group = Number(event.currentTarget.dataset.group) || 0;
+    if (!group) return;
+    const photos = this.data.photos.map((photo) => (
+      Number(photo.group) === group ? { ...photo, group: 0 } : photo
+    ));
+    this.updatePhotos(photos, []);
+    wx.showToast({ title: '\u5df2\u53d6\u6d88\u5408\u5e76', icon: 'none' });
   },
   startOcr() {
     if (this.data.loading) return Promise.resolve(null);

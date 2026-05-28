@@ -24,7 +24,8 @@
           <image wx:if="{{item.tempFilePath}}" class="photo-thumb" src="{{item.tempFilePath}}" mode="aspectFill" />
           <view wx:if="{{item.group}}" class="group-label">组 {{item.group}}</view>
           <view class="photo-index">第 {{item.id}} 张</view>
-          <view class="clip" catchtap="startGrouping">⌘</view>
+          <view class="clip" data-id="{{item.id}}" catchtap="startGrouping">⌘</view>
+          <view wx:if="{{item.group}}" class="split" data-group="{{item.group}}" catchtap="splitGroup">拆</view>
         </view>
         <view class="photo add" bindtap="chooseAlbum">+</view>
       </view>
