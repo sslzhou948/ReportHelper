@@ -21,8 +21,9 @@
     <view class="pad">
       <view class="photo-grid">
         <view wx:for="{{photos}}" wx:key="id" data-id="{{item.id}}" class="photo {{item.group ? 'grouped' : ''}}" bindtap="preview">
+          <image wx:if="{{item.tempFilePath}}" class="photo-thumb" src="{{item.tempFilePath}}" mode="aspectFill" />
           <view wx:if="{{item.group}}" class="group-label">组 {{item.group}}</view>
-          <view>第 {{item.id}} 张</view>
+          <view class="photo-index">第 {{item.id}} 张</view>
           <view class="clip" catchtap="startGrouping">⌘</view>
         </view>
         <view class="photo add" bindtap="chooseAlbum">+</view>
@@ -50,8 +51,9 @@
     <view class="pad mt-16">
       <view class="photo-grid">
         <view wx:for="{{photos}}" wx:key="id" data-id="{{item.id}}" class="photo {{item.isSelected ? 'selected' : ''}}" bindtap="toggleSelect">
+          <image wx:if="{{item.tempFilePath}}" class="photo-thumb" src="{{item.tempFilePath}}" mode="aspectFill" />
           <view wx:if="{{item.isSelected}}" class="order-label">{{item.selectedOrder}}</view>
-          <view>第 {{item.id}} 张</view>
+          <view class="photo-index">第 {{item.id}} 张</view>
         </view>
       </view>
       <view class="sub center mt-16">已选 {{selected.length}} 张，按选中顺序合并</view>

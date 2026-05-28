@@ -260,7 +260,7 @@ Page({
       });
       return;
     }
-    wx.showToast({ title: '预览图片', icon: 'none' });
+    wx.showToast({ title: '\u6682\u65e0\u53ef\u9884\u89c8\u56fe\u7247', icon: 'none' });
   },
   startGrouping() {
     if (this.data.photos.length === 0) {
