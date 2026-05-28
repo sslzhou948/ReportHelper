@@ -120,10 +120,11 @@ asyncChecks.push(client.get('/api/profiles').then((data) => {
 }));
 
 const hybridRequests = [];
+const hybridStorage = createMemoryStorage();
 const hybridApi = createApi({
   mode: 'hybrid-upload',
   baseUrl: 'http://127.0.0.1:8787',
-  storage: createMemoryStorage(),
+  storage: hybridStorage,
   createRequestId: () => `req_hybrid_${hybridRequests.length + 1}`,
   request(config) {
     hybridRequests.push(config);
@@ -132,7 +133,7 @@ const hybridApi = createApi({
       data: {
         data: config.url.includes('/duplicate-check')
           ? { hasDuplicates: false, candidates: [] }
-          : { id: 'task_1', reports: [] },
+          : { id: 'task_1', profileId: '33333333-3333-4333-8333-333333333333', reports: [] },
         requestId: config.header['X-Request-Id']
       }
     });
@@ -151,7 +152,7 @@ asyncChecks.push(hybridApi.createOcrTask({
   ocrTaskId: '22222222-2222-4222-8222-222222222222',
   reports: [{ draftId: 'draft_mock' }],
   duplicateDecisions: [{ draftId: 'draft_mock', decision: 'skip' }]
-})).then(() => {
+})).then(() => hybridApi.listReports('profile_mock')).then(() => hybridApi.listMetricSnapshots('profile_mock')).then(() => {
   assert.strictEqual(hybridRequests[0].url, 'http://127.0.0.1:8787/api/ocr/tasks');
   assert.deepStrictEqual(hybridRequests[0].data, { fixtureCaseIds: ['acth'] });
   assert.strictEqual(hybridRequests[1].url, 'http://127.0.0.1:8787/api/reports/duplicate-check');
@@ -165,6 +166,9 @@ asyncChecks.push(hybridApi.createOcrTask({
     ocrTaskId: '22222222-2222-4222-8222-222222222222',
     duplicateDecisions: [{ draftId: 'draft_mock', decision: 'skip' }]
   });
+  assert.strictEqual(hybridStorage.get('healthhelperBackendProfileId'), '33333333-3333-4333-8333-333333333333');
+  assert.strictEqual(hybridRequests[3].url, 'http://127.0.0.1:8787/api/profiles/33333333-3333-4333-8333-333333333333/reports');
+  assert.strictEqual(hybridRequests[4].url, 'http://127.0.0.1:8787/api/profiles/33333333-3333-4333-8333-333333333333/metrics/snapshots');
 }));
 
 const errorClient = createApiClient({

@@ -1,6 +1,13 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { batchCreateReports, checkDuplicateReports, DuplicateReportRequiresDecisionError, getDraftsForTask } from '../services/report-service.js';
+import {
+  getMetricHistory,
+  getReportDetail,
+  listMetricSnapshots,
+  listReportsForProfile,
+  setMetricPinned
+} from '../services/report-query-service.js';
 import { ensureDevSession } from '../services/dev-user.js';
 import { getRequestId } from '../utils/request-id.js';
 
@@ -19,7 +26,126 @@ const batchCreateSchema = z.object({
   })).optional()
 });
 
+const listReportsQuerySchema = z.object({
+  limit: z.coerce.number().int().positive().optional()
+});
+
+const metricSnapshotQuerySchema = z.object({
+  filter: z.enum(['all', 'abnormal', 'pinned']).optional(),
+  category: z.string().optional()
+});
+
+const pinMetricSchema = z.object({
+  isPinned: z.boolean()
+});
+
 export async function registerReportRoutes(app: FastifyInstance) {
+  app.get<{ Params: { profileId: string }; Querystring: { limit?: string } }>('/api/profiles/:profileId/reports', async (request, reply) => {
+    const requestId = getRequestId(request);
+    const parsed = listReportsQuerySchema.safeParse(request.query || {});
+    if (!parsed.success) {
+      return reply.status(400).send({
+        error: {
+          code: 'VALIDATION_FAILED',
+          message: '报告列表参数无效',
+          details: parsed.error.flatten()
+        },
+        requestId
+      });
+    }
+
+    const { user } = await ensureDevSession(app.prisma);
+    const reports = await listReportsForProfile(app.prisma, request.params.profileId, user.id, parsed.data.limit);
+    if (!reports) {
+      return reply.status(404).send({
+        error: { code: 'NOT_FOUND', message: '档案不存在' },
+        requestId
+      });
+    }
+
+    return { data: reports, requestId };
+  });
+
+  app.get<{ Params: { reportId: string } }>('/api/reports/:reportId', async (request, reply) => {
+    const requestId = getRequestId(request);
+    const { user } = await ensureDevSession(app.prisma);
+    const detail = await getReportDetail(app.prisma, request.params.reportId, user.id);
+    if (!detail) {
+      return reply.status(404).send({
+        error: { code: 'NOT_FOUND', message: '报告不存在' },
+        requestId
+      });
+    }
+
+    return { data: detail, requestId };
+  });
+
+  app.get<{ Params: { profileId: string }; Querystring: { filter?: string; category?: string } }>('/api/profiles/:profileId/metrics/snapshots', async (request, reply) => {
+    const requestId = getRequestId(request);
+    const parsed = metricSnapshotQuerySchema.safeParse(request.query || {});
+    if (!parsed.success) {
+      return reply.status(400).send({
+        error: {
+          code: 'VALIDATION_FAILED',
+          message: '指标快照参数无效',
+          details: parsed.error.flatten()
+        },
+        requestId
+      });
+    }
+
+    const { user } = await ensureDevSession(app.prisma);
+    const snapshots = await listMetricSnapshots(app.prisma, request.params.profileId, user.id, parsed.data);
+    if (!snapshots) {
+      return reply.status(404).send({
+        error: { code: 'NOT_FOUND', message: '档案不存在' },
+        requestId
+      });
+    }
+
+    return { data: snapshots, requestId };
+  });
+
+  app.get<{ Params: { profileId: string; metricKey: string } }>('/api/profiles/:profileId/metrics/:metricKey/history', async (request, reply) => {
+    const requestId = getRequestId(request);
+    const { user } = await ensureDevSession(app.prisma);
+    const history = await getMetricHistory(app.prisma, request.params.profileId, user.id, request.params.metricKey);
+    if (!history) {
+      return reply.status(404).send({
+        error: { code: 'NOT_FOUND', message: '档案不存在' },
+        requestId
+      });
+    }
+
+    return { data: history, requestId };
+  });
+
+  app.patch<{ Params: { profileId: string; metricKey: string } }>('/api/profiles/:profileId/metrics/:metricKey/pin', async (request, reply) => {
+    const requestId = getRequestId(request);
+    const parsed = pinMetricSchema.safeParse(request.body || {});
+    if (!parsed.success) {
+      return reply.status(400).send({
+        error: {
+          code: 'VALIDATION_FAILED',
+          message: '关注参数无效',
+          details: parsed.error.flatten()
+        },
+        requestId
+      });
+    }
+
+    const { user } = await ensureDevSession(app.prisma);
+    const snapshot = await setMetricPinned(app.prisma, request.params.profileId, user.id, request.params.metricKey, parsed.data.isPinned);
+    if (!snapshot) {
+      return reply.status(404).send({
+        error: { code: 'NOT_FOUND', message: '档案不存在' },
+        requestId
+      });
+    }
+
+    return { data: snapshot, requestId };
+  });
+
   app.post('/api/reports/duplicate-check', async (request, reply) => {
     const requestId = getRequestId(request);
     const parsed = duplicateCheckSchema.safeParse(request.body || {});

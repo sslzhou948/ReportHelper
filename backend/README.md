@@ -41,11 +41,11 @@ The backend contract must stay aligned with:
 
 ## Mini Program Fixture Link
 
-During local mini program debugging, keep the app in mock mode by default and enable only the upload confirmation loop against the backend:
+During local mini program debugging, keep the app in mock mode by default and enable the upload-to-report loop against the backend:
 
 ```js
 wx.setStorageSync('healthhelperApiMode', 'hybrid-upload')
 wx.setStorageSync('healthhelperBackendBaseUrl', 'http://127.0.0.1:8787')
 ```
 
-In this mode, fixture OCR task creation, duplicate check, and batch save use the backend. Other pages still use the mock adapter until their backend list/detail/snapshot routes are implemented.
+In this mode, fixture OCR task creation, duplicate check, batch save, report list/detail, metric snapshots, metric history, and metric pinning use the backend. Profiles and recheck plans still use the mock adapter until those backend routes are implemented.

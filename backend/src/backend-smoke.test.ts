@@ -16,6 +16,7 @@ class MemoryPrisma {
   drafts: Row[] = [];
   reports: Row[] = [];
   reportMetricValues: Row[] = [];
+  userMetricSnapshots: Row[] = [];
 
   user = {
     upsert: async ({ where, create }: any) => {
@@ -126,17 +127,50 @@ class MemoryPrisma {
   };
 
   report = {
-    findMany: async ({ where, include }: any) => {
+    findMany: async ({ where, include, orderBy, take }: any) => {
       const rows = this.reports.filter((report) => {
         if (where.profileId && report.profileId !== where.profileId) return false;
         if (where.deletedAt === null && report.deletedAt) return false;
+        if (where.analysisPolicy?.not && report.analysisPolicy === where.analysisPolicy.not) return false;
         return true;
       });
-      if (!include?.metrics) return rows;
-      return rows.map((report) => ({
+      if (Array.isArray(orderBy)) {
+        rows.sort((a, b) => {
+          for (const item of orderBy) {
+            const key = Object.keys(item)[0];
+            const direction = item[key];
+            const left = a[key] instanceof Date ? a[key].getTime() : a[key];
+            const right = b[key] instanceof Date ? b[key].getTime() : b[key];
+            if (left === right) continue;
+            return direction === 'desc' ? (right > left ? 1 : -1) : (left > right ? 1 : -1);
+          }
+          return 0;
+        });
+      }
+      const limitedRows = take ? rows.slice(0, take) : rows;
+      if (!include?.metrics) return limitedRows;
+      return limitedRows.map((report) => ({
         ...report,
         metrics: this.reportMetricValues.filter((metric) => metric.reportId === report.id)
       }));
+    },
+    findFirst: async ({ where, include }: any) => {
+      const report = this.reports.find((item) => {
+        if (where.id && item.id !== where.id) return false;
+        if (where.deletedAt === null && item.deletedAt) return false;
+        if (where.profile) {
+          const profile = this.profiles.find((profileRow) => profileRow.id === item.profileId);
+          if (!profile || profile.userId !== where.profile.userId) return false;
+          if (where.profile.deletedAt === null && profile.deletedAt) return false;
+        }
+        return true;
+      });
+      if (!report) return null;
+      if (!include?.metrics) return report;
+      return {
+        ...report,
+        metrics: this.reportMetricValues.filter((metric) => metric.reportId === report.id)
+      };
     },
     create: async ({ data }: any) => {
       const report = {
@@ -168,6 +202,37 @@ class MemoryPrisma {
         });
       }
       return { count: data.length };
+    }
+  };
+
+  userMetricSnapshot = {
+    findMany: async ({ where, select }: any) => {
+      const rows = this.userMetricSnapshots.filter((snapshot) => {
+        if (where.profileId && snapshot.profileId !== where.profileId) return false;
+        if (where.isPinned !== undefined && snapshot.isPinned !== where.isPinned) return false;
+        return true;
+      });
+      if (!select) return rows;
+      return rows.map((row) => Object.keys(select).reduce((acc: Row, key) => {
+        acc[key] = row[key];
+        return acc;
+      }, {}));
+    },
+    upsert: async ({ where, update, create }: any) => {
+      const key = where.profileId_metricKey;
+      let snapshot = this.userMetricSnapshots.find((item) => item.profileId === key.profileId && item.metricKey === key.metricKey);
+      if (snapshot) {
+        Object.assign(snapshot, update, { updatedAt: now() });
+      } else {
+        snapshot = {
+          id: randomUUID(),
+          ...create,
+          createdAt: now(),
+          updatedAt: now()
+        };
+        this.userMetricSnapshots.push(snapshot);
+      }
+      return snapshot;
     }
   };
 
@@ -243,6 +308,53 @@ const savePayload = saveResponse.json();
 assert.equal(savePayload.data.reports.length, 7);
 assert.equal(prisma.reports.filter((report) => !report.deletedAt).length, 7);
 
+const listReportsResponse = await app.inject({
+  method: 'GET',
+  url: `/api/profiles/${profileId}/reports`
+});
+assert.equal(listReportsResponse.statusCode, 200);
+const reportsPayload = listReportsResponse.json();
+assert.equal(reportsPayload.data.length, 7);
+assert.ok(reportsPayload.data.some((report: Row) => report.modality === 'imaging' && report.analysisPolicy === 'view_only'));
+
+const firstReportId = reportsPayload.data[0].id;
+const reportDetailResponse = await app.inject({
+  method: 'GET',
+  url: `/api/reports/${firstReportId}`
+});
+assert.equal(reportDetailResponse.statusCode, 200);
+const reportDetailPayload = reportDetailResponse.json();
+assert.equal(reportDetailPayload.data.report.id, firstReportId);
+assert.ok(Array.isArray(reportDetailPayload.data.groups));
+
+const snapshotsResponse = await app.inject({
+  method: 'GET',
+  url: `/api/profiles/${profileId}/metrics/snapshots`
+});
+assert.equal(snapshotsResponse.statusCode, 200);
+const snapshotsPayload = snapshotsResponse.json();
+assert.ok(snapshotsPayload.data.some((snapshot: Row) => snapshot.metricKey === 'acth'));
+assert.ok(!snapshotsPayload.data.some((snapshot: Row) => snapshot.lastReportId === reportsPayload.data.find((report: Row) => report.modality === 'imaging').id));
+
+const historyResponse = await app.inject({
+  method: 'GET',
+  url: `/api/profiles/${profileId}/metrics/acth/history`
+});
+assert.equal(historyResponse.statusCode, 200);
+const historyPayload = historyResponse.json();
+assert.equal(historyPayload.data.metricKey, 'acth');
+assert.ok(historyPayload.data.history.length >= 1);
+
+const pinResponse = await app.inject({
+  method: 'PATCH',
+  url: `/api/profiles/${profileId}/metrics/acth/pin`,
+  payload: {
+    isPinned: true
+  }
+});
+assert.equal(pinResponse.statusCode, 200);
+assert.equal(pinResponse.json().data.isPinned, true);
+
 const secondTaskResponse = await app.inject({
   method: 'POST',
   url: '/api/ocr/tasks',
@@ -297,4 +409,4 @@ assert.equal(prisma.reports.filter((report) => !report.deletedAt).length, 7);
 
 await app.close();
 
-console.log('Backend smoke passed: fixture OCR, duplicate check, and batch save routes');
+console.log('Backend smoke passed: fixture OCR, report save, duplicate check, and report read routes');

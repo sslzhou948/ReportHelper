@@ -100,6 +100,7 @@ Page({
         reportCount: task.reportCount || reports.length,
         unresolvedConflictCount: reports.reduce((sum, report) => sum + (report.conflictCount || 0), 0)
       });
+      if (task.profileId) wx.setStorageSync('healthhelperBackendProfileId', task.profileId);
     }).catch(() => {
       this.setData({ loading: false });
       wx.showToast({ title: '\u52a0\u8f7d\u8bc6\u522b\u7ed3\u679c\u5931\u8d25', icon: 'none' });

@@ -23,6 +23,19 @@ function toBackendBatchCreatePayload(payload = {}) {
   };
 }
 
+function createHybridStorage(options = {}) {
+  if (options.storage) return options.storage;
+  return {
+    get(key) {
+      if (typeof wx === 'undefined' || !wx.getStorageSync) return '';
+      return wx.getStorageSync(key);
+    },
+    set(key, value) {
+      if (typeof wx !== 'undefined' && wx.setStorageSync) wx.setStorageSync(key, value);
+    }
+  };
+}
+
 function createBackendApi(client) {
   return {
     authWxLogin(payload, config) {
@@ -112,14 +125,35 @@ function createBackendApi(client) {
 
 function createHybridUploadApi(options = {}) {
   const mockApi = createMockApi();
+  const storage = createHybridStorage(options);
   const backendApi = createBackendApi(createApiClient(options));
+  const backendProfileId = (profileId) => storage.get('healthhelperBackendProfileId') || profileId;
+  const rememberProfile = (result) => {
+    if (result && result.profileId) storage.set('healthhelperBackendProfileId', result.profileId);
+    return result;
+  };
   return {
     ...mockApi,
     createOcrTask(payload, config) {
-      return backendApi.createOcrTask(toBackendCreateOcrTaskPayload(payload), config);
+      return backendApi.createOcrTask(toBackendCreateOcrTaskPayload(payload), config).then(rememberProfile);
     },
     getOcrTask(taskId) {
-      return backendApi.getOcrTask(taskId);
+      return backendApi.getOcrTask(taskId).then(rememberProfile);
+    },
+    listReports(profileId, params) {
+      return backendApi.listReports(backendProfileId(profileId), params);
+    },
+    getReportDetail(reportId) {
+      return backendApi.getReportDetail(reportId);
+    },
+    listMetricSnapshots(profileId, params) {
+      return backendApi.listMetricSnapshots(backendProfileId(profileId), params);
+    },
+    getMetricHistory(profileId, metricKey) {
+      return backendApi.getMetricHistory(backendProfileId(profileId), metricKey);
+    },
+    setMetricPinned(profileId, metricKey, isPinned) {
+      return backendApi.setMetricPinned(backendProfileId(profileId), metricKey, isPinned);
     },
     checkDuplicateReports(payload, config) {
       return backendApi.checkDuplicateReports(toBackendDuplicatePayload(payload), config);
