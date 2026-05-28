@@ -34,9 +34,24 @@ function isActiveOcrTask(task) {
   return task && task.taskId && ACTIVE_OCR_STATUSES.includes(task.status || 'processing');
 }
 
+function taskPriority(task) {
+  const status = task && task.status;
+  if (['needs_confirmation', 'ready_to_save'].includes(status)) return 0;
+  if (status === 'failed') return 1;
+  return 2;
+}
+
+function sortPendingOcrTasks(tasks) {
+  return (tasks || []).slice().sort((left, right) => {
+    const priority = taskPriority(left) - taskPriority(right);
+    if (priority !== 0) return priority;
+    return Number(right.createdAt || 0) - Number(left.createdAt || 0);
+  });
+}
+
 function writePendingOcrTasks(profileId, tasks) {
   const others = readPendingOcrTasks().filter((task) => task.profileId !== profileId);
-  const activeTasks = (tasks || []).map((task) => toPendingOcrTask(task, profileId)).filter(isActiveOcrTask);
+  const activeTasks = sortPendingOcrTasks((tasks || []).map((task) => toPendingOcrTask(task, profileId)).filter(isActiveOcrTask));
   wx.setStorageSync('pendingOcrTasks', activeTasks.concat(others));
   return activeTasks;
 }
@@ -73,6 +88,26 @@ function formatPendingOcrTask(task) {
       : '\u8bc6\u522b\u5b8c\u6210\u540e\u4f1a\u63d0\u793a\u786e\u8ba4\uff0c\u60a8\u53ef\u7ee7\u7eed\u4f7f\u7528\u5176\u4ed6\u529f\u80fd\u3002',
     actionText: '\u67e5\u770b \u203a',
     tone: isSlow ? 'warning' : 'processing'
+  };
+}
+
+function formatPendingOcrSummary(tasks) {
+  const activeTasks = sortPendingOcrTasks(tasks).filter(isActiveOcrTask);
+  const firstTask = activeTasks[0] || null;
+  const summary = formatPendingOcrTask(firstTask);
+  if (!summary || activeTasks.length <= 1) return summary;
+  const readyCount = activeTasks.filter((task) => ['needs_confirmation', 'ready_to_save'].includes(task.status)).length;
+  const failedCount = activeTasks.filter((task) => task.status === 'failed').length;
+  const countText = `\u5171 ${activeTasks.length} \u4e2a\u8bc6\u522b\u4efb\u52a1`;
+  return {
+    ...summary,
+    taskCount: activeTasks.length,
+    title: readyCount
+      ? `${readyCount} \u4e2a\u4efb\u52a1\u5f85\u786e\u8ba4`
+      : (failedCount ? `${failedCount} \u4e2a\u4efb\u52a1\u9700\u5904\u7406` : `\u8bc6\u522b\u4e2d\uff08${activeTasks.length} \u4e2a\u4efb\u52a1\uff09`),
+    detail: `${countText}\uff0c\u4f18\u5148\u5904\u7406\uff1a${summary.title}`,
+    actionText: '\u67e5\u770b \u203a',
+    tone: readyCount || failedCount ? 'warning' : summary.tone
   };
 }
 
@@ -144,12 +179,12 @@ Page({
       const syncedTasks = writePendingOcrTasks(profileId, tasks);
       if (syncedTasks.length === 0 && localTasks.length > 0 && (wx.getStorageSync('uploadPhotos') || []).length > 0) {
         const activeLocalTasks = writePendingOcrTasks(profileId, localTasks);
-        return formatPendingOcrTask(activeLocalTasks[0] || null);
+        return formatPendingOcrSummary(activeLocalTasks);
       }
-      return formatPendingOcrTask(syncedTasks[0] || null);
+      return formatPendingOcrSummary(syncedTasks);
     }).catch(() => {
-      const activeTasks = localTasks.map((task) => toPendingOcrTask(task, profileId)).filter(isActiveOcrTask);
-      return formatPendingOcrTask(activeTasks[0] || null);
+      const activeTasks = sortPendingOcrTasks(localTasks.map((task) => toPendingOcrTask(task, profileId)).filter(isActiveOcrTask));
+      return formatPendingOcrSummary(activeTasks);
     });
   },
 
@@ -207,7 +242,8 @@ Page({
   goOcrTask() {
     const pending = readPendingOcrTasks();
     const currentProfileId = getApp().getCurrentProfileId();
-    const task = pending.find((item) => item.profileId === currentProfileId) || pending[0];
+    const task = sortPendingOcrTasks(pending.filter((item) => item.profileId === currentProfileId))[0]
+      || sortPendingOcrTasks(pending)[0];
     if (!task) {
       wx.navigateTo({ url: '/pages/upload/pick' });
       return;

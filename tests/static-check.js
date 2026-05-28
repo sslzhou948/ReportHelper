@@ -85,6 +85,9 @@ assert.ok(uploadPickJs.includes('wx.showModal'), 'upload pick must confirm leavi
 assert.ok(uploadPickJs.includes('splitGroup(event)'), 'upload pick must allow cancelling an existing photo merge');
 assert.ok(!homeWxml.includes('\u6b63\u5728\u8bc6\u522b 3 \u5f20\u62a5\u544a'), 'home OCR notice must not hardcode report counts');
 assert.ok(homeIndexJs.includes('api.listOcrTasks'), 'home must refresh pending OCR state from API');
+assert.ok(homeIndexJs.includes('formatPendingOcrSummary'), 'home must summarize multiple pending OCR tasks');
+assert.ok(homeIndexJs.includes('taskPriority'), 'home must prioritize ready or failed OCR tasks when several are pending');
+assert.ok(homeIndexJs.includes('taskCount: activeTasks.length'), 'home pending OCR summary must keep the task count');
 const nativeHomeLayoutClasses = [
   'ocr-card',
   'upload-cta',
