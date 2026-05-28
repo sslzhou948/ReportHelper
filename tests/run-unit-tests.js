@@ -683,6 +683,20 @@ asyncChecks.push(fixtureRepeatApi.createOcrTask({
     () => assert.fail('full fixture duplicate save should require a decision'),
     (error) => {
       assert.strictEqual(error.code, 'DUPLICATE_REPORT_REQUIRES_DECISION');
+      return fixtureRepeatApi.batchCreateReports({
+        ocrTaskId: task.id,
+        reports: task.drafts,
+        duplicateDecisions: result.candidates.map((candidate, index) => ({
+          draftId: candidate.draftId,
+          decision: index === 0 ? 'replace' : 'skip',
+          existingReportId: index === 0 ? 'report_not_a_candidate' : candidate.existingReportId
+        }))
+      }).then(
+        () => assert.fail('invalid duplicate replace target should be rejected'),
+        (invalidError) => {
+          assert.strictEqual(invalidError.code, 'INVALID_DUPLICATE_DECISION');
+        }
+      );
     }
   );
 })));

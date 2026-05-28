@@ -251,6 +251,16 @@ class MemoryPrisma {
       if (!report) throw new Error('report not found');
       Object.assign(report, data, { updatedAt: now() });
       return report;
+    },
+    updateMany: async ({ where, data }: any) => {
+      const rows = this.reports.filter((item) => {
+        if (where.id && item.id !== where.id) return false;
+        if (where.profileId && item.profileId !== where.profileId) return false;
+        if (where.deletedAt === null && item.deletedAt) return false;
+        return true;
+      });
+      rows.forEach((report) => Object.assign(report, data, { updatedAt: now() }));
+      return { count: rows.length };
     }
   };
 
@@ -1134,6 +1144,22 @@ const blockedSaveResponse = await app.inject({
 assert.equal(blockedSaveResponse.statusCode, 409);
 assert.equal(blockedSaveResponse.json().error.code, 'DUPLICATE_REPORT_REQUIRES_DECISION');
 
+const invalidDuplicateDecisionResponse = await app.inject({
+  method: 'POST',
+  url: '/api/reports/batch-create',
+  payload: {
+    profileId,
+    ocrTaskId: secondTaskPayload.data.id,
+    duplicateDecisions: duplicatePayload.data.candidates.map((candidate: Row, index: number) => ({
+      draftId: candidate.draftId,
+      decision: index === 0 ? 'replace' : 'skip',
+      existingReportId: index === 0 ? '00000000-0000-4000-8000-000000000000' : candidate.existingReportId
+    }))
+  }
+});
+assert.equal(invalidDuplicateDecisionResponse.statusCode, 400);
+assert.equal(invalidDuplicateDecisionResponse.json().error.code, 'INVALID_DUPLICATE_DECISION');
+
 const skipSaveResponse = await app.inject({
   method: 'POST',
   url: '/api/reports/batch-create',
@@ -1149,6 +1175,42 @@ const skipSaveResponse = await app.inject({
 });
 assert.equal(skipSaveResponse.statusCode, 200);
 assert.equal(skipSaveResponse.json().data.reports.length, 0);
+assert.equal(prisma.reports.filter((report) => !report.deletedAt).length, 7);
+
+const replaceTaskResponse = await app.inject({
+  method: 'POST',
+  url: '/api/ocr/tasks',
+  payload: {
+    profileId,
+    fixtureCaseIds: ['acth']
+  }
+});
+assert.equal(replaceTaskResponse.statusCode, 200);
+const replaceDuplicateResponse = await app.inject({
+  method: 'POST',
+  url: '/api/reports/duplicate-check',
+  payload: {
+    profileId,
+    ocrTaskId: replaceTaskResponse.json().data.id
+  }
+});
+assert.equal(replaceDuplicateResponse.statusCode, 200);
+const replaceCandidate = replaceDuplicateResponse.json().data.candidates[0];
+const replaceSaveResponse = await app.inject({
+  method: 'POST',
+  url: '/api/reports/batch-create',
+  payload: {
+    profileId,
+    ocrTaskId: replaceTaskResponse.json().data.id,
+    duplicateDecisions: [{
+      draftId: replaceCandidate.draftId,
+      decision: 'replace',
+      existingReportId: replaceCandidate.existingReportId
+    }]
+  }
+});
+assert.equal(replaceSaveResponse.statusCode, 200);
+assert.equal(replaceSaveResponse.json().data.reports[0].action, 'replaced');
 assert.equal(prisma.reports.filter((report) => !report.deletedAt).length, 7);
 
 const scopedProfileResponse = await app.inject({

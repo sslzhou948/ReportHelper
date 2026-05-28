@@ -743,6 +743,24 @@ function createMockApi() {
       }, {});
       const unresolved = candidates.filter((candidate) => !decisionByDraft[candidate.draftId]);
       if (unresolved.length) return rejectDuplicateCandidates(unresolved);
+      const draftIds = new Set(drafts.map((draft) => draft.draftId));
+      const allowedExistingByDraft = candidates.reduce((acc, candidate) => {
+        if (!candidate.draftId || !candidate.existingReportId) return acc;
+        if (!acc[candidate.draftId]) acc[candidate.draftId] = new Set();
+        acc[candidate.draftId].add(candidate.existingReportId);
+        return acc;
+      }, {});
+      const invalidDecision = duplicateDecisions.some((decision) => {
+        if (!draftIds.has(decision.draftId)) return true;
+        if (decision.decision !== 'replace') return false;
+        return !decision.existingReportId || !allowedExistingByDraft[decision.draftId] || !allowedExistingByDraft[decision.draftId].has(decision.existingReportId);
+      });
+      if (invalidDecision) {
+        return Promise.reject({
+          code: 'INVALID_DUPLICATE_DECISION',
+          message: '重复报告处理参数无效，请重新确认后再保存'
+        });
+      }
 
       const startIndex = reports.length;
       const savedReports = drafts.reduce((acc, draft, index) => {

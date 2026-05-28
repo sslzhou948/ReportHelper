@@ -5,6 +5,7 @@ import {
   checkDuplicateReports,
   DuplicateReportRequiresDecisionError,
   getDraftsForTask,
+  InvalidDuplicateDecisionError,
   UnresolvedDraftConflictsError
 } from '../services/report-service.js';
 import {
@@ -340,6 +341,15 @@ export async function registerReportRoutes(app: FastifyInstance) {
             details: {
               conflicts: error.conflicts
             }
+          },
+          requestId
+        });
+      }
+      if (error instanceof InvalidDuplicateDecisionError) {
+        return reply.status(error.statusCode).send({
+          error: {
+            code: error.code,
+            message: error.message
           },
           requestId
         });

@@ -68,6 +68,15 @@ export class UnresolvedDraftConflictsError extends Error {
   }
 }
 
+export class InvalidDuplicateDecisionError extends Error {
+  code = 'INVALID_DUPLICATE_DECISION';
+  statusCode = 400;
+
+  constructor() {
+    super('重复报告处理参数无效，请重新确认后再保存');
+  }
+}
+
 function toPlainObject(value: Prisma.JsonValue): JsonObject {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
   return value as JsonObject;
@@ -325,6 +334,22 @@ export async function batchCreateReports(prisma: PrismaClient, input: BatchCreat
     const candidates = await checkDuplicateReports(tx as PrismaClient, input.profileId, drafts);
     const unresolved = candidates.filter((candidate) => !candidate.draftId || !decisionByDraft.has(candidate.draftId));
     if (unresolved.length) throw new DuplicateReportRequiresDecisionError(unresolved);
+    const draftIds = new Set(drafts.map((draft) => draft.id));
+    const allowedExistingByDraft = candidates.reduce<Map<string, Set<string>>>((acc, candidate) => {
+      if (!candidate.draftId || !candidate.existingReportId) return acc;
+      if (!acc.has(candidate.draftId)) acc.set(candidate.draftId, new Set());
+      acc.get(candidate.draftId)?.add(candidate.existingReportId);
+      return acc;
+    }, new Map());
+    for (const decision of duplicateDecisions) {
+      if (!draftIds.has(decision.draftId)) throw new InvalidDuplicateDecisionError();
+      if (decision.decision === 'replace') {
+        const allowed = decision.existingReportId
+          ? allowedExistingByDraft.get(decision.draftId)?.has(decision.existingReportId)
+          : false;
+        if (!allowed) throw new InvalidDuplicateDecisionError();
+      }
+    }
 
     const saved: Array<{ draftId: string; reportId: string; action: string; replacedReportId: string | null }> = [];
 
@@ -335,10 +360,15 @@ export async function batchCreateReports(prisma: PrismaClient, input: BatchCreat
       let replacedReportId: string | null = null;
       if (decision?.decision === 'replace' && decision.existingReportId) {
         replacedReportId = decision.existingReportId;
-        await tx.report.update({
-          where: { id: decision.existingReportId },
+        const replaceResult = await tx.report.updateMany({
+          where: {
+            id: decision.existingReportId,
+            profileId: input.profileId,
+            deletedAt: null
+          },
           data: { deletedAt: new Date() }
         });
+        if (replaceResult.count !== 1) throw new InvalidDuplicateDecisionError();
       }
 
       const reportData = reportCreateData(draft, input.userId);
