@@ -12,7 +12,7 @@ const createOcrTaskSchema = z.object({
     photoId: z.string().uuid(),
     groupId: z.string().trim().min(1).max(128),
     sortOrder: z.number().int().positive()
-  })).optional()
+  })).max(9).optional()
 });
 
 const listOcrTasksSchema = z.object({

@@ -673,6 +673,21 @@ const unsupportedWebpUploadResponse = await app.inject({
 assert.equal(unsupportedWebpUploadResponse.statusCode, 415);
 assert.equal(unsupportedWebpUploadResponse.json().error.code, 'UNSUPPORTED_MEDIA_TYPE');
 
+const tooManyOcrPhotosResponse = await app.inject({
+  method: 'POST',
+  url: '/api/ocr/tasks',
+  payload: {
+    profileId,
+    photos: Array.from({ length: 10 }, (_, index) => ({
+      photoId: `00000000-0000-4000-8000-${String(index + 1).padStart(12, '0')}`,
+      groupId: `photo_${index + 1}`,
+      sortOrder: index + 1
+    }))
+  }
+});
+assert.equal(tooManyOcrPhotosResponse.statusCode, 400);
+assert.equal(tooManyOcrPhotosResponse.json().error.code, 'VALIDATION_FAILED');
+
 const incompletePhotoTaskResponse = await app.inject({
   method: 'POST',
   url: '/api/ocr/tasks',
