@@ -65,6 +65,36 @@ function createApiClient(options = {}) {
   }));
   const createId = options.createRequestId || createRequestId;
 
+  async function refreshAccessToken() {
+    const refreshToken = storage.get('refreshToken');
+    if (!refreshToken) return false;
+
+    const requestId = createId();
+    const response = await request({
+      url: `${baseUrl}/api/auth/refresh`,
+      method: 'POST',
+      data: { refreshToken },
+      header: {
+        'Content-Type': 'application/json',
+        'X-Request-Id': requestId
+      }
+    });
+
+    const statusCode = response.statusCode || 0;
+    const payload = response.data || {};
+    if (statusCode < 200 || statusCode >= 300 || !payload.data || !payload.data.token) {
+      storage.remove('token');
+      storage.remove('refreshToken');
+      storage.remove('userId');
+      return false;
+    }
+
+    storage.set('token', payload.data.token);
+    if (payload.data.refreshToken) storage.set('refreshToken', payload.data.refreshToken);
+    if (payload.data.userId) storage.set('userId', payload.data.userId);
+    return true;
+  }
+
   async function requestJson(method, path, data, config = {}) {
     const requestId = config.requestId || createId();
     const token = storage.get('token');
@@ -87,6 +117,17 @@ function createApiClient(options = {}) {
     const payload = response.data || {};
     if (statusCode >= 200 && statusCode < 300) {
       return payload.data === undefined ? payload : payload.data;
+    }
+
+    const canRefresh = statusCode === 401
+      && !config.skipAuthRefresh
+      && path !== '/api/auth/refresh'
+      && path !== '/api/auth/wx-login';
+    if (canRefresh && await refreshAccessToken()) {
+      return requestJson(method, path, data, {
+        ...config,
+        skipAuthRefresh: true
+      });
     }
 
     throw new ApiError(normalizeErrorPayload(payload, statusCode));

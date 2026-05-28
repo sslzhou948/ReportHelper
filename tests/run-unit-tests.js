@@ -119,6 +119,61 @@ asyncChecks.push(client.get('/api/profiles').then((data) => {
   assert.strictEqual(capturedRequest.header['X-Request-Id'], 'req_test');
 }));
 
+const refreshStorage = createMemoryStorage({
+  token: 'expired_token',
+  refreshToken: 'refresh_token_1',
+  userId: 'user_old'
+});
+const refreshRequests = [];
+const refreshClient = createApiClient({
+  baseUrl: 'https://api.example.test',
+  storage: refreshStorage,
+  createRequestId: () => `req_refresh_${refreshRequests.length + 1}`,
+  request(config) {
+    refreshRequests.push(config);
+    if (refreshRequests.length === 1) {
+      return Promise.resolve({
+        statusCode: 401,
+        data: {
+          error: { code: 'UNAUTHORIZED', message: 'expired' },
+          requestId: config.header['X-Request-Id']
+        }
+      });
+    }
+    if (config.url.endsWith('/api/auth/refresh')) {
+      return Promise.resolve({
+        statusCode: 200,
+        data: {
+          data: {
+            token: 'fresh_token',
+            refreshToken: 'refresh_token_2',
+            userId: 'user_new'
+          },
+          requestId: config.header['X-Request-Id']
+        }
+      });
+    }
+    return Promise.resolve({
+      statusCode: 200,
+      data: {
+        data: { ok: true },
+        requestId: config.header['X-Request-Id']
+      }
+    });
+  }
+});
+
+asyncChecks.push(refreshClient.get('/api/profiles').then((data) => {
+  assert.deepStrictEqual(data, { ok: true });
+  assert.strictEqual(refreshRequests.length, 3, '401 should refresh and retry once');
+  assert.strictEqual(refreshRequests[1].url, 'https://api.example.test/api/auth/refresh');
+  assert.deepStrictEqual(refreshRequests[1].data, { refreshToken: 'refresh_token_1' });
+  assert.strictEqual(refreshRequests[2].header.Authorization, 'Bearer fresh_token');
+  assert.strictEqual(refreshStorage.get('token'), 'fresh_token');
+  assert.strictEqual(refreshStorage.get('refreshToken'), 'refresh_token_2');
+  assert.strictEqual(refreshStorage.get('userId'), 'user_new');
+}));
+
 const hybridRequests = [];
 const hybridStorage = createMemoryStorage();
 const hybridApi = createApi({
