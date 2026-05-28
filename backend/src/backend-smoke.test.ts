@@ -202,6 +202,12 @@ class MemoryPrisma {
         });
       }
       return { count: data.length };
+    },
+    update: async ({ where, data }: any) => {
+      const metric = this.reportMetricValues.find((item) => item.id === where.id);
+      if (!metric) throw new Error('metric not found');
+      Object.assign(metric, data, { updatedAt: now() });
+      return metric;
     }
   };
 
@@ -327,6 +333,42 @@ const reportDetailPayload = reportDetailResponse.json();
 assert.equal(reportDetailPayload.data.report.id, firstReportId);
 assert.ok(Array.isArray(reportDetailPayload.data.groups));
 
+const editableMetric = reportDetailPayload.data.report.metrics.find((metric: Row) => metric.valueType === 'quantitative');
+if (editableMetric) {
+  const editedMetrics = reportDetailPayload.data.report.metrics.map((metric: Row) => (
+    metric.id === editableMetric.id
+      ? {
+        ...metric,
+        valueNumeric: Number(metric.refRangeHigh || 1) + 10,
+        isManuallyEdited: true
+      }
+      : metric
+  ));
+  const editReportResponse = await app.inject({
+    method: 'PATCH',
+    url: `/api/reports/${firstReportId}`,
+    payload: {
+      basicInfo: {
+        hospital: '用户校准医院',
+        reportDate: reportDetailPayload.data.report.reportDate,
+        note: '用户已核对'
+      },
+      metrics: editedMetrics,
+      findings: reportDetailPayload.data.report.findings,
+      warnings: reportDetailPayload.data.report.warnings
+    }
+  });
+  assert.equal(editReportResponse.statusCode, 200);
+  const editReportPayload = editReportResponse.json();
+  assert.equal(editReportPayload.data.report.hospital, '用户校准医院');
+  assert.equal(editReportPayload.data.report.note, '用户已核对');
+  assert.ok(editReportPayload.data.report.abnormalCount >= 1);
+  assert.ok(editReportPayload.data.report.metrics.some((metric: Row) => metric.id === editableMetric.id && metric.isManuallyEdited));
+  if (editReportPayload.data.report.metrics.length > 1) {
+    assert.ok(editReportPayload.data.report.metrics.some((metric: Row) => metric.id !== editableMetric.id && !metric.isManuallyEdited));
+  }
+}
+
 const snapshotsResponse = await app.inject({
   method: 'GET',
   url: `/api/profiles/${profileId}/metrics/snapshots`
@@ -407,6 +449,18 @@ assert.equal(skipSaveResponse.statusCode, 200);
 assert.equal(skipSaveResponse.json().data.reports.length, 0);
 assert.equal(prisma.reports.filter((report) => !report.deletedAt).length, 7);
 
+const deleteReportResponse = await app.inject({
+  method: 'DELETE',
+  url: `/api/reports/${firstReportId}`
+});
+assert.equal(deleteReportResponse.statusCode, 200);
+const afterDeleteListResponse = await app.inject({
+  method: 'GET',
+  url: `/api/profiles/${profileId}/reports`
+});
+assert.equal(afterDeleteListResponse.statusCode, 200);
+assert.ok(!afterDeleteListResponse.json().data.some((report: Row) => report.id === firstReportId));
+
 await app.close();
 
-console.log('Backend smoke passed: fixture OCR, report save, duplicate check, and report read routes');
+console.log('Backend smoke passed: fixture OCR, report save/read/edit/delete, and duplicate check routes');

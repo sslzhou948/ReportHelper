@@ -212,6 +212,131 @@ export async function getReportDetail(prisma: PrismaClient, reportId: string, us
   };
 }
 
+function calculateMetricTone(metric: { valueType?: string; valueNumeric?: unknown; valueQualitative?: unknown; refRangeLow?: unknown; refRangeHigh?: unknown; tone?: unknown }) {
+  if (metric.valueType === 'qualitative') {
+    const value = String(metric.valueQualitative || '');
+    return value && value !== '阴性' ? 'positive' : 'ok';
+  }
+  const value = toNumber(metric.valueNumeric as Prisma.Decimal | number | string | null | undefined);
+  const low = toNumber(metric.refRangeLow as Prisma.Decimal | number | string | null | undefined);
+  const high = toNumber(metric.refRangeHigh as Prisma.Decimal | number | string | null | undefined);
+  if (value === null) return 'unknown';
+  if (low !== null && value < low) return 'low';
+  if (high !== null && value > high) return 'high';
+  return 'ok';
+}
+
+function metricUpdateData(metric: Record<string, unknown>) {
+  const valueType = String(metric.valueType || 'quantitative');
+  return {
+    metricName: String(metric.metricName || metric.metricKey || '未知指标'),
+    originalMetricName: String(metric.originalMetricName || metric.metricName || metric.metricKey || '未知指标'),
+    category: String(metric.category || 'other'),
+    categoryCn: String(metric.categoryCn || '其他'),
+    mappingStatus: String(metric.mappingStatus || 'confirmed'),
+    valueType,
+    valueNumeric: valueType === 'quantitative' ? toNumber(metric.valueNumeric as Prisma.Decimal | number | string | null | undefined) : null,
+    valueQualitative: valueType === 'qualitative' ? String(metric.valueQualitative || '') : null,
+    normalizedUnit: metric.normalizedUnit ? String(metric.normalizedUnit) : null,
+    refRangeLow: toNumber(metric.refRangeLow as Prisma.Decimal | number | string | null | undefined),
+    refRangeHigh: toNumber(metric.refRangeHigh as Prisma.Decimal | number | string | null | undefined),
+    refQualitative: metric.refQualitative ? String(metric.refQualitative) : null,
+    refText: metric.refText ? String(metric.refText) : null,
+    tone: calculateMetricTone(metric),
+    ocrConfidence: toNumber(metric.ocrConfidence as Prisma.Decimal | number | string | null | undefined),
+    isManuallyEdited: !!metric.isManuallyEdited
+  };
+}
+
+function reportUpdateData(payload: { basicInfo?: Record<string, unknown>; findings?: unknown[]; warnings?: unknown[] }, report: ReportWithMetrics) {
+  const info = payload.basicInfo || {};
+  return {
+    type: info.type !== undefined ? String(info.type) : report.type,
+    originalType: info.originalType !== undefined ? String(info.originalType) : report.originalType,
+    canonicalTypeName: info.canonicalTypeName !== undefined ? String(info.canonicalTypeName) : report.canonicalTypeName,
+    modality: info.modality !== undefined ? String(info.modality) : report.modality,
+    examPart: info.examPart !== undefined ? String(info.examPart || '') : report.examPart,
+    examMethod: info.examMethod !== undefined ? String(info.examMethod || '') : report.examMethod,
+    hospital: info.hospital !== undefined ? String(info.hospital) : report.hospital,
+    hospitalSource: info.hospital !== undefined ? 'user_edited' : undefined,
+    reportDate: info.reportDate !== undefined ? new Date(String(info.reportDate)) : report.reportDate,
+    reportDateSource: info.reportDate !== undefined ? 'user_edited' : undefined,
+    findings: payload.findings !== undefined ? payload.findings as Prisma.InputJsonValue : report.findings as Prisma.InputJsonValue,
+    warnings: payload.warnings !== undefined ? payload.warnings as Prisma.InputJsonValue : report.warnings as Prisma.InputJsonValue,
+    note: info.note !== undefined ? String(info.note || '') : report.note
+  };
+}
+
+export async function updateReportDetail(prisma: PrismaClient, reportId: string, userId: string, payload: { basicInfo?: Record<string, unknown>; metrics?: Array<Record<string, unknown>>; findings?: unknown[]; warnings?: unknown[] }) {
+  const updatedId = await prisma.$transaction(async (tx) => {
+    const report = await tx.report.findFirst({
+      where: {
+        id: reportId,
+        deletedAt: null,
+        profile: {
+          userId,
+          deletedAt: null
+        }
+      },
+      include: {
+        metrics: true
+      }
+    });
+    if (!report) return null;
+
+    let abnormalCount = report.abnormalCount;
+    if (payload.metrics) {
+      const existingMetricIds = new Set(report.metrics.map((metric) => metric.id));
+      const updatedMetrics = payload.metrics
+        .filter((metric) => metric.id && existingMetricIds.has(String(metric.id)))
+        .map((metric) => ({
+          id: String(metric.id),
+          data: metricUpdateData(metric)
+        }));
+
+      abnormalCount = updatedMetrics.filter((metric) => !['ok', 'unknown'].includes(metric.data.tone)).length;
+      for (const metric of updatedMetrics) {
+        await tx.reportMetricValue.update({
+          where: { id: metric.id },
+          data: metric.data
+        });
+      }
+    }
+
+    await tx.report.update({
+      where: { id: report.id },
+      data: {
+        ...reportUpdateData(payload, report as unknown as ReportWithMetrics),
+        abnormalCount
+      }
+    });
+
+    return report.id;
+  });
+
+  if (!updatedId) return null;
+  return getReportDetail(prisma, updatedId, userId);
+}
+
+export async function deleteReportForUser(prisma: PrismaClient, reportId: string, userId: string) {
+  const report = await prisma.report.findFirst({
+    where: {
+      id: reportId,
+      deletedAt: null,
+      profile: {
+        userId,
+        deletedAt: null
+      }
+    }
+  });
+  if (!report) return null;
+  await prisma.report.update({
+    where: { id: report.id },
+    data: { deletedAt: new Date() }
+  });
+  return { ok: true };
+}
+
 export async function listMetricRowsForProfile(prisma: PrismaClient, profileId: string, userId: string) {
   const profile = await ensureProfileForUser(prisma, profileId, userId);
   if (!profile) return null;

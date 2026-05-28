@@ -146,6 +146,12 @@ function createHybridUploadApi(options = {}) {
     getReportDetail(reportId) {
       return backendApi.getReportDetail(reportId);
     },
+    updateReport(reportId, payload, config) {
+      return backendApi.updateReport(reportId, payload, config);
+    },
+    deleteReport(reportId, config) {
+      return backendApi.deleteReport(reportId, config);
+    },
     listMetricSnapshots(profileId, params) {
       return backendApi.listMetricSnapshots(backendProfileId(profileId), params);
     },

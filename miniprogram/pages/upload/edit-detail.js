@@ -59,9 +59,11 @@ function clone(value) {
 
 Page({
   taskId: '',
+  reportId: '',
   reportIdx: 0,
   draftId: '',
   draft: null,
+  source: 'ocr',
 
   data: {
     loading: false,
@@ -85,8 +87,12 @@ Page({
 
   onLoad(query = {}) {
     this.taskId = query.taskId || '';
+    this.reportId = query.reportId || '';
+    this.source = this.reportId ? 'report' : 'ocr';
     this.reportIdx = Number(query.reportIdx || 0);
-    this.loadDraft();
+    if (query.editing === '1') this.setData({ editing: true });
+    if (this.source === 'report') this.loadReport();
+    else this.loadDraft();
   },
 
   refreshData() {
@@ -127,6 +133,40 @@ Page({
     });
   },
 
+  loadReport() {
+    if (!this.reportId) {
+      wx.showToast({ title: '未找到报告', icon: 'none' });
+      return;
+    }
+    this.setData({ loading: true });
+    api.getReportDetail(this.reportId).then(({ report }) => {
+      this.draft = clone({
+        draftId: report.id,
+        basicInfo: {
+          type: report.type,
+          originalType: report.originalType,
+          canonicalTypeName: report.canonicalTypeName,
+          modality: report.modality,
+          examPart: report.examPart,
+          examMethod: report.examMethod,
+          hospital: report.hospital,
+          reportDate: report.reportDate,
+          hospitalSource: 'ocr',
+          reportDateSource: 'ocr'
+        },
+        metrics: report.metrics || [],
+        findings: report.findings || [],
+        warnings: report.warnings || []
+      });
+      this.draftId = report.id;
+      this.setData({ loading: false });
+      this.refreshData();
+    }).catch(() => {
+      this.setData({ loading: false });
+      wx.showToast({ title: '加载报告详情失败', icon: 'none' });
+    });
+  },
+
   goBack() {
     wx.navigateBack();
   },
@@ -137,7 +177,8 @@ Page({
 
   cancelEdit() {
     this.setData({ editing: false });
-    this.loadDraft();
+    if (this.source === 'report') this.loadReport();
+    else this.loadDraft();
   },
 
   onBasicInput(event) {
@@ -209,6 +250,23 @@ Page({
   saveAndBack() {
     if (!this.draftId || this.data.saving) return Promise.resolve(false);
     this.setData({ saving: true });
+    if (this.source === 'report') {
+      return api.updateReport(this.reportId, {
+        basicInfo: this.draft.basicInfo || {},
+        metrics: this.draft.metrics || [],
+        findings: this.draft.findings || [],
+        warnings: this.draft.warnings || []
+      }, {
+        idempotencyKey: `edit_report_${this.reportId}`
+      }).then(() => {
+        wx.showToast({ title: '已保存修改', icon: 'success' });
+        this.setData({ saving: false, editing: false });
+        setTimeout(() => wx.navigateBack(), 500);
+      }).catch(() => {
+        this.setData({ saving: false });
+        wx.showToast({ title: '保存修改失败', icon: 'none' });
+      });
+    }
     return api.updateOcrDraft({
       taskId: this.taskId,
       draftId: this.draftId,

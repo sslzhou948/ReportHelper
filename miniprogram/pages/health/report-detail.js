@@ -11,6 +11,9 @@ Page({
     this.reportId = query.id;
     this.load();
   },
+  onShow() {
+    if (this.reportId) this.load();
+  },
   load() {
     this.setData({ loading: true });
     api.getReportDetail(this.reportId).then(({ report, groups }) => {
@@ -28,13 +31,7 @@ Page({
   },
   showEdit() {
     if (!this.data.report) return;
-    wx.showModal({
-      title: '编辑报告',
-      content: '正式报告编辑页正在接入中，当前不会自动修改或保存报告数据。',
-      showCancel: false,
-      confirmText: '知道了',
-      confirmColor: '#5F815F'
-    });
+    wx.navigateTo({ url: `/pages/upload/edit-detail?reportId=${this.reportId}&editing=1` });
   },
   showDelete() {
     wx.showModal({

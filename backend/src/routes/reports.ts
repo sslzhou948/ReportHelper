@@ -2,11 +2,13 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { batchCreateReports, checkDuplicateReports, DuplicateReportRequiresDecisionError, getDraftsForTask } from '../services/report-service.js';
 import {
+  deleteReportForUser,
   getMetricHistory,
   getReportDetail,
   listMetricSnapshots,
   listReportsForProfile,
-  setMetricPinned
+  setMetricPinned,
+  updateReportDetail
 } from '../services/report-query-service.js';
 import { ensureDevSession } from '../services/dev-user.js';
 import { getRequestId } from '../utils/request-id.js';
@@ -37,6 +39,13 @@ const metricSnapshotQuerySchema = z.object({
 
 const pinMetricSchema = z.object({
   isPinned: z.boolean()
+});
+
+const updateReportSchema = z.object({
+  basicInfo: z.record(z.string(), z.unknown()).optional(),
+  metrics: z.array(z.record(z.string(), z.unknown())).optional(),
+  findings: z.array(z.unknown()).optional(),
+  warnings: z.array(z.unknown()).optional()
 });
 
 export async function registerReportRoutes(app: FastifyInstance) {
@@ -78,6 +87,46 @@ export async function registerReportRoutes(app: FastifyInstance) {
     }
 
     return { data: detail, requestId };
+  });
+
+  app.patch<{ Params: { reportId: string } }>('/api/reports/:reportId', async (request, reply) => {
+    const requestId = getRequestId(request);
+    const parsed = updateReportSchema.safeParse(request.body || {});
+    if (!parsed.success) {
+      return reply.status(400).send({
+        error: {
+          code: 'VALIDATION_FAILED',
+          message: '报告编辑参数无效',
+          details: parsed.error.flatten()
+        },
+        requestId
+      });
+    }
+
+    const { user } = await ensureDevSession(app.prisma);
+    const detail = await updateReportDetail(app.prisma, request.params.reportId, user.id, parsed.data);
+    if (!detail) {
+      return reply.status(404).send({
+        error: { code: 'NOT_FOUND', message: '报告不存在' },
+        requestId
+      });
+    }
+
+    return { data: detail, requestId };
+  });
+
+  app.delete<{ Params: { reportId: string } }>('/api/reports/:reportId', async (request, reply) => {
+    const requestId = getRequestId(request);
+    const { user } = await ensureDevSession(app.prisma);
+    const result = await deleteReportForUser(app.prisma, request.params.reportId, user.id);
+    if (!result) {
+      return reply.status(404).send({
+        error: { code: 'NOT_FOUND', message: '报告不存在' },
+        requestId
+      });
+    }
+
+    return { data: result, requestId };
   });
 
   app.get<{ Params: { profileId: string }; Querystring: { filter?: string; category?: string } }>('/api/profiles/:profileId/metrics/snapshots', async (request, reply) => {
