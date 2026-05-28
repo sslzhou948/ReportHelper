@@ -248,6 +248,91 @@ asyncChecks.push((async () => {
   }
 })());
 
+asyncChecks.push((async () => {
+  const pagePath = path.resolve(__dirname, '..', 'miniprogram', 'pages', 'upload', 'pick.js');
+  const apiPath = path.resolve(__dirname, '..', 'miniprogram', 'utils', 'api.js');
+  const pageModulePath = require.resolve(pagePath);
+  const apiModulePath = require.resolve(apiPath);
+  const savedWx = global.wx;
+  const savedPage = global.Page;
+  const savedGetApp = global.getApp;
+  const savedApiCache = require.cache[apiModulePath];
+  const storageState = {};
+  const calls = [];
+  let pageConfig = null;
+  const stubApi = {
+    signUploads(payload) {
+      calls.push({ type: 'sign', payload });
+      return Promise.resolve({
+        uploads: payload.files.map((file, index) => ({
+          clientFileId: file.clientFileId,
+          photoId: `signed_photo_${index + 1}`,
+          uploadUrl: `https://upload.example.test/${file.clientFileId}`,
+          headers: {}
+        }))
+      });
+    },
+    completeUploads() {
+      calls.push({ type: 'complete' });
+      return Promise.resolve({ photos: [] });
+    },
+    createOcrTask() {
+      calls.push({ type: 'ocr' });
+      return Promise.reject(new Error('OCR task should not be created after upload failure'));
+    }
+  };
+  try {
+    require.cache[apiModulePath] = {
+      id: apiModulePath,
+      filename: apiModulePath,
+      loaded: true,
+      exports: { api: stubApi }
+    };
+    global.wx = {
+      getStorageSync: (key) => storageState[key],
+      setStorageSync: (key, value) => { storageState[key] = value; },
+      removeStorageSync: (key) => { delete storageState[key]; },
+      uploadFile: ({ fail }) => fail({ errMsg: 'uploadFile:fail timeout' }),
+      showToast: () => {}
+    };
+    global.getApp = () => ({ getCurrentProfileId: () => 'profile_upload' });
+    global.Page = (config) => { pageConfig = config; };
+    delete require.cache[pageModulePath];
+    require(pagePath);
+    const page = {
+      ...pageConfig,
+      data: JSON.parse(JSON.stringify(pageConfig.data)),
+      setData(update) {
+        this.data = {
+          ...this.data,
+          ...update
+        };
+      }
+    };
+    page.data.photos = [{
+      id: 1,
+      group: 0,
+      tempFilePath: 'first.jpg',
+      fileName: 'first.jpg',
+      mimeType: 'image/jpeg',
+      size: 1024
+    }];
+    await page.startOcr();
+    assert.deepStrictEqual(calls.map((call) => call.type), ['sign']);
+    assert.strictEqual(page.data.loading, false);
+    assert.strictEqual(page.data.hasDraft, true);
+    assert.ok(page.data.uploadError.includes('已保留草稿'));
+    assert.strictEqual(storageState.uploadDraft.photos.length, 1, 'upload failure should keep selected photos as a draft');
+  } finally {
+    if (savedApiCache) require.cache[apiModulePath] = savedApiCache;
+    else delete require.cache[apiModulePath];
+    global.wx = savedWx;
+    global.Page = savedPage;
+    global.getApp = savedGetApp;
+    delete require.cache[pageModulePath];
+  }
+})());
+
 assert.strictEqual(realcaseOcrDrafts.length, 7, 'realcase OCR baseline should cover all provided images');
 assert.ok(realcaseOcrDrafts.some((draft) => (draft.metrics || []).some((metric) => metric.tone === 'high')), 'realcase baseline should include abnormal metrics');
 assert.ok(realcaseOcrDrafts.some((draft) => (draft.findings || []).length > 0), 'realcase baseline should include imaging findings');

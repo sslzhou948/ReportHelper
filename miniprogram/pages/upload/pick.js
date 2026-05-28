@@ -415,9 +415,9 @@ Page({
       this.setData({
         loading: false,
         hasDraft: true,
-        uploadError: '\u8bc6\u522b\u4efb\u52a1\u521b\u5efa\u5931\u8d25\uff0c\u5df2\u4fdd\u7559\u8349\u7a3f\uff0c\u53ef\u7a0d\u540e\u91cd\u8bd5\u3002'
+        uploadError: '\u4e0a\u4f20\u6216\u8bc6\u522b\u4efb\u52a1\u521b\u5efa\u5931\u8d25\uff0c\u5df2\u4fdd\u7559\u8349\u7a3f\uff0c\u53ef\u7a0d\u540e\u91cd\u8bd5\u3002'
       });
-      wx.showToast({ title: '\u521b\u5efa\u8bc6\u522b\u4efb\u52a1\u5931\u8d25', icon: 'none' });
+      wx.showToast({ title: '\u4e0a\u4f20\u5931\u8d25\uff0c\u5df2\u4fdd\u7559\u8349\u7a3f', icon: 'none' });
     });
   },
   startFixtureOcr(options = {}) {
