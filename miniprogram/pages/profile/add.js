@@ -9,19 +9,18 @@ function refreshFields(page, form) {
 }
 
 function defaultProfile(relation) {
-  const isSelf = relation === '\u6211\u81ea\u5df1';
   return {
-    relation: relation || '\u5988\u5988',
-    realName: isSelf ? '\u674e\u5efa\u56fd' : '\u738b\u82ac',
-    gender: isSelf ? 'M' : 'F',
-    birthDate: isSelf ? '1978-08-16' : '1958-03-12',
-    diseaseType: isSelf ? '\u9ad8\u8840\u538b' : '\u4e73\u817a\u764c',
-    diagnosedAt: isSelf ? '' : '2024-04-10',
-    stage: isSelf ? '' : 'IIA \u671f',
-    treatmentPhase: isSelf ? 'treating' : 'recovery',
-    primaryHospital: isSelf ? '\u793e\u533a\u533b\u9662' : '\u534f\u548c\u533b\u9662',
+    relation: relation || '',
+    realName: '',
+    gender: '',
+    birthDate: '',
+    diseaseType: '',
+    diagnosedAt: '',
+    stage: '',
+    treatmentPhase: '',
+    primaryHospital: '',
     primaryDoctor: '',
-    primaryDepartment: isSelf ? '\u5fc3\u5185\u79d1' : '\u80bf\u7624\u79d1'
+    primaryDepartment: ''
   };
 }
 
