@@ -212,12 +212,12 @@ function createMockApi() {
   const recheckPlans = clone(store.mock.recheckPlans);
 
   function findRecheckPlan(planId) {
-    return recheckPlans.find((plan) => plan.id === planId);
+    return recheckPlans.find((plan) => plan.id === planId && !plan.deletedAt);
   }
 
   function serializeRecheckPlans(profileId) {
     const plans = recheckPlans
-      .filter((plan) => plan.profileId === profileId)
+      .filter((plan) => plan.profileId === profileId && !plan.deletedAt)
       .sort((a, b) => new Date(a.date) - new Date(b.date));
     const pending = plans.filter((plan) => plan.status === 'pending');
     return {
@@ -569,6 +569,13 @@ function createMockApi() {
       const plan = findRecheckPlan(planId);
       if (!plan) return ok(null);
       plan.status = 'cancelled';
+      return ok(plan);
+    },
+
+    deleteRecheckPlan(planId) {
+      const plan = findRecheckPlan(planId);
+      if (!plan) return ok(null);
+      plan.deletedAt = new Date().toISOString();
       return ok(plan);
     },
 

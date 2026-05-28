@@ -128,6 +128,9 @@ function createBackendApi(client) {
     cancelRecheckPlan(planId, config) {
       return client.post(`/api/recheck-plans/${planId}/cancel`, {}, config);
     },
+    deleteRecheckPlan(planId, config) {
+      return client.delete(`/api/recheck-plans/${planId}`, config);
+    },
     createOcrTask(payload, config) {
       return client.post('/api/ocr/tasks', payload, config);
     },
@@ -258,6 +261,10 @@ function createHybridUploadApi(options = {}) {
     cancelRecheckPlan(planId, config) {
       if (!hasBackendProfile()) return mockApi.cancelRecheckPlan(planId, config);
       return backendApi.cancelRecheckPlan(planId, config);
+    },
+    deleteRecheckPlan(planId, config) {
+      if (!hasBackendProfile()) return mockApi.deleteRecheckPlan(planId, config);
+      return backendApi.deleteRecheckPlan(planId, config);
     },
     checkDuplicateReports(payload, config) {
       return backendApi.checkDuplicateReports(toBackendDuplicatePayload(payload), config);

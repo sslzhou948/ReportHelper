@@ -937,6 +937,32 @@ const cancelRecheckResponse = await app.inject({
 assert.equal(cancelRecheckResponse.statusCode, 200);
 assert.equal(cancelRecheckResponse.json().data.status, 'cancelled');
 
+const deleteSeedResponse = await app.inject({
+  method: 'POST',
+  url: `/api/profiles/${profileId}/recheck-plans`,
+  payload: {
+    type: 'CT followup',
+    date: offsetDateOnly(26),
+    hospital: 'Union Hospital',
+    todos: [{ text: 'Prepare documents', sortOrder: 1 }]
+  }
+});
+assert.equal(deleteSeedResponse.statusCode, 200);
+const deleteRecheckResponse = await app.inject({
+  method: 'DELETE',
+  url: `/api/recheck-plans/${deleteSeedResponse.json().data.id}`
+});
+assert.equal(deleteRecheckResponse.statusCode, 200);
+const afterDeleteRecheckResponse = await app.inject({
+  method: 'GET',
+  url: `/api/profiles/${profileId}/recheck-plans`
+});
+assert.equal(afterDeleteRecheckResponse.statusCode, 200);
+assert.ok(![afterDeleteRecheckResponse.json().data.nextPlan]
+  .concat(afterDeleteRecheckResponse.json().data.otherPlans || [])
+  .filter(Boolean)
+  .some((plan: Row) => plan.id === deleteSeedResponse.json().data.id));
+
 const createTaskResponse = await app.inject({
   method: 'POST',
   url: '/api/ocr/tasks',

@@ -466,4 +466,33 @@ export async function registerRecheckRoutes(app: FastifyInstance) {
       requestId
     };
   });
+
+  app.delete<{ Params: { planId: string } }>('/api/recheck-plans/:planId', async (request, reply) => {
+    const requestId = getRequestId(request);
+    const session = await requireSession(app, request, reply);
+    if (!session) return;
+    const { user } = session;
+    const plan = await findPlanForUser(app, request.params.planId, user.id);
+    if (!plan) {
+      return reply.status(404).send({
+        error: { code: 'NOT_FOUND', message: 'Recheck plan not found' },
+        requestId
+      });
+    }
+
+    const updated = await app.prisma.recheckPlan.update({
+      where: { id: plan.id },
+      data: { deletedAt: new Date() },
+      include: {
+        todos: {
+          orderBy: { sortOrder: 'asc' }
+        }
+      }
+    });
+
+    return {
+      data: serializePlan(updated as unknown as RecheckPlanShape),
+      requestId
+    };
+  });
 }

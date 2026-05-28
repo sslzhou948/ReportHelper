@@ -353,7 +353,7 @@ asyncChecks.push(hybridApi.createOcrTask({
   date: '2026-06-01',
   hospital: '协和医院',
   todos: [{ text: '预约挂号', sortOrder: 1 }]
-})).then(() => hybridApi.listRecheckPlans('profile_mock')).then(() => hybridApi.updateRecheckTodo('plan_1', 'todo_1', { isDone: true })).then(() => {
+})).then(() => hybridApi.listRecheckPlans('profile_mock')).then(() => hybridApi.updateRecheckTodo('plan_1', 'todo_1', { isDone: true })).then(() => hybridApi.deleteRecheckPlan('plan_1')).then(() => {
   assert.strictEqual(hybridRequests[0].url, 'http://127.0.0.1:8787/api/ocr/tasks');
   assert.deepStrictEqual(hybridRequests[0].data, { fixtureCaseIds: ['acth'] });
   assert.strictEqual(hybridRequests[1].url, 'http://127.0.0.1:8787/api/uploads/sign');
@@ -399,6 +399,7 @@ asyncChecks.push(hybridApi.createOcrTask({
   assert.strictEqual(hybridRequests[11].url, 'http://127.0.0.1:8787/api/profiles/33333333-3333-4333-8333-333333333333/recheck-plans');
   assert.strictEqual(hybridRequests[12].url, 'http://127.0.0.1:8787/api/profiles/33333333-3333-4333-8333-333333333333/recheck-plans');
   assert.strictEqual(hybridRequests[13].url, 'http://127.0.0.1:8787/api/recheck-plans/plan_1/todos/todo_1');
+  assert.strictEqual(hybridRequests[14].url, 'http://127.0.0.1:8787/api/recheck-plans/plan_1');
 }));
 
 const errorClient = createApiClient({
@@ -824,6 +825,15 @@ asyncChecks.push(mockApi.createRecheckPlan('profile_mom', {
 }).then((plan) => mockApi.cancelRecheckPlan(plan.id).then(() => mockApi.listRecheckPlans('profile_mom'))).then((recheck) => {
   const visible = [recheck.nextPlan].concat(recheck.otherPlans).filter(Boolean);
   assert.ok(!visible.some((plan) => plan.date === '2026-06-22'), 'cancelled plan should be hidden from pending list');
+  return mockApi.createRecheckPlan('profile_mom', {
+    type: 'CT followup',
+    date: '2026-06-23',
+    hospital: 'Union Hospital',
+    todos: buildDefaultTodos().slice(0, 1)
+  });
+}).then((plan) => mockApi.deleteRecheckPlan(plan.id).then(() => mockApi.listRecheckPlans('profile_mom'))).then((recheck) => {
+  const visible = [recheck.nextPlan].concat(recheck.otherPlans).filter(Boolean);
+  assert.ok(!visible.some((plan) => plan.date === '2026-06-23'), 'deleted plan should be hidden from recheck list');
 }));
 asyncChecks.push(mockApi.setMetricPinned('profile_mom', 'unknown_metric', true).then(
   () => assert.fail('unknown metric should not be pinned'),

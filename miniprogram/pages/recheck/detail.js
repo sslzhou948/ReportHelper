@@ -175,8 +175,19 @@ Page({
   deletePlan() {
     wx.showModal({
       title: '\u5220\u9664\u6b64\u8ba1\u5212\uff1f',
-      content: '\u5220\u9664\u80fd\u529b\u5c06\u5728\u540e\u7eed\u7248\u672c\u63a5\u5165\uff0c\u5f53\u524d\u8bf7\u5148\u7528\u53d6\u6d88\u8ba1\u5212\u3002',
-      confirmColor: '#C07060'
+      content: '\u5220\u9664\u540e\u5c06\u4e0d\u518d\u51fa\u73b0\u5728\u590d\u67e5\u8ba1\u5212\u5217\u8868\u3002',
+      confirmColor: '#C07060',
+      success: (res) => {
+        if (!res.confirm || !this.data.plan) return;
+        api.deleteRecheckPlan(this.data.plan.id, {
+          idempotencyKey: `delete_recheck_${this.data.plan.id}`
+        }).then(() => {
+          wx.showToast({ title: '\u5df2\u5220\u9664', icon: 'success' });
+          setTimeout(() => wx.navigateBack(), 500);
+        }).catch(() => {
+          wx.showToast({ title: '\u5220\u9664\u5931\u8d25', icon: 'none' });
+        });
+      }
     });
   }
 });
