@@ -14,6 +14,20 @@ function ok(data) {
   return Promise.resolve(clone(data));
 }
 
+function canUseWxStorage() {
+  return typeof wx !== 'undefined' && wx.getStorageSync && wx.setStorageSync;
+}
+
+function readStoredReports() {
+  if (!canUseWxStorage()) return null;
+  const stored = wx.getStorageSync('mockReports');
+  return Array.isArray(stored) ? stored : null;
+}
+
+function persistStoredReports(reports) {
+  if (canUseWxStorage()) wx.setStorageSync('mockReports', clone(reports));
+}
+
 function extractNumber(value, fallback) {
   const match = String(value || '').match(/\d+/);
   return match ? Number(match[0]) : fallback;
@@ -146,7 +160,7 @@ function createMockApi() {
   const ocrTasks = {};
   const duplicateCandidates = [];
   const profiles = clone(store.mock.profiles);
-  const reports = clone(store.mock.reports);
+  const reports = readStoredReports() || clone(store.mock.reports);
   const recheckPlans = clone(store.mock.recheckPlans);
 
   function findRecheckPlan(planId) {
@@ -358,12 +372,14 @@ function createMockApi() {
         if (metric.refRangeHigh !== undefined && metric.valueNumeric > metric.refRangeHigh) return true;
         return false;
       }).length;
+      persistStoredReports(reports);
       return this.getReportDetail(reportId);
     },
 
     deleteReport(reportId) {
       const report = reports.find((item) => item.id === reportId);
       if (report) report.deletedAt = new Date().toISOString();
+      persistStoredReports(reports);
       return ok({ ok: true });
     },
 
@@ -607,6 +623,7 @@ function createMockApi() {
         return acc;
       }, []);
       reports.push(...savedReports);
+      persistStoredReports(reports);
       return ok({
         reports: savedReports.map((report) => ({
           draftId: report.draftId,

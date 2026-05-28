@@ -299,6 +299,33 @@ asyncChecks.push(mockApi.createOcrTask({
 })).then((result) => {
   assert.strictEqual(result.hasDuplicates, false, 'same CT type with different exam part should not be treated as duplicate');
 }));
+const fixtureRepeatApi = createApi();
+asyncChecks.push(fixtureRepeatApi.createOcrTask({
+  profileId: 'profile_mom',
+  fixtureCaseIds: ['acth', 'thyroid', 'cortisol', 'liver_function', 'uric_electrolyte_lipid', 'chest_ct_plain', 'abdomen_pelvis_ct_plain']
+}).then((task) => fixtureRepeatApi.batchCreateReports({
+  ocrTaskId: task.id,
+  reports: task.drafts
+}).then(() => fixtureRepeatApi.createOcrTask({
+  profileId: 'profile_mom',
+  fixtureCaseIds: ['acth', 'thyroid', 'cortisol', 'liver_function', 'uric_electrolyte_lipid', 'chest_ct_plain', 'abdomen_pelvis_ct_plain']
+}))).then((task) => fixtureRepeatApi.checkDuplicateReports({
+  profileId: 'profile_mom',
+  ocrTaskId: task.id,
+  reports: task.drafts
+}).then((result) => {
+  assert.strictEqual(result.hasDuplicates, true, 'saving the full realcase fixture twice should trigger duplicates');
+  assert.ok(result.candidates.length >= 7, 'full fixture duplicate check should include each repeated report');
+  return fixtureRepeatApi.batchCreateReports({
+    ocrTaskId: task.id,
+    reports: task.drafts
+  }).then(
+    () => assert.fail('full fixture duplicate save should require a decision'),
+    (error) => {
+      assert.strictEqual(error.code, 'DUPLICATE_REPORT_REQUIRES_DECISION');
+    }
+  );
+})));
 asyncChecks.push(mockApi.listRecheckPlans('profile_mom').then((recheck) => {
   assert.ok(recheck.nextPlan, 'mock api should expose next recheck plan');
   assert.ok(Array.isArray(recheck.otherPlans), 'mock api should expose other recheck plans');

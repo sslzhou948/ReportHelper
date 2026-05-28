@@ -48,6 +48,8 @@ async function waitForPath(miniProgram, expectedPath, timeout = 5000) {
       wx.removeStorageSync('pendingOcrTasks');
       wx.removeStorageSync('uploadPhotos');
       wx.removeStorageSync('healthDefaultView');
+      wx.removeStorageSync('mockReports');
+      wx.removeStorageSync('lastDuplicateAlertText');
       wx.setStorageSync('lastProfileId', 'profile_mom');
       getApp().setCurrentProfileId('profile_mom');
     });
@@ -68,6 +70,70 @@ async function waitForPath(miniProgram, expectedPath, timeout = 5000) {
     assert.strictEqual(data.photos.length, 0, 'upload page should start empty');
     assert.strictEqual(data.reportCount, 0, 'empty upload page should have zero reports');
     console.log('upload smoke: empty state passed');
+
+    console.log('fixture smoke: reuse upload page');
+    await page.setData({ showFixtureEntry: true });
+    data = await page.data();
+    assert.strictEqual(data.showFixtureEntry, true, 'fixture route should expose realcase entry');
+    console.log('fixture smoke: route ready');
+    const firstTask = await page.callMethod('startFixtureOcr');
+    console.log(`fixture smoke: first OCR task created ${firstTask && firstTask.id}`);
+    await miniProgram.evaluate((taskId) => {
+      wx.navigateTo({ url: `/pages/upload/confirm?taskId=${taskId}&fixture=realcase` });
+    }, firstTask.id);
+    page = await waitForPath(miniProgram, 'pages/upload/confirm', 6000);
+    assert.strictEqual(page.path, 'pages/upload/confirm', 'fixture OCR should open confirmation page');
+    await page.waitFor(1000);
+    data = await page.data();
+    assert.strictEqual(data.reportCount, 7, 'fixture confirmation should show seven reports');
+    console.log('fixture smoke: first confirmation ready');
+    await page.callMethod('saveAll');
+    console.log('fixture smoke: first save requested');
+    page = await waitForPath(miniProgram, 'pages/health/index', 6000);
+    assert.strictEqual(page.path, 'pages/health/index', 'first fixture save should enter health page');
+    await page.waitFor(1000);
+    const firstSaveCount = await miniProgram.evaluate(() => {
+      const reports = wx.getStorageSync('mockReports') || [];
+      return reports.filter((report) => report.profileId === 'profile_mom' && !report.deletedAt).length;
+    });
+    assert.ok(firstSaveCount >= 11, 'first fixture save should persist reports in mock storage');
+
+    await miniProgram.evaluate(() => {
+      wx.showActionSheet = (options) => {
+        wx.setStorageSync('lastDuplicateAlertText', options.alertText || '');
+        options.success({ tapIndex: 2 });
+      };
+    });
+    await miniProgram.evaluate(() => {
+      wx.navigateTo({ url: '/pages/upload/pick' });
+    });
+    page = await waitForPath(miniProgram, 'pages/upload/pick', 6000);
+    assert.strictEqual(page.path, 'pages/upload/pick', 'second fixture flow should open upload page');
+    await page.waitFor(600);
+    await page.setData({ showFixtureEntry: true });
+    console.log('fixture smoke: second route ready');
+    const secondTask = await page.callMethod('startFixtureOcr');
+    console.log(`fixture smoke: second OCR task created ${secondTask && secondTask.id}`);
+    await miniProgram.evaluate((taskId) => {
+      wx.navigateTo({ url: `/pages/upload/confirm?taskId=${taskId}&fixture=realcase` });
+    }, secondTask.id);
+    page = await waitForPath(miniProgram, 'pages/upload/confirm', 6000);
+    await page.waitFor(1000);
+    console.log('fixture smoke: second confirmation ready');
+    await page.callMethod('saveAll');
+    console.log('fixture smoke: second save requested');
+    page = await waitForPath(miniProgram, 'pages/health/index', 6000);
+    await page.waitFor(1000);
+    const duplicateResult = await miniProgram.evaluate(() => {
+      const reports = wx.getStorageSync('mockReports') || [];
+      return {
+        alertText: wx.getStorageSync('lastDuplicateAlertText'),
+        count: reports.filter((report) => report.profileId === 'profile_mom' && !report.deletedAt).length
+      };
+    });
+    assert.ok(duplicateResult.alertText.includes('已存在'), 'second fixture save should show duplicate decision prompt');
+    assert.strictEqual(duplicateResult.count, firstSaveCount, 'skipping repeated fixture reports should not create redundant reports');
+    console.log('fixture duplicate smoke passed');
 
     console.log('DevTools smoke passed.');
   } catch (error) {
