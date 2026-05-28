@@ -407,7 +407,9 @@ const hybridApi = createApi({
       data: {
         data: config.url.includes('/duplicate-check')
           ? { hasDuplicates: false, candidates: [] }
-          : { id: 'task_1', profileId: '33333333-3333-4333-8333-333333333333', reports: [] },
+          : config.url.includes('/exports')
+            ? { exportId: 'export_1', status: 'ready', downloadUrl: '/api/exports/export_1/download?token=t', expiresAt: '2026-06-01T00:00:00.000Z' }
+            : { id: 'task_1', profileId: '33333333-3333-4333-8333-333333333333', reports: [] },
         requestId: config.header['X-Request-Id']
       }
     });
@@ -457,7 +459,12 @@ asyncChecks.push(hybridApi.createOcrTask({
   date: '2026-06-01',
   hospital: '协和医院',
   todos: [{ text: '预约挂号', sortOrder: 1 }]
-})).then(() => hybridApi.listRecheckPlans('profile_mock')).then(() => hybridApi.updateRecheckTodo('plan_1', 'todo_1', { isDone: true })).then(() => hybridApi.deleteRecheckPlan('plan_1')).then(() => {
+})).then(() => hybridApi.listRecheckPlans('profile_mock')).then(() => hybridApi.updateRecheckTodo('plan_1', 'todo_1', { isDone: true })).then(() => hybridApi.deleteRecheckPlan('plan_1')).then(() => hybridApi.createExport('profile_mock', {
+  includeReports: true,
+  includeMetrics: true,
+  includeRecheckPlans: true,
+  format: 'json'
+})).then((exportResult) => hybridApi.getExport(exportResult.exportId)).then(() => {
   assert.strictEqual(hybridRequests[0].url, 'http://127.0.0.1:8787/api/ocr/tasks');
   assert.deepStrictEqual(hybridRequests[0].data, { fixtureCaseIds: ['acth'] });
   assert.strictEqual(hybridRequests[1].url, 'http://127.0.0.1:8787/api/uploads/sign');
@@ -504,6 +511,14 @@ asyncChecks.push(hybridApi.createOcrTask({
   assert.strictEqual(hybridRequests[12].url, 'http://127.0.0.1:8787/api/profiles/33333333-3333-4333-8333-333333333333/recheck-plans');
   assert.strictEqual(hybridRequests[13].url, 'http://127.0.0.1:8787/api/recheck-plans/plan_1/todos/todo_1');
   assert.strictEqual(hybridRequests[14].url, 'http://127.0.0.1:8787/api/recheck-plans/plan_1');
+  assert.strictEqual(hybridRequests[15].url, 'http://127.0.0.1:8787/api/profiles/33333333-3333-4333-8333-333333333333/exports');
+  assert.deepStrictEqual(hybridRequests[15].data, {
+    includeReports: true,
+    includeMetrics: true,
+    includeRecheckPlans: true,
+    format: 'json'
+  });
+  assert.strictEqual(hybridRequests[16].url, 'http://127.0.0.1:8787/api/exports/export_1');
 }));
 
 const errorClient = createApiClient({
@@ -649,6 +664,19 @@ asyncChecks.push(mockApi.signUploads({
 }).then((result) => {
   assert.strictEqual(result.photos.length, 1);
   assert.strictEqual(result.photos[0].status, 'uploaded');
+}));
+asyncChecks.push(mockApi.createExport('profile_mom', {
+  includeReports: true,
+  includeMetrics: true,
+  includeRecheckPlans: true,
+  format: 'json'
+}).then((result) => {
+  assert.strictEqual(result.status, 'ready');
+  assert.ok(result.downloadUrl.startsWith('mock-download://'));
+  return mockApi.getExport(result.exportId);
+}).then((result) => {
+  assert.strictEqual(result.status, 'ready');
+  assert.ok(result.fileName.endsWith('.json'));
 }));
 asyncChecks.push(mockApi.createOcrTask({
   profileId: 'profile_mom',

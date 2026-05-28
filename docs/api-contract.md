@@ -1005,6 +1005,8 @@ Idempotency-Key: <uuid>
 
 ### POST `/api/profiles/{profileId}/exports`
 
+v1 最小闭环生成 JSON 导出文件并返回 `ready` 状态；后续接对象存储时保持 `exportId/status/downloadUrl/expiresAt` 响应字段不变。
+
 请求：
 
 ```json

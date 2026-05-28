@@ -1366,6 +1366,36 @@ const afterDeleteListResponse = await app.inject({
 assert.equal(afterDeleteListResponse.statusCode, 200);
 assert.ok(!afterDeleteListResponse.json().data.some((report: Row) => report.id === firstReportId));
 
+const createExportResponse = await app.inject({
+  method: 'POST',
+  url: `/api/profiles/${profileId}/exports`,
+  payload: {
+    includeReports: true,
+    includeMetrics: true,
+    includeRecheckPlans: true,
+    format: 'json'
+  }
+});
+assert.equal(createExportResponse.statusCode, 200);
+const exportPayload = createExportResponse.json().data;
+assert.equal(exportPayload.status, 'ready');
+assert.ok(exportPayload.downloadUrl.includes(`/api/exports/${exportPayload.exportId}/download`));
+const getExportResponse = await app.inject({
+  method: 'GET',
+  url: `/api/exports/${exportPayload.exportId}`
+});
+assert.equal(getExportResponse.statusCode, 200);
+assert.equal(getExportResponse.json().data.fileName, exportPayload.fileName);
+const downloadExportResponse = await app.inject({
+  method: 'GET',
+  url: exportPayload.downloadUrl
+});
+assert.equal(downloadExportResponse.statusCode, 200);
+const downloadedExport = JSON.parse(downloadExportResponse.body);
+assert.equal(downloadedExport.profile.id, profileId);
+assert.ok(Array.isArray(downloadedExport.reports));
+assert.ok(Array.isArray(downloadedExport.recheckPlans));
+
 await app.close();
 
-console.log('Backend smoke passed: auth, profile CRUD, upload sign/complete, recheck plans, OCR task list/cancel, fixture OCR draft edit, report save/read/edit/delete, and duplicate check routes');
+console.log('Backend smoke passed: auth, profile CRUD, upload sign/complete, recheck plans, OCR task list/cancel, fixture OCR draft edit, report save/read/edit/delete, duplicate check, and export routes');

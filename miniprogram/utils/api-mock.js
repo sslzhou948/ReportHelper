@@ -206,6 +206,7 @@ function normalizeReportIdentity(reportOrDraft) {
 function createMockApi() {
   const pinnedOverrides = {};
   const ocrTasks = {};
+  const exports = {};
   const duplicateCandidates = [];
   const profiles = clone(store.mock.profiles);
   const reports = readStoredReports() || clone(store.mock.reports);
@@ -577,6 +578,26 @@ function createMockApi() {
       if (!plan) return ok(null);
       plan.deletedAt = new Date().toISOString();
       return ok(plan);
+    },
+
+    createExport(profileId, payload = {}) {
+      const exportId = `export_mock_${Object.keys(exports).length + 1}`;
+      const createdAt = new Date();
+      const result = {
+        exportId,
+        status: 'ready',
+        format: 'json',
+        fileName: `healthhelper-${profileId}-${createdAt.toISOString().slice(0, 10)}.json`,
+        downloadUrl: `mock-download://${exportId}`,
+        expiresAt: new Date(createdAt.getTime() + 24 * 60 * 60 * 1000).toISOString(),
+        payload
+      };
+      exports[exportId] = result;
+      return ok(result);
+    },
+
+    getExport(exportId) {
+      return ok(exports[exportId] || null);
     },
 
     createOcrTask({ profileId, photos, fixtureCaseIds } = {}) {

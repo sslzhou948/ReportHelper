@@ -6,26 +6,51 @@ const automator = require('miniprogram-automator');
 const root = path.resolve(__dirname, '..');
 const cliPath = path.join(process.env.WECHAT_DEVTOOLS_DIR || 'D:\\WeChat-DevTools', 'cli.bat');
 const devtoolsPort = Number(process.env.WECHAT_DEVTOOLS_PORT || 9420);
+const watchdog = setTimeout(() => {
+  console.error('DevTools smoke timed out after 60s');
+  process.exit(1);
+}, 60000);
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function withTimeout(promise, ms, label) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
 function runDevToolsCli(args) {
-  spawnSync('cmd.exe', ['/d', '/c', 'call', cliPath].concat(args), {
+  const result = spawnSync('cmd.exe', ['/d', '/c', 'call', cliPath].concat(args), {
     cwd: root,
     stdio: 'ignore',
-    windowsHide: true
+    windowsHide: true,
+    timeout: 15000
   });
+  if (result.error) throw result.error;
+  if (result.status && result.status !== 0) {
+    throw new Error(`WeChat DevTools CLI exited with ${result.status}`);
+  }
 }
 
 async function connectDevTools() {
   try {
-    return await automator.connect({ wsEndpoint: `ws://127.0.0.1:${devtoolsPort}` });
+    return await withTimeout(
+      automator.connect({ wsEndpoint: `ws://127.0.0.1:${devtoolsPort}` }),
+      5000,
+      'WeChat DevTools connect'
+    );
   } catch (error) {
     runDevToolsCli(['auto', '--project', root, '--trust-project', '--auto-port', String(devtoolsPort)]);
     await sleep(1500);
-    return automator.connect({ wsEndpoint: `ws://127.0.0.1:${devtoolsPort}` });
+    return withTimeout(
+      automator.connect({ wsEndpoint: `ws://127.0.0.1:${devtoolsPort}` }),
+      8000,
+      'WeChat DevTools reconnect'
+    );
   }
 }
 
@@ -105,5 +130,6 @@ async function waitForPath(miniProgram, expectedPath, timeout = 5000) {
     process.exitCode = 1;
   } finally {
     if (miniProgram) miniProgram.disconnect();
+    clearTimeout(watchdog);
   }
 })();

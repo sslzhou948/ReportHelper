@@ -7,7 +7,7 @@
   <view class="pad mt-12">
     <view class="card card-pad">
       <view class="title">导出当前档案数据</view>
-      <view class="sub mt-8">包含检查报告、指标记录和复查计划。导出文件需要后端生成安全下载链接，当前版本暂不创建导出任务。</view>
+      <view class="sub mt-8">包含检查报告、指标记录和复查计划。导出文件生成后会提供 24 小时有效的安全下载链接。</view>
     </view>
   </view>
   <view class="section-title">导出内容</view>
@@ -19,6 +19,14 @@
     </view>
   </view>
   <view class="pad mt-16">
-    <view class="btn secondary" bindtap="exportData">查看导出说明</view>
+    <view class="btn {{loading ? 'disabled' : ''}}" bindtap="exportData">{{loading ? '正在生成' : '生成导出文件'}}</view>
+  </view>
+  <view wx:if="{{exportResult}}" class="pad mt-12">
+    <view class="card card-pad">
+      <view class="title">{{exportReady ? '导出已生成' : '导出处理中'}}</view>
+      <view class="sub mt-8">{{exportResult.fileName}}</view>
+      <view class="tiny mt-8">有效期至 {{exportResult.expiresAt}}</view>
+      <view wx:if="{{exportReady}}" class="btn secondary mt-16" bindtap="copyDownloadUrl">复制下载链接</view>
+    </view>
   </view>
 </view>

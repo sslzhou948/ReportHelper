@@ -4,6 +4,7 @@ import Fastify from 'fastify';
 import type { PrismaClient } from '@prisma/client';
 import type { Env } from './config/env.js';
 import { registerAuthRoutes } from './routes/auth.js';
+import { registerExportRoutes } from './routes/exports.js';
 import { registerOcrRoutes } from './routes/ocr.js';
 import { registerProfileRoutes } from './routes/profiles.js';
 import { registerRecheckRoutes } from './routes/recheck.js';
@@ -58,6 +59,7 @@ export function buildApp({ env, prisma }: BuildAppOptions) {
   app.register(registerOcrRoutes);
   app.register(registerReportRoutes);
   app.register(registerRecheckRoutes);
+  app.register(registerExportRoutes);
 
   return app;
 }

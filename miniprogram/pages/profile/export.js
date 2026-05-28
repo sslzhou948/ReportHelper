@@ -1,6 +1,10 @@
+const { api } = require('../../utils/api');
+
 Page({
   data: {
-    exportReady: false
+    exportReady: false,
+    loading: false,
+    exportResult: null
   },
 
   goBack() {
@@ -8,11 +12,42 @@ Page({
   },
 
   exportData() {
-    wx.showModal({
-      title: '导出暂未开放',
-      content: '数据导出需要后端生成文件和安全下载链接。当前版本不会创建假导出任务，后续接入后会在这里开放。',
-      showCancel: false,
-      confirmText: '知道了'
+    if (this.data.loading) return;
+    const profileId = getApp().getCurrentProfileId();
+    this.setData({ loading: true });
+    api.createExport(profileId, {
+      includeReports: true,
+      includeMetrics: true,
+      includeRecheckPlans: true,
+      format: 'json'
+    }, {
+      idempotencyKey: `export_${profileId}_${Date.now()}`
+    }).then((result) => {
+      if (result && result.status === 'ready') return result;
+      return api.getExport(result.exportId);
+    }).then((result) => {
+      this.setData({
+        exportReady: result && result.status === 'ready',
+        exportResult: result || null,
+        loading: false
+      });
+      wx.showToast({ title: result && result.status === 'ready' ? '导出已生成' : '导出处理中', icon: 'none' });
+    }).catch(() => {
+      this.setData({ loading: false });
+      wx.showToast({ title: '导出失败，请重试', icon: 'none' });
+    });
+  },
+
+  copyDownloadUrl() {
+    const url = this.data.exportResult && this.data.exportResult.downloadUrl;
+    if (!url) return;
+    if (!wx.setClipboardData) {
+      wx.showToast({ title: url, icon: 'none' });
+      return;
+    }
+    wx.setClipboardData({
+      data: url,
+      success: () => wx.showToast({ title: '下载链接已复制', icon: 'success' })
     });
   }
 });
