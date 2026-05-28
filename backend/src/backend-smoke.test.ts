@@ -46,6 +46,31 @@ const env: Env = {
 const prisma = new MemoryPrisma();
 const app = buildApp({ env, prisma: prisma as any });
 
+const healthResponse = await app.inject({
+  method: 'GET',
+  url: '/api/health'
+});
+assert.equal(healthResponse.statusCode, 200);
+assert.equal(healthResponse.json().data.ok, true);
+assert.equal(healthResponse.json().data.database.status, 'unchecked');
+
+const unhealthyApp = buildApp({
+  env,
+  prisma: {
+    $queryRawUnsafe: async () => {
+      throw new Error('database unavailable');
+    }
+  } as any
+});
+const unhealthyResponse = await unhealthyApp.inject({
+  method: 'GET',
+  url: '/api/health'
+});
+assert.equal(unhealthyResponse.statusCode, 503);
+assert.equal(unhealthyResponse.json().data.ok, false);
+assert.equal(unhealthyResponse.json().data.database.status, 'error');
+await unhealthyApp.close();
+
 const productionWxSession = await resolveWxLoginSession({
   ...env,
   NODE_ENV: 'production'

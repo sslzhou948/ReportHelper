@@ -88,6 +88,28 @@ Idempotency-Key: <uuid>
 - 创建复查计划。
 - 删除报告。
 
+### 1.6 Health Check
+
+`GET /api/health` does not require authentication. It is the base signal for API status checks and the future admin system-health dashboard.
+
+Successful response:
+
+```json
+{
+  "data": {
+    "ok": true,
+    "service": "healthhelper-backend",
+    "database": {
+      "status": "ok",
+      "checked": true
+    }
+  },
+  "requestId": "req_123"
+}
+```
+
+When a real Prisma database check fails, the endpoint returns HTTP `503` with `data.ok=false` and `database.status="error"`. Test or in-memory providers may return `database.status="unchecked"` with `checked=false`.
+
 ## 2. 核心类型
 
 ### 2.1 Profile

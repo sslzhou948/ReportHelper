@@ -17,6 +17,32 @@ type BuildAppOptions = {
   prisma: PrismaClient;
 };
 
+async function getDatabaseHealth(prisma: PrismaClient) {
+  const rawPrisma = prisma as unknown as {
+    $queryRawUnsafe?: (query: string) => Promise<unknown>;
+  };
+
+  if (typeof rawPrisma.$queryRawUnsafe !== 'function') {
+    return {
+      status: 'unchecked',
+      checked: false
+    };
+  }
+
+  try {
+    await rawPrisma.$queryRawUnsafe('SELECT 1');
+    return {
+      status: 'ok',
+      checked: true
+    };
+  } catch {
+    return {
+      status: 'error',
+      checked: true
+    };
+  }
+}
+
 export function buildApp({ env, prisma }: BuildAppOptions) {
   const app = Fastify({
     logger: env.NODE_ENV !== 'test'
@@ -45,13 +71,19 @@ export function buildApp({ env, prisma }: BuildAppOptions) {
     });
   });
 
-  app.get('/api/health', async (request) => ({
-    data: {
-      ok: true,
-      service: 'healthhelper-backend'
-    },
-    requestId: getRequestId(request)
-  }));
+  app.get('/api/health', async (request, reply) => {
+    const database = await getDatabaseHealth(prisma);
+    const ok = database.status !== 'error';
+    if (!ok) reply.status(503);
+    return {
+      data: {
+        ok,
+        service: 'healthhelper-backend',
+        database
+      },
+      requestId: getRequestId(request)
+    };
+  });
 
   app.register(registerAuthRoutes);
   app.register(registerProfileRoutes);

@@ -21,6 +21,7 @@ Updated: 2026-05-29
 - Backend upload signing now goes through a storage provider boundary, so object storage signing can replace the local upload provider without changing mini program API contracts.
 - Login onboarding now exposes tappable user agreement and privacy policy pages, with a clear medical disclaimer before account/profile creation.
 - Prisma now has an initial PostgreSQL migration and a drift check that compares the committed migration against the current schema without requiring a running database.
+- Backend health check now reports database readiness when a real Prisma client is available, giving the future admin system-health page a reusable API signal.
 
 ## Verified Commands
 
