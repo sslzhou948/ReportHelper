@@ -7,10 +7,10 @@
   <view class="section-title">基本信息</view>
   <view class="pad">
     <view class="card">
-      <view class="row" bindtap="showPicker"><view class="sub label">检查类型</view><view class="flex right">{{plan.type}}</view><view class="arrow">›</view></view>
-      <view class="row" bindtap="showPicker"><view class="sub label">日期</view><view class="flex right">{{plan.date}}</view><view class="arrow">›</view></view>
-      <view class="row" bindtap="showPicker"><view class="sub label">医院</view><view class="flex right">{{plan.hospital}}</view><view class="arrow">›</view></view>
-      <view class="row" bindtap="showPicker"><view class="sub label">科室</view><view class="flex right">{{plan.department || '未指定'}}</view><view class="arrow">›</view></view>
+      <view class="row" data-key="type" data-label="检查类型" bindtap="editField"><view class="sub label">检查类型</view><view class="flex right">{{plan.type}}</view><view class="arrow">›</view></view>
+      <view class="row" data-key="date" data-label="日期" bindtap="editField"><view class="sub label">日期</view><view class="flex right">{{plan.date}}</view><view class="arrow">›</view></view>
+      <view class="row" data-key="hospital" data-label="医院" bindtap="editField"><view class="sub label">医院</view><view class="flex right">{{plan.hospital}}</view><view class="arrow">›</view></view>
+      <view class="row" data-key="department" data-label="科室" bindtap="editField"><view class="sub label">科室</view><view class="flex right">{{plan.department || '未指定'}}</view><view class="arrow">›</view></view>
     </view>
   </view>
   <view class="countdown"><hh-pill tone="primary">{{days}} 天后</hh-pill></view>

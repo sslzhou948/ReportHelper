@@ -715,6 +715,13 @@ asyncChecks.push(mockApi.createRecheckPlan('profile_mom', {
 }).then((plan) => {
   assert.strictEqual(plan.status, 'pending');
   assert.strictEqual(plan.todos.length, 5);
+  return mockApi.updateRecheckPlan(plan.id, {
+    hospital: '协和东院',
+    department: '影像科'
+  });
+}).then((plan) => {
+  assert.strictEqual(plan.hospital, '协和东院');
+  assert.strictEqual(plan.department, '影像科');
   return mockApi.addRecheckTodo(plan.id, { text: '自定义待办' });
 }).then((plan) => {
   assert.strictEqual(plan.todos.length, 6);

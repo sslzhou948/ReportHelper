@@ -954,6 +954,18 @@ Idempotency-Key: <uuid>
 
 编辑计划基础信息或状态。
 
+请求：
+```json
+{
+  "type": "常规复查",
+  "date": "2026-06-20",
+  "hospital": "协和东院",
+  "department": "影像科"
+}
+```
+
+日期必须为今天或未来日期；否则返回 `400 VALIDATION_FAILED`。
+
 ### PATCH `/api/recheck-plans/{planId}/todos/{todoId}`
 
 请求：

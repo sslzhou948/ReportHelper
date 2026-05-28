@@ -1,6 +1,17 @@
 const { api } = require('../../utils/api');
 const { daysBetween } = require('../../utils/date');
 
+function todayString(now = new Date()) {
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function daysToPlan(plan) {
+  return plan ? Math.max(0, daysBetween(new Date(), plan.date)) : 0;
+}
+
 Page({
   data: {
     plan: null,
@@ -18,7 +29,7 @@ Page({
       const plan = plans.find((item) => item.id === this.planId) || plans[0] || null;
       this.setData({
         plan,
-        days: plan ? Math.max(0, daysBetween(new Date(), plan.date)) : 0,
+        days: daysToPlan(plan),
         loading: false
       });
     }).catch(() => {
@@ -29,8 +40,45 @@ Page({
   goBack() {
     wx.navigateBack();
   },
-  showPicker() {
-    wx.showToast({ title: '\u7f16\u8f91\u5b57\u6bb5', icon: 'none' });
+  editField(event) {
+    if (!this.data.plan) return;
+    const key = event.currentTarget.dataset.key;
+    const label = event.currentTarget.dataset.label || '\u5b57\u6bb5';
+    wx.showModal({
+      title: `\u7f16\u8f91${label}`,
+      editable: true,
+      placeholderText: key === 'date' ? todayString() : '\u8bf7\u8f93\u5165',
+      content: String(this.data.plan[key] || ''),
+      confirmText: '\u4fdd\u5b58',
+      success: (res) => {
+        if (!res.confirm) return;
+        const value = String(res.content || '').trim();
+        if (!value && key !== 'department') {
+          wx.showToast({ title: `\u8bf7\u8f93\u5165${label}`, icon: 'none' });
+          return;
+        }
+        if (key === 'date' && !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+          wx.showToast({ title: '\u8bf7\u8f93\u5165 YYYY-MM-DD', icon: 'none' });
+          return;
+        }
+        api.updateRecheckPlan(this.data.plan.id, {
+          [key]: value
+        }, {
+          idempotencyKey: `recheck_edit_${this.data.plan.id}_${key}_${Date.now()}`
+        }).then((plan) => {
+          this.setData({
+            plan,
+            days: daysToPlan(plan)
+          });
+          wx.showToast({ title: '\u5df2\u4fdd\u5b58', icon: 'success' });
+        }).catch((error) => {
+          const title = error && error.code === 'VALIDATION_FAILED'
+            ? '\u8bf7\u68c0\u67e5\u586b\u5199\u5185\u5bb9'
+            : '\u4fdd\u5b58\u5931\u8d25';
+          wx.showToast({ title, icon: 'none' });
+        });
+      }
+    });
   },
   addTodo() {
     if (!this.data.plan) return;

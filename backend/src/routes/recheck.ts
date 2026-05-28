@@ -20,6 +20,13 @@ const createRecheckPlanSchema = z.object({
   })).optional()
 });
 
+const updateRecheckPlanSchema = createRecheckPlanSchema
+  .omit({ todos: true })
+  .partial()
+  .refine((value) => Object.keys(value).length > 0, {
+    message: 'At least one field is required'
+  });
+
 const updateTodoSchema = z.object({
   isDone: z.boolean()
 });
@@ -235,6 +242,75 @@ export async function registerRecheckRoutes(app: FastifyInstance) {
 
     return {
       data: serializePlan(plan as unknown as RecheckPlanShape),
+      requestId
+    };
+  });
+
+  app.patch<{ Params: { planId: string } }>('/api/recheck-plans/:planId', async (request, reply) => {
+    const requestId = getRequestId(request);
+    const parsed = updateRecheckPlanSchema.safeParse(request.body || {});
+    if (!parsed.success) {
+      return reply.status(400).send({
+        error: {
+          code: 'VALIDATION_FAILED',
+          message: 'Invalid recheck plan parameters',
+          details: parsed.error.flatten()
+        },
+        requestId
+      });
+    }
+
+    let dateOnly = '';
+    if (parsed.data.date !== undefined) {
+      dateOnly = toDateOnly(parsed.data.date);
+      if (!isValidDateOnly(dateOnly) || dateOnly < todayDateOnly()) {
+        return reply.status(400).send({
+          error: {
+            code: 'VALIDATION_FAILED',
+            message: 'Recheck date must be today or later',
+            details: {
+              fieldErrors: {
+                date: 'Date must be today or later'
+              }
+            }
+          },
+          requestId
+        });
+      }
+    }
+
+    const session = await requireSession(app, request, reply);
+    if (!session) return;
+    const { user } = session;
+    const plan = await findPlanForUser(app, request.params.planId, user.id);
+    if (!plan) {
+      return reply.status(404).send({
+        error: { code: 'NOT_FOUND', message: 'Recheck plan not found' },
+        requestId
+      });
+    }
+
+    const data: Record<string, unknown> = {};
+    if (parsed.data.type !== undefined) data.type = parsed.data.type;
+    if (parsed.data.date !== undefined) data.date = new Date(`${dateOnly}T00:00:00.000Z`);
+    if (parsed.data.timeOfDay !== undefined) data.timeOfDay = parsed.data.timeOfDay || '';
+    if (parsed.data.hospital !== undefined) data.hospital = parsed.data.hospital;
+    if (parsed.data.department !== undefined) data.department = parsed.data.department || '';
+    if (parsed.data.doctor !== undefined) data.doctor = parsed.data.doctor || '';
+    if (parsed.data.reminderConfig !== undefined) data.reminderConfig = toInputJson(parsed.data.reminderConfig);
+
+    const updated = await app.prisma.recheckPlan.update({
+      where: { id: plan.id },
+      data,
+      include: {
+        todos: {
+          orderBy: { sortOrder: 'asc' }
+        }
+      }
+    });
+
+    return {
+      data: serializePlan(updated as unknown as RecheckPlanShape),
       requestId
     };
   });

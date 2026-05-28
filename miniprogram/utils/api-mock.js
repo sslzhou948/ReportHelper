@@ -514,6 +514,16 @@ function createMockApi() {
       return ok(plan);
     },
 
+    updateRecheckPlan(planId, payload) {
+      const plan = findRecheckPlan(planId);
+      if (!plan) return ok(null);
+      ['type', 'date', 'timeOfDay', 'hospital', 'department', 'doctor'].forEach((key) => {
+        if (payload[key] !== undefined) plan[key] = payload[key] || '';
+      });
+      if (payload.reminderConfig !== undefined) plan.reminderConfig = payload.reminderConfig;
+      return ok(plan);
+    },
+
     updateRecheckTodo(planId, todoId, payload) {
       const plan = findRecheckPlan(planId);
       if (!plan) return ok(null);

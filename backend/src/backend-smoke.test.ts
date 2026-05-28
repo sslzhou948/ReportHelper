@@ -813,6 +813,28 @@ const recheckPlan = createRecheckResponse.json().data;
 assert.equal(recheckPlan.date, nextRecheckDate);
 assert.equal(recheckPlan.todos.length, 2);
 
+const updateRecheckPlanResponse = await app.inject({
+  method: 'PATCH',
+  url: `/api/recheck-plans/${recheckPlan.id}`,
+  payload: {
+    hospital: '协和东院',
+    department: '影像科'
+  }
+});
+assert.equal(updateRecheckPlanResponse.statusCode, 200);
+assert.equal(updateRecheckPlanResponse.json().data.hospital, '协和东院');
+assert.equal(updateRecheckPlanResponse.json().data.department, '影像科');
+
+const invalidUpdateRecheckPlanResponse = await app.inject({
+  method: 'PATCH',
+  url: `/api/recheck-plans/${recheckPlan.id}`,
+  payload: {
+    date: offsetDateOnly(-2)
+  }
+});
+assert.equal(invalidUpdateRecheckPlanResponse.statusCode, 400);
+assert.equal(invalidUpdateRecheckPlanResponse.json().error.code, 'VALIDATION_FAILED');
+
 const listRecheckResponse = await app.inject({
   method: 'GET',
   url: `/api/profiles/${profileId}/recheck-plans`
