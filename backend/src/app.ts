@@ -8,6 +8,7 @@ import { registerOcrRoutes } from './routes/ocr.js';
 import { registerProfileRoutes } from './routes/profiles.js';
 import { registerRecheckRoutes } from './routes/recheck.js';
 import { registerReportRoutes } from './routes/reports.js';
+import { registerUploadRoutes } from './routes/uploads.js';
 import { getRequestId } from './utils/request-id.js';
 
 type BuildAppOptions = {
@@ -53,6 +54,7 @@ export function buildApp({ env, prisma }: BuildAppOptions) {
 
   app.register(registerAuthRoutes);
   app.register(registerProfileRoutes);
+  app.register(registerUploadRoutes);
   app.register(registerOcrRoutes);
   app.register(registerReportRoutes);
   app.register(registerRecheckRoutes);

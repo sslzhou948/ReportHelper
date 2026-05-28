@@ -393,6 +393,19 @@ function createMockApi() {
       return ok({ ok: true });
     },
 
+    signUploads({ profileId, files } = {}) {
+      return ok({
+        uploads: (files || []).map((file, index) => ({
+          clientFileId: file.clientFileId,
+          photoId: `photo_mock_${Date.now()}_${index + 1}`,
+          objectKey: `mock/${profileId || 'profile'}/${file.fileName || `image_${index + 1}`}`,
+          uploadUrl: `mock-upload://${file.clientFileId || index + 1}`,
+          headers: {},
+          expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString()
+        }))
+      });
+    },
+
     listReports(profileId) {
       return ok(getActiveReports(profileId));
     },

@@ -70,6 +70,9 @@ function createBackendApi(client) {
     deleteProfile(profileId, config) {
       return client.delete(`/api/profiles/${profileId}`, config);
     },
+    signUploads(payload, config) {
+      return client.post('/api/uploads/sign', payload, config);
+    },
     listReports(profileId, params = {}) {
       const query = params.limit ? `?limit=${params.limit}` : '';
       return client.get(`/api/profiles/${profileId}/reports${query}`);
@@ -151,6 +154,12 @@ function createHybridUploadApi(options = {}) {
     ...mockApi,
     createOcrTask(payload, config) {
       return backendApi.createOcrTask(toBackendCreateOcrTaskPayload(payload), config).then(rememberProfile);
+    },
+    signUploads(payload, config) {
+      return backendApi.signUploads({
+        ...payload,
+        profileId: backendProfileId(payload.profileId)
+      }, config);
     },
     listOcrTasks(params = {}) {
       return backendApi.listOcrTasks({

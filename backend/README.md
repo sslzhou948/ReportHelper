@@ -13,14 +13,15 @@ This is the self-managed backend for the mini program. v1 uses local PostgreSQL 
 
 ## First Loop
 
-1. Create OCR task from fixture drafts.
-2. List or cancel unfinished OCR tasks.
-3. Confirm/edit drafts.
-4. Run duplicate check.
-5. Save reports with replace/skip decisions.
-6. Query reports, details, metric snapshots, and metric history.
-7. Edit reports and recompute snapshots.
-8. Create/update/complete/cancel recheck plans.
+1. Sign image uploads and persist report photo metadata.
+2. Create OCR task from fixture drafts.
+3. List or cancel unfinished OCR tasks.
+4. Confirm/edit drafts.
+5. Run duplicate check.
+6. Save reports with replace/skip decisions.
+7. Query reports, details, metric snapshots, and metric history.
+8. Edit reports and recompute snapshots.
+9. Create/update/complete/cancel recheck plans.
 
 ## Local Setup
 
@@ -52,4 +53,4 @@ wx.setStorageSync('healthhelperApiMode', 'hybrid-upload')
 wx.setStorageSync('healthhelperBackendBaseUrl', 'http://127.0.0.1:8787')
 ```
 
-In this mode, fixture OCR task creation/list/cancel, duplicate check, batch save, report list/detail/edit/delete, metric snapshots/history/pinning, and recheck plans use the backend after a backend profile is established. Full `backend` mode also routes profiles through the backend.
+In this mode, upload signing, fixture OCR task creation/list/cancel, duplicate check, batch save, report list/detail/edit/delete, metric snapshots/history/pinning, and recheck plans use the backend after a backend profile is established. Full `backend` mode also routes profiles through the backend.

@@ -199,7 +199,15 @@ asyncChecks.push(hybridApi.createOcrTask({
   profileId: 'profile_mock',
   photos: [{ photoId: 'photo_1' }],
   fixtureCaseIds: ['acth']
-}).then(() => hybridApi.listOcrTasks({
+}).then(() => hybridApi.signUploads({
+  profileId: 'profile_mock',
+  files: [{
+    clientFileId: 'local_1',
+    fileName: 'report.jpg',
+    mimeType: 'image/jpeg',
+    size: 1024
+  }]
+})).then(() => hybridApi.listOcrTasks({
   profileId: 'profile_mock',
   status: 'needs_confirmation'
 })).then(() => hybridApi.cancelOcrTask('task_1')).then(() => hybridApi.checkDuplicateReports({
@@ -218,25 +226,28 @@ asyncChecks.push(hybridApi.createOcrTask({
 })).then(() => hybridApi.listRecheckPlans('profile_mock')).then(() => hybridApi.updateRecheckTodo('plan_1', 'todo_1', { isDone: true })).then(() => {
   assert.strictEqual(hybridRequests[0].url, 'http://127.0.0.1:8787/api/ocr/tasks');
   assert.deepStrictEqual(hybridRequests[0].data, { fixtureCaseIds: ['acth'] });
-  assert.strictEqual(hybridRequests[1].url, 'http://127.0.0.1:8787/api/ocr/tasks?profileId=33333333-3333-4333-8333-333333333333&status=needs_confirmation');
-  assert.strictEqual(hybridRequests[2].url, 'http://127.0.0.1:8787/api/ocr/tasks/task_1/cancel');
-  assert.strictEqual(hybridRequests[3].url, 'http://127.0.0.1:8787/api/reports/duplicate-check');
-  assert.deepStrictEqual(hybridRequests[3].data, {
+  assert.strictEqual(hybridRequests[1].url, 'http://127.0.0.1:8787/api/uploads/sign');
+  assert.strictEqual(hybridRequests[1].data.profileId, '33333333-3333-4333-8333-333333333333');
+  assert.strictEqual(hybridRequests[1].data.files[0].clientFileId, 'local_1');
+  assert.strictEqual(hybridRequests[2].url, 'http://127.0.0.1:8787/api/ocr/tasks?profileId=33333333-3333-4333-8333-333333333333&status=needs_confirmation');
+  assert.strictEqual(hybridRequests[3].url, 'http://127.0.0.1:8787/api/ocr/tasks/task_1/cancel');
+  assert.strictEqual(hybridRequests[4].url, 'http://127.0.0.1:8787/api/reports/duplicate-check');
+  assert.deepStrictEqual(hybridRequests[4].data, {
     profileId: '11111111-1111-4111-8111-111111111111',
     ocrTaskId: '22222222-2222-4222-8222-222222222222'
   });
-  assert.strictEqual(hybridRequests[4].url, 'http://127.0.0.1:8787/api/reports/batch-create');
-  assert.deepStrictEqual(hybridRequests[4].data, {
+  assert.strictEqual(hybridRequests[5].url, 'http://127.0.0.1:8787/api/reports/batch-create');
+  assert.deepStrictEqual(hybridRequests[5].data, {
     profileId: undefined,
     ocrTaskId: '22222222-2222-4222-8222-222222222222',
     duplicateDecisions: [{ draftId: 'draft_mock', decision: 'skip' }]
   });
   assert.strictEqual(hybridStorage.get('healthhelperBackendProfileId'), '33333333-3333-4333-8333-333333333333');
-  assert.strictEqual(hybridRequests[5].url, 'http://127.0.0.1:8787/api/profiles/33333333-3333-4333-8333-333333333333/reports');
-  assert.strictEqual(hybridRequests[6].url, 'http://127.0.0.1:8787/api/profiles/33333333-3333-4333-8333-333333333333/metrics/snapshots');
-  assert.strictEqual(hybridRequests[7].url, 'http://127.0.0.1:8787/api/profiles/33333333-3333-4333-8333-333333333333/recheck-plans');
+  assert.strictEqual(hybridRequests[6].url, 'http://127.0.0.1:8787/api/profiles/33333333-3333-4333-8333-333333333333/reports');
+  assert.strictEqual(hybridRequests[7].url, 'http://127.0.0.1:8787/api/profiles/33333333-3333-4333-8333-333333333333/metrics/snapshots');
   assert.strictEqual(hybridRequests[8].url, 'http://127.0.0.1:8787/api/profiles/33333333-3333-4333-8333-333333333333/recheck-plans');
-  assert.strictEqual(hybridRequests[9].url, 'http://127.0.0.1:8787/api/recheck-plans/plan_1/todos/todo_1');
+  assert.strictEqual(hybridRequests[9].url, 'http://127.0.0.1:8787/api/profiles/33333333-3333-4333-8333-333333333333/recheck-plans');
+  assert.strictEqual(hybridRequests[10].url, 'http://127.0.0.1:8787/api/recheck-plans/plan_1/todos/todo_1');
 }));
 
 const errorClient = createApiClient({
@@ -297,6 +308,19 @@ asyncChecks.push(mockApi.authWxLogin({ code: 'code_1' }).then((session) => {
   return mockApi.logout();
 }).then((result) => {
   assert.strictEqual(result.ok, true);
+}));
+asyncChecks.push(mockApi.signUploads({
+  profileId: 'profile_mom',
+  files: [{
+    clientFileId: 'local_mock_1',
+    fileName: 'report.jpg',
+    mimeType: 'image/jpeg',
+    size: 1024
+  }]
+}).then((result) => {
+  assert.strictEqual(result.uploads.length, 1);
+  assert.strictEqual(result.uploads[0].clientFileId, 'local_mock_1');
+  assert.ok(result.uploads[0].photoId);
 }));
 asyncChecks.push(mockApi.createOcrTask({
   profileId: 'profile_mom',

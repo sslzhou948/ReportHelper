@@ -16,6 +16,7 @@ class MemoryPrisma {
   ocrTasks: Row[] = [];
   drafts: Row[] = [];
   reports: Row[] = [];
+  reportPhotos: Row[] = [];
   reportMetricValues: Row[] = [];
   userMetricSnapshots: Row[] = [];
   recheckPlans: Row[] = [];
@@ -263,6 +264,19 @@ class MemoryPrisma {
     }
   };
 
+  reportPhoto = {
+    create: async ({ data }: any) => {
+      const photo = {
+        id: randomUUID(),
+        ...data,
+        createdAt: now(),
+        updatedAt: now()
+      };
+      this.reportPhotos.push(photo);
+      return photo;
+    }
+  };
+
   userMetricSnapshot = {
     findMany: async ({ where, select }: any) => {
       const rows = this.userMetricSnapshots.filter((snapshot) => {
@@ -498,6 +512,68 @@ assert.equal(profilesResponse.statusCode, 200);
 const profilesPayload = profilesResponse.json();
 assert.equal(profilesPayload.data.length, 1);
 const profileId = profilesPayload.data[0].id;
+
+const signUploadsResponse = await app.inject({
+  method: 'POST',
+  url: '/api/uploads/sign',
+  payload: {
+    profileId,
+    files: [
+      {
+        clientFileId: 'local_1',
+        fileName: 'report1.jpg',
+        mimeType: 'image/jpeg',
+        size: 123456
+      },
+      {
+        clientFileId: 'local_2',
+        fileName: 'report2.png',
+        mimeType: 'image/png',
+        size: 456789
+      }
+    ]
+  }
+});
+assert.equal(signUploadsResponse.statusCode, 200);
+const signUploadsPayload = signUploadsResponse.json();
+assert.equal(signUploadsPayload.data.uploads.length, 2);
+assert.equal(signUploadsPayload.data.uploads[0].clientFileId, 'local_1');
+assert.ok(signUploadsPayload.data.uploads[0].photoId);
+assert.ok(signUploadsPayload.data.uploads[0].objectKey.includes(profileId));
+assert.equal(prisma.reportPhotos.length, 2);
+assert.equal(prisma.reportPhotos[0].status, 'signed');
+
+const oversizedUploadResponse = await app.inject({
+  method: 'POST',
+  url: '/api/uploads/sign',
+  payload: {
+    profileId,
+    files: [{
+      clientFileId: 'too_large',
+      fileName: 'large.jpg',
+      mimeType: 'image/jpeg',
+      size: 11 * 1024 * 1024
+    }]
+  }
+});
+assert.equal(oversizedUploadResponse.statusCode, 413);
+assert.equal(oversizedUploadResponse.json().error.code, 'PAYLOAD_TOO_LARGE');
+
+const unsupportedUploadResponse = await app.inject({
+  method: 'POST',
+  url: '/api/uploads/sign',
+  payload: {
+    profileId,
+    files: [{
+      clientFileId: 'bad_type',
+      fileName: 'report.pdf',
+      mimeType: 'application/pdf',
+      size: 1024
+    }]
+  }
+});
+assert.equal(unsupportedUploadResponse.statusCode, 415);
+assert.equal(unsupportedUploadResponse.json().error.code, 'UNSUPPORTED_MEDIA_TYPE');
 
 const createProfileResponse = await app.inject({
   method: 'POST',
@@ -858,4 +934,4 @@ assert.ok(!afterDeleteListResponse.json().data.some((report: Row) => report.id =
 
 await app.close();
 
-console.log('Backend smoke passed: auth, profile CRUD, recheck plans, OCR task list/cancel, fixture OCR draft edit, report save/read/edit/delete, and duplicate check routes');
+console.log('Backend smoke passed: auth, profile CRUD, upload sign, recheck plans, OCR task list/cancel, fixture OCR draft edit, report save/read/edit/delete, and duplicate check routes');
