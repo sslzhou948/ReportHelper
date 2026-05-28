@@ -61,6 +61,12 @@ class MemoryPrisma {
       };
       this.profiles.push(profile);
       return profile;
+    },
+    update: async ({ where, data }: any) => {
+      const profile = this.profiles.find((item) => item.id === where.id);
+      if (!profile) throw new Error('profile not found');
+      Object.assign(profile, data, { updatedAt: now() });
+      return profile;
     }
   };
 
@@ -278,6 +284,47 @@ const profilesPayload = profilesResponse.json();
 assert.equal(profilesPayload.data.length, 1);
 const profileId = profilesPayload.data[0].id;
 
+const createProfileResponse = await app.inject({
+  method: 'POST',
+  url: '/api/profiles',
+  payload: {
+    relation: '爸爸',
+    realName: '测试档案',
+    gender: 'M',
+    birthDate: '1970-01-02',
+    diseaseType: '高血压',
+    primaryHospital: '社区医院'
+  }
+});
+assert.equal(createProfileResponse.statusCode, 200);
+const createdProfile = createProfileResponse.json().data;
+assert.equal(createdProfile.realName, '测试档案');
+assert.equal(createdProfile.birthDate, '1970-01-02');
+assert.equal(createdProfile.avatarText, '案');
+
+const updateProfileResponse = await app.inject({
+  method: 'PATCH',
+  url: `/api/profiles/${createdProfile.id}`,
+  payload: {
+    primaryHospital: '协和医院',
+    stage: '随访'
+  }
+});
+assert.equal(updateProfileResponse.statusCode, 200);
+assert.equal(updateProfileResponse.json().data.summary, '高血压 · 随访 · 协和医院');
+
+const deleteProfileResponse = await app.inject({
+  method: 'DELETE',
+  url: `/api/profiles/${createdProfile.id}`
+});
+assert.equal(deleteProfileResponse.statusCode, 200);
+const afterDeleteProfilesResponse = await app.inject({
+  method: 'GET',
+  url: '/api/profiles'
+});
+assert.equal(afterDeleteProfilesResponse.statusCode, 200);
+assert.ok(!afterDeleteProfilesResponse.json().data.some((profile: Row) => profile.id === createdProfile.id));
+
 const createTaskResponse = await app.inject({
   method: 'POST',
   url: '/api/ocr/tasks',
@@ -463,4 +510,4 @@ assert.ok(!afterDeleteListResponse.json().data.some((report: Row) => report.id =
 
 await app.close();
 
-console.log('Backend smoke passed: fixture OCR, report save/read/edit/delete, and duplicate check routes');
+console.log('Backend smoke passed: profile CRUD, fixture OCR, report save/read/edit/delete, and duplicate check routes');
