@@ -300,11 +300,31 @@ function createApi(options = {}) {
   return createMockApi();
 }
 
-const api = createApi();
+let cachedRuntimeApi = null;
+let cachedRuntimeKey = '';
+
+function getRuntimeApi() {
+  const runtimeOptions = getRuntimeApiOptions();
+  const runtimeKey = `${runtimeOptions.mode}|${runtimeOptions.baseUrl}`;
+  if (!cachedRuntimeApi || cachedRuntimeKey !== runtimeKey) {
+    cachedRuntimeApi = createApi(runtimeOptions);
+    cachedRuntimeKey = runtimeKey;
+  }
+  return cachedRuntimeApi;
+}
+
+const api = new Proxy({}, {
+  get(_target, property) {
+    const runtimeApi = getRuntimeApi();
+    const value = runtimeApi[property];
+    return typeof value === 'function' ? value.bind(runtimeApi) : value;
+  }
+});
 
 module.exports = {
   api,
   createApi,
   createBackendApi,
-  createHybridUploadApi
+  createHybridUploadApi,
+  getRuntimeApi
 };

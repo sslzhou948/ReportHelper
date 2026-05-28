@@ -77,6 +77,7 @@ const reportDetailJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'heal
 const metricDetailJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'health', 'metric-detail.js'), 'utf8');
 const metricDetailWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'health', 'metric-detail.wxml'), 'utf8');
 const pinnedManageJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'health', 'pinned-manage.js'), 'utf8');
+const apiJs = fs.readFileSync(path.join(miniprogramRoot, 'utils', 'api.js'), 'utf8');
 const apiMockJs = fs.readFileSync(path.join(miniprogramRoot, 'utils', 'api-mock.js'), 'utf8');
 assert.ok(uploadPickJs.includes("UPLOAD_DRAFT_KEY = 'uploadDraft'"), 'upload pick must persist unfinished upload drafts');
 assert.ok(uploadPickJs.includes('wx.chooseMedia') || uploadPickJs.includes('wx.chooseImage'), 'upload pick must use native image selection APIs');
@@ -138,6 +139,7 @@ assert.ok(metricDetailJs.includes('showApiErrorToast') && pinnedManageJs.include
 assert.ok(!apiMockJs.includes('reportCount: 3'), 'OCR mock fallback must not fabricate three reports');
 assert.ok(profileExportJs.includes('api.createExport'), 'profile export page must create a real export task');
 assert.ok(!profileExportWxml.includes('暂不创建导出任务'), 'profile export page must not present export as disabled');
+assert.ok(apiJs.includes('new Proxy') && apiJs.includes('getRuntimeApi()'), 'runtime API facade must allow DevTools mode switching');
 
 assert.ok(profileOnboardJs.includes('requestWxLoginCode()'), 'onboard login must use the native wx.login result');
 assert.ok(!profileOnboardJs.includes('mock_code'), 'onboard login must not continue with a mock code after wx.login failure');

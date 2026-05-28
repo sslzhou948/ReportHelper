@@ -16,6 +16,7 @@ Updated: 2026-05-29
 - Network offline and slow-loading recovery states are available on the four main tabs.
 - Multiple pending OCR tasks are summarized on home and prioritized by ready, failed, then processing state.
 - Full local verification is available through `npm run check:all`; WeChat DevTools smoke remains a separate explicit check.
+- Hybrid-upload DevTools smoke now runs without local Docker/Postgres by starting an in-memory Fastify backend, saving seven realcase fixture reports through backend APIs, and reading them back from the mini program health page.
 
 ## Verified Commands
 
@@ -24,6 +25,7 @@ Updated: 2026-05-29
 - `npm.cmd run fixtures:check`
 - `npm.cmd run check:all`
 - `npm.cmd run devtools:flow`
+- `npm.cmd run devtools:hybrid-flow`
 - `npm.cmd run build` in `backend/`
 - `npm.cmd test` in `backend/`
 
@@ -41,9 +43,9 @@ Updated: 2026-05-29
 
 ## Next Recommended Slice
 
-Start the real backend integration loop behind feature flags:
+Start hardening the real backend integration loop:
 
-1. Run the mini program in `hybrid-upload` mode against local backend.
-2. Use fixture OCR to save reports into the backend and browse them from the mini program.
-3. Add a DevTools smoke path that toggles backend mode for this fixture loop.
-4. Keep physical image upload and real OCR provider integration decoupled until the downstream data loop is stable.
+1. Keep `npm run devtools:hybrid-flow` as the no-Postgres downstream business-loop gate.
+2. Add the same fixture loop against a real PostgreSQL database once local Docker/Postgres is available.
+3. Keep physical image upload and real OCR provider integration decoupled until the downstream data loop is stable.
+4. After Postgres is wired, add migration/seed/reset guidance for repeatable local product testing.

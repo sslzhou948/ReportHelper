@@ -4,7 +4,7 @@
   "private": true,
   "description": "我的病例夹微信小程序工程",
   "scripts": {
-    "test": "node tests/run-unit-tests.js && node tests/static-check.js && node --check tests/devtools-flow.js",
+    "test": "node tests/run-unit-tests.js && node tests/static-check.js && node --check tests/devtools-flow.js && node --check tests/devtools-hybrid-flow.js",
     "check:all": "npm run test && npm run visual:check && npm run fixtures:check && npm --prefix backend run build && npm --prefix backend test",
     "static:check": "node tests/static-check.js",
     "visual:check": "node tests/check-visual-contracts.js",
@@ -13,7 +13,8 @@
     "devtools:open": "node scripts/wechat-devtools.js open",
     "devtools:preview": "node scripts/wechat-devtools.js preview",
     "devtools:cli-check": "node scripts/wechat-devtools.js check",
-    "devtools:flow": "node tests/devtools-flow.js"
+    "devtools:flow": "node tests/devtools-flow.js",
+    "devtools:hybrid-flow": "node tests/devtools-hybrid-flow.js"
   },
   "engines": {
     "node": ">=18"

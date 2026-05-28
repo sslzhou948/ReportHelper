@@ -35,6 +35,7 @@ If code behavior and these contracts diverge, update the contract first, then up
 - `npm run fixtures:check`: verifies all real screenshot fixtures and golden placeholder files are present.
 - `npm run devtools:cli-check`: checks whether the local WeChat DevTools CLI can be invoked.
 - `npm run devtools:preview`: compiles the real mini program project in WeChat DevTools and generates preview output.
+- `npm run devtools:hybrid-flow`: starts an in-memory backend and verifies the mini program `hybrid-upload` fixture loop through WeChat DevTools without requiring local Postgres.
 - `npm run check:all`: runs mini program unit/static checks, visual checks, fixture checks, backend build, and backend smoke tests. WeChat DevTools checks remain separate because they require local DevTools access.
 - Manual/interactive testing: open the project in WeChat DevTools, use it like a patient family member, and test upload grouping, OCR confirmation, health data switching, report detail editing, recheck todo completion, and profile switching.
 
