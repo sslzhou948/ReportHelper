@@ -1,0 +1,106 @@
+﻿<view class="page edit-page">
+  <view class="nav">
+    <view class="nav-side left" bindtap="goBack">返回</view>
+    <view class="nav-title">{{editing ? '编辑报告详情' : '报告详情'}}</view>
+    <view wx:if="{{!editing}}" class="nav-side right" bindtap="startEdit">编辑</view>
+    <view wx:else class="nav-side right" bindtap="saveAndBack">保存</view>
+  </view>
+  <view class="pad mt-12">
+    <view class="notice">黄色标记的项 OCR 不确定，请重点检查</view>
+  </view>
+  <view class="section-title">基本信息</view>
+  <view class="pad">
+    <view class="card">
+      <view class="edit-row"><view class="sub label">报告类型</view><input wx:if="{{editing}}" class="edit-input" value="{{basicInfo.type}}" data-field="type" bindinput="onBasicInput" /><view wx:else class="flex right readonly">{{basicInfo.type}}</view></view>
+      <view wx:if="{{basicInfo.canonicalTypeName && basicInfo.canonicalTypeName !== basicInfo.type}}" class="edit-row"><view class="sub label">标准分类</view><view class="flex right readonly">{{basicInfo.canonicalTypeName}}</view></view>
+      <view wx:if="{{basicInfo.modality === 'imaging'}}" class="edit-row"><view class="sub label">检查部位</view><input wx:if="{{editing}}" class="edit-input" value="{{basicInfo.examPart}}" placeholder="待确认" data-field="examPart" bindinput="onBasicInput" /><view wx:else class="flex right readonly">{{basicInfo.examPart || '待确认'}}</view></view>
+      <view wx:if="{{basicInfo.modality === 'imaging'}}" class="edit-row"><view class="sub label">检查方式</view><input wx:if="{{editing}}" class="edit-input" value="{{basicInfo.examMethod}}" placeholder="待确认" data-field="examMethod" bindinput="onBasicInput" /><view wx:else class="flex right readonly">{{basicInfo.examMethod || '待确认'}}</view></view>
+      <view class="edit-row"><view class="sub label">医院</view><input wx:if="{{editing}}" class="edit-input" value="{{basicInfo.hospital}}" data-field="hospital" bindinput="onBasicInput" /><view wx:else class="flex right readonly">{{basicInfo.hospital}}</view></view>
+      <view class="edit-row"><view class="sub label">检查日期</view><picker wx:if="{{editing}}" class="date-picker" mode="date" value="{{basicInfo.reportDate}}" bindchange="onDateChange"><view class="edit-picker">{{basicInfo.reportDate}}</view></picker><view wx:else class="flex right readonly">{{basicInfo.reportDate}}</view></view>
+    </view>
+    <view wx:if="{{basicInfo.hospitalSource === 'inferred_from_batch' || basicInfo.reportDateSource === 'inferred_from_batch'}}" class="source-note">部分基础信息根据同批报告推测，请核对。</view>
+  </view>
+  <view wx:if="{{warnings.length}}">
+    <view class="section-title">需要确认</view>
+    <view class="pad">
+      <view class="card card-pad">
+        <view wx:for="{{warnings}}" wx:key="code" class="warning-row">
+          <view class="warn-dot">!</view>
+          <view class="body">{{item.message}}</view>
+        </view>
+      </view>
+    </view>
+  </view>
+  <view wx:for="{{groups}}" wx:key="name">
+    <view class="section-title">
+      <view>{{item.name}}</view>
+      <view class="tiny">{{item.items.length}} 项</view>
+    </view>
+    <view class="pad">
+      <view class="card">
+        <view wx:for="{{item.items}}" wx:key="name" class="metric-edit">
+          <view class="metric-name">
+            <view class="metric-title-left">
+              <view wx:if="{{item.uncertain}}" class="warn-dot">!</view>
+              <view class="body strong">{{item.name}}</view>
+            </view>
+            <view wx:if="{{item.mappingStatus !== 'confirmed'}}" class="status-pill">{{item.mappingStatus}}</view>
+          </view>
+          <view wx:if="{{!editing}}" class="metric-read">
+            <view class="metric-value {{item.tone === 'high' ? 'value-high' : ''}} {{item.tone === 'low' ? 'value-low' : ''}} {{item.tone === 'positive' ? 'value-positive' : ''}}">{{item.value}}</view>
+            <view class="unit-chip">{{item.unit}}</view>
+            <view class="tiny ref-read">参考 {{item.ref}}</view>
+          </view>
+          <view wx:elif="{{item.valueType === 'qualitative'}}" class="qualitative-edit">
+            <picker range="{{['阴性', '阳性', '弱阳性', '可疑']}}" value="0" data-index="{{item.index}}" bindchange="onQualitativeChange">
+              <view class="mini-input">{{item.value || '请选择'}}</view>
+            </picker>
+            <view class="unit-readonly">参考 {{item.ref}}</view>
+          </view>
+          <view wx:else class="metric-inputs">
+            <input class="mini-input value-input {{item.tone === 'high' ? 'value-high' : ''}} {{item.tone === 'low' ? 'value-low' : ''}}" value="{{item.value}}" data-index="{{item.index}}" data-field="valueNumeric" bindinput="onMetricInput" />
+            <view class="unit-readonly">{{item.unit}}</view>
+          </view>
+          <view wx:if="{{editing && item.valueType !== 'qualitative' && item.refText}}" class="ref-text-note">
+            <view class="tiny">参考</view>
+            <view class="tiny ref-text">{{item.refText}}</view>
+          </view>
+          <view wx:elif="{{editing && item.valueType !== 'qualitative'}}" class="ref-inputs">
+            <view class="tiny">参考</view>
+            <input class="mini-input" value="{{item.refLow}}" placeholder="下限" data-index="{{item.index}}" data-field="refRangeLow" bindinput="onMetricInput" />
+            <view class="range-separator">-</view>
+            <input class="mini-input" value="{{item.refHigh}}" placeholder="上限" data-index="{{item.index}}" data-field="refRangeHigh" bindinput="onMetricInput" />
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+  <view wx:if="{{findings.length}}">
+    <view class="section-title">
+      <view>影像所见</view>
+      <view class="tiny">{{findings.length}} 条</view>
+    </view>
+    <view class="pad">
+      <view class="card card-pad">
+        <view wx:for="{{findings}}" wx:key="*this" class="finding-row editable-finding">
+          <view class="finding-dot"></view>
+          <textarea wx:if="{{editing}}" class="finding-input" value="{{item}}" data-index="{{index}}" auto-height bindinput="onFindingInput" />
+          <view wx:else class="body">{{item}}</view>
+        </view>
+      </view>
+    </view>
+  </view>
+  <view wx:if="{{!loading && !groups.length && !findings.length}}" class="pad">
+    <view class="empty-detail">
+      <view class="body strong">暂无可展示的识别明细</view>
+      <view class="tiny mt-8">请返回确认页检查报告来源，或稍后重新识别。</view>
+    </view>
+  </view>
+  <view class="bottom-action">
+    <view wx:if="{{!editing}}" class="btn" bindtap="startEdit">编辑</view>
+    <view wx:else class="bottom-grid">
+      <view class="btn secondary" bindtap="cancelEdit">取消</view>
+      <view class="btn {{saving ? 'disabled' : ''}}" bindtap="saveAndBack">保存修改</view>
+    </view>
+  </view>
+</view>

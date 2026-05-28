@@ -1,0 +1,6 @@
+{
+  "usingComponents": {
+    "metric-row": "/components/metric-row/metric-row",
+    "hh-pill": "/components/pill/pill"
+  }
+}

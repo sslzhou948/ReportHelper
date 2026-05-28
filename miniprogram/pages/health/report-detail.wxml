@@ -1,0 +1,56 @@
+﻿<view class="page">
+  <view class="nav">
+    <view class="nav-side left" bindtap="goBack">‹ 返回</view>
+    <view class="nav-title">{{report.type}}报告</view>
+    <view class="nav-side right" bindtap="showEdit">编辑</view>
+  </view>
+  <view class="pad mt-12">
+    <view class="card card-pad">
+      <view class="report-head">
+        <view class="title">{{report.hospital}}</view>
+        <hh-pill wx:if="{{report.abnormalCount > 0}}" tone="high">{{report.abnormalCount}} 项异常</hh-pill>
+      </view>
+      <view class="sub mt-8">{{report.reportDate}}</view>
+      <view class="report-tags">
+        <view wx:if="{{report.canonicalTypeName && report.canonicalTypeName !== report.type}}" class="tag">归一：{{report.canonicalTypeName}}</view>
+        <view wx:if="{{report.modality === 'imaging'}}" class="tag">影像报告</view>
+        <view wx:if="{{report.examPart}}" class="tag">{{report.examPart}}</view>
+        <view wx:if="{{report.analysisPolicy === 'view_only'}}" class="tag muted">仅归档查看</view>
+      </view>
+      <view wx:if="{{report.note}}" class="tiny mt-12">备注：{{report.note}}</view>
+    </view>
+  </view>
+  <view wx:for="{{groups}}" wx:key="category">
+    <view class="section-title">{{item.categoryCn}}</view>
+    <view class="pad">
+      <view class="card">
+        <view wx:for="{{item.items}}" wx:key="metricKey" class="row metric-row {{item.tone}}" data-key="{{item.metricKey}}" bindtap="goMetric">
+          <view class="flex">
+            <view class="body strong">{{item.metricName}}</view>
+            <view class="tiny">参考 {{item.refRangeLow}}-{{item.refRangeHigh}}</view>
+          </view>
+          <view class="right">
+            <view class="metric-value {{item.tone}}">{{item.valueNumeric || item.valueQualitative}}</view>
+            <view class="tiny">{{item.unit}}</view>
+          </view>
+          <view class="trend-icon">趋</view>
+        </view>
+      </view>
+    </view>
+  </view>
+  <view wx:if="{{findings.length}}">
+    <view class="section-title">影像所见</view>
+    <view class="pad">
+      <view class="card card-pad">
+        <view wx:for="{{findings}}" wx:key="*this" class="finding-row">
+          <view class="finding-dot"></view>
+          <view class="body">{{item}}</view>
+        </view>
+      </view>
+    </view>
+  </view>
+  <view class="bottom-actions">
+    <view class="btn secondary" bindtap="showEdit">编辑</view>
+    <view class="btn danger" bindtap="showDelete">删除报告</view>
+  </view>
+</view>

@@ -1,0 +1,6 @@
+Page({
+  goBack() {
+    wx.navigateBack();
+  }
+});
+

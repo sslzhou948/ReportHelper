@@ -1,0 +1,22 @@
+{
+  "caseId": "acth",
+  "status": "structured",
+  "modality": "laboratory",
+  "basicInfo": {
+    "hospital": "北京协和医院",
+    "reportDate": "2025-12-22",
+    "type": "血浆ACTH (8AM)"
+  },
+  "metrics": [
+    {
+      "metricKey": "acth",
+      "metricName": "促肾上腺皮质激素",
+      "valueNumeric": 301,
+      "unit": "pg/ml",
+      "refRangeLow": 7.2,
+      "refRangeHigh": 63.3,
+      "tone": "high"
+    }
+  ],
+  "expectedFields": ["hospital", "reportDate", "metricName", "value", "unit", "referenceRange", "tone"]
+}

@@ -1,0 +1,23 @@
+﻿<view class="page">
+  <view class="nav">
+    <view class="nav-side left" bindtap="goBack">‹ 返回</view>
+    <view class="nav-title">报告归档管理</view>
+    <view class="nav-side right"></view>
+  </view>
+  <view class="pad mt-12">
+    <view class="notice">按时间管理已归档报告。删除、恢复和批量移动会在接入后端后开放。</view>
+  </view>
+  <view class="pad mt-12">
+    <view class="card">
+      <view wx:for="{{reports}}" wx:key="id" class="row" data-id="{{item.id}}" bindtap="goReport">
+        <view class="flex">
+          <view class="body strong">{{item.type}}</view>
+          <view class="tiny">{{item.hospital}} · {{item.displayDate}}</view>
+        </view>
+        <hh-pill wx:if="{{item.abnormalCount > 0}}" tone="high">{{item.abnormalCount}} 异常</hh-pill>
+        <view class="arrow">›</view>
+      </view>
+    </view>
+  </view>
+</view>
+

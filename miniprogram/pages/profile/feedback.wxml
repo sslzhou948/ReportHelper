@@ -1,0 +1,17 @@
+﻿<view class="page">
+  <view class="nav">
+    <view class="nav-side left" bindtap="goBack">‹ 返回</view>
+    <view class="nav-title">意见反馈</view>
+    <view class="nav-side right"></view>
+  </view>
+  <view class="pad mt-12">
+    <textarea class="textarea" value="{{text}}" bindinput="onText" placeholder="请描述你遇到的问题或建议" maxlength="500" />
+  </view>
+  <view class="pad mt-12">
+    <input class="input" value="{{contact}}" bindinput="onContact" placeholder="联系方式（选填）" />
+  </view>
+  <view class="pad mt-16">
+    <view class="btn" bindtap="submit">提交反馈</view>
+  </view>
+</view>
+

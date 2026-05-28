@@ -1,0 +1,35 @@
+﻿<view class="page">
+  <view class="nav">
+    <view class="nav-side left" bindtap="goBack">‹ 返回</view>
+    <view class="nav-title">档案资料</view>
+    <view class="nav-side right" bindtap="save">保存</view>
+  </view>
+  <view class="pad mt-12">
+    <view class="notice">本页数据仅用于健康记录参考，严格遵守隐私保护</view>
+  </view>
+  <view class="section-title">基本与病情信息</view>
+  <view class="pad">
+    <view class="card">
+      <view wx:for="{{fields}}" wx:key="label" class="row" bindtap="editField">
+        <view class="sub label">{{item.label}}</view>
+        <view class="flex right">{{item.value}}</view>
+        <view class="arrow">›</view>
+      </view>
+    </view>
+  </view>
+  <view class="section-title">
+    <view>用药记录</view>
+    <view class="section-action" bindtap="editField">+ 添加</view>
+  </view>
+  <view class="pad">
+    <view class="card">
+      <view class="row" bindtap="editField">
+        <view class="flex">
+          <view class="body strong">他莫昔芬</view>
+          <view class="tiny">10mg · 每日 2 次 · 2024 年 5 月起</view>
+        </view>
+        <view class="arrow">›</view>
+      </view>
+    </view>
+  </view>
+</view>

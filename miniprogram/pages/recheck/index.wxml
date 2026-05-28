@@ -1,0 +1,56 @@
+﻿<view class="page page-tab">
+  <view class="nav">
+    <view class="nav-side left"></view>
+    <view class="nav-title">复查计划</view>
+    <view class="nav-side right" bindtap="goNew">+ 新增</view>
+  </view>
+  <block wx:if="{{nextPlan}}">
+    <view class="section-title">下次复查</view>
+    <view class="pad">
+      <view class="card card-pad">
+        <view class="plan-head">
+          <view class="plan-date">{{nextPlan.displayDate}}</view>
+          <view class="plan-weekday">{{nextPlan.weekday}}</view>
+          <hh-pill tone="warn">还有 {{daysToNext}} 天</hh-pill>
+        </view>
+        <view class="sub mt-8">{{nextPlan.hospital}} · {{nextPlan.type}}</view>
+        <view class="progress-line mt-12">
+          <view class="progress"><view style="width: {{progressPercent}}%;"></view></view>
+          <view class="sub">{{readyCount}}/{{nextPlan.todos.length}} 准备就绪</view>
+        </view>
+        <view wx:if="{{allReady}}" class="btn mt-16" bindtap="completePlan">标记为已完成</view>
+      </view>
+    </view>
+    <view class="section-title">待办事项</view>
+    <view class="pad">
+      <view class="card">
+        <view wx:for="{{nextPlan.todos}}" wx:key="id" class="row" data-index="{{index}}" bindtap="toggleTodo">
+          <view class="todo-box {{item.isDone ? 'done' : ''}}">{{item.isDone ? '✓' : ''}}</view>
+          <view class="flex {{item.isDone ? 'todo-done' : ''}}">{{item.text}}</view>
+        </view>
+        <view class="row add-row" bindtap="addTodo">+ 添加待办</view>
+      </view>
+    </view>
+  </block>
+  <view class="section-title">
+    <view>之后还有</view>
+    <view class="tiny">{{otherPlans.length}} 项</view>
+  </view>
+  <view class="pad">
+    <view class="card">
+      <view wx:for="{{otherPlans}}" wx:key="id" class="row" data-id="{{item.id}}" bindtap="goDetail">
+        <view class="date-block">
+          <view class="date-day">{{item.dayText}}</view>
+          <view class="date-month">{{item.monthText}}</view>
+        </view>
+        <view class="flex">
+          <view class="body strong">{{item.type}}</view>
+          <view class="tiny">{{item.hospital}}</view>
+        </view>
+        <view class="tiny">{{item.weekday}}</view>
+        <view class="arrow">›</view>
+      </view>
+    </view>
+  </view>
+  <view class="done-link">已完成 ({{doneCount}}) ›</view>
+</view>

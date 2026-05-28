@@ -1,0 +1,20 @@
+{
+  "caseId": "uric_electrolyte_lipid",
+  "status": "structured",
+  "modality": "laboratory",
+  "basicInfo": {
+    "hospital": "北京协和医院",
+    "reportDate": "2026-01-23",
+    "type": "尿酸、电解质、血脂"
+  },
+  "metrics": [
+    { "metricKey": "ast", "metricName": "天门冬氨酸氨基转移酶", "valueNumeric": 41, "unit": "U/L", "refRangeLow": 13, "refRangeHigh": 35, "tone": "high" },
+    { "metricKey": "creatinine", "metricName": "肌酐(酶法)", "valueNumeric": 43, "unit": "μmol/L", "refRangeLow": 45, "refRangeHigh": 84, "tone": "low" },
+    { "metricKey": "uric_acid", "metricName": "尿酸", "valueNumeric": 112, "unit": "μmol/L", "refRangeLow": 150, "refRangeHigh": 357, "tone": "low" },
+    { "metricKey": "tc", "metricName": "总胆固醇", "valueNumeric": 5.81, "unit": "mmol/L", "refRangeHigh": 5.2, "tone": "high" },
+    { "metricKey": "tg", "metricName": "甘油三酯", "valueNumeric": 1.33, "unit": "mmol/L", "refRangeHigh": 1.7, "tone": "ok" },
+    { "metricKey": "hdl_c", "metricName": "高密度脂蛋白胆固醇", "valueNumeric": 2.27, "unit": "mmol/L", "refRangeLow": 1, "tone": "ok" },
+    { "metricKey": "ldl_c", "metricName": "低密度脂蛋白胆固醇", "valueNumeric": 2.46, "unit": "mmol/L", "refRangeHigh": 3.4, "tone": "ok" }
+  ],
+  "expectedFields": ["hospital", "reportDate", "metricName", "value", "unit", "referenceRange", "tone"]
+}

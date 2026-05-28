@@ -1,0 +1,14 @@
+﻿<view class="metric-row" bindtap="onTap">
+  <view class="metric-main">
+    <view class="metric-name">{{metric.metricName}}</view>
+    <view class="metric-sub">{{metric.lastDate}} · {{metric.trendLabel}}</view>
+  </view>
+  <view class="metric-value {{metric.lastTone}}">
+    <text wx:if="{{metric.valueType === 'qualitative'}}">{{metric.lastValueQualitative}}</text>
+    <text wx:else>{{metric.lastValueNumeric}}</text>
+    <text wx:if="{{metric.lastTone === 'high'}}"> ↑</text>
+    <text wx:if="{{metric.lastTone === 'low'}}"> ↓</text>
+    <view class="metric-unit">{{metric.unit}}</view>
+  </view>
+  <view class="metric-arrow">›</view>
+</view>

@@ -1,0 +1,46 @@
+.label {
+  min-width: 150rpx;
+}
+
+.arrow {
+  color: var(--ink-3);
+  font-size: 40rpx;
+}
+
+.countdown {
+  display: flex;
+  justify-content: center;
+  padding: 24rpx 32rpx 0;
+}
+
+.todo-box {
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: 12rpx;
+  border: 3rpx solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.todo-box.done {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #FFFFFF;
+}
+
+.add-row {
+  justify-content: center;
+  color: var(--primary);
+}
+
+.danger-zone {
+  margin-top: 48rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.danger-text {
+  color: var(--high);
+}

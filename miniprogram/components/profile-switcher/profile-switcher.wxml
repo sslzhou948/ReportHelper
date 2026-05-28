@@ -1,0 +1,25 @@
+﻿<view wx:if="{{visible}}" class="mask" bindtap="close">
+  <view class="sheet" catchtap="noop">
+    <view class="grab"></view>
+    <view class="sheet-head">
+      <view class="sheet-title">{{manage ? '管理档案' : '切换档案'}}</view>
+      <view class="sheet-action" bindtap="toggleManage">{{manage ? '完成' : '管理 ›'}}</view>
+    </view>
+    <view wx:for="{{profiles}}" wx:key="id" class="profile-row {{item.id === currentProfileId && !manage ? 'active' : ''}}" data-id="{{item.id}}" bindtap="onProfileTap">
+      <view class="avatar">{{item.avatarText}}</view>
+      <view class="flex">
+        <view class="profile-name">{{item.realName}} <text class="relation">{{item.relation}}</text></view>
+        <view class="tiny">{{item.summary}}</view>
+      </view>
+      <view wx:if="{{manage}}" class="row-actions">
+        <text>编辑</text>
+        <text class="danger">删除</text>
+      </view>
+      <view wx:elif="{{item.id === currentProfileId}}" class="check">✓</view>
+    </view>
+    <view class="add-row" bindtap="addProfile">
+      <view class="add-icon">+</view>
+      <view>添加新档案</view>
+    </view>
+  </view>
+</view>

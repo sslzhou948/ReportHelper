@@ -1,0 +1,66 @@
+{
+  "appid": "wxeab2ae56843879da",
+  "compileType": "miniprogram",
+  "libVersion": "2.30.0",
+  "projectname": "healthhelper",
+  "miniprogramRoot": "miniprogram/",
+  "setting": {
+    "urlCheck": false,
+    "es6": true,
+    "enhance": true,
+    "postcss": true,
+    "minified": true,
+    "coverView": true,
+    "lazyloadPlaceholderEnable": true,
+    "preloadBackgroundData": false,
+    "autoAudits": false,
+    "uglifyFileName": false,
+    "checkInvalidKey": true,
+    "checkSiteMap": true,
+    "uploadWithSourceMap": true,
+    "compileHotReLoad": true,
+    "babelSetting": {
+      "ignore": [],
+      "disablePlugins": [],
+      "outputPath": ""
+    },
+    "compileWorklet": false,
+    "packNpmManually": false,
+    "packNpmRelationList": [],
+    "minifyWXSS": true,
+    "minifyWXML": true,
+    "localPlugins": false,
+    "disableUseStrict": false,
+    "useCompilerPlugins": false,
+    "condition": false,
+    "swc": false,
+    "disableSWC": true
+  },
+  "condition": {
+    "miniprogram": {
+      "list": [
+        {
+          "name": "首页",
+          "pathName": "pages/home/index",
+          "query": ""
+        },
+        {
+          "name": "上传报告",
+          "pathName": "pages/upload/pick",
+          "query": ""
+        },
+        {
+          "name": "健康数据",
+          "pathName": "pages/health/index",
+          "query": "view=metric"
+        }
+      ]
+    }
+  },
+  "simulatorPluginLibVersion": {},
+  "packOptions": {
+    "ignore": [],
+    "include": []
+  },
+  "editorSetting": {}
+}

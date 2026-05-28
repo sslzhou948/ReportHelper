@@ -1,0 +1,18 @@
+{
+  "caseId": "liver_function",
+  "status": "structured",
+  "modality": "laboratory",
+  "basicInfo": {
+    "hospital": "北京协和医院",
+    "reportDate": "2026-01-23",
+    "type": "肝功"
+  },
+  "metrics": [
+    { "metricKey": "alt", "metricName": "丙氨酸氨基转移酶", "valueNumeric": 23, "unit": "U/L", "refRangeLow": 7, "refRangeHigh": 40, "tone": "ok" },
+    { "metricKey": "tp", "metricName": "总蛋白", "valueNumeric": 69, "unit": "g/L", "refRangeLow": 60, "refRangeHigh": 85, "tone": "ok" },
+    { "metricKey": "alb", "metricName": "白蛋白(BCG法)", "valueNumeric": 43, "unit": "g/L", "refRangeLow": 35, "refRangeHigh": 52, "tone": "ok" },
+    { "metricKey": "tbil", "metricName": "总胆红素", "valueNumeric": 5.6, "unit": "μmol/L", "refRangeLow": 5.1, "refRangeHigh": 22.2, "tone": "ok" },
+    { "metricKey": "dbil", "metricName": "直接胆红素", "valueNumeric": 1.6, "unit": "μmol/L", "refRangeHigh": 6.8, "tone": "ok" }
+  ],
+  "expectedFields": ["hospital", "reportDate", "metricName", "value", "unit", "referenceRange", "tone"]
+}

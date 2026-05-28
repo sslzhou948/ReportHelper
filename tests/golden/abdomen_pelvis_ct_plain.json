@@ -1,0 +1,18 @@
+{
+  "caseId": "abdomen_pelvis_ct_plain",
+  "status": "structured",
+  "modality": "imaging",
+  "basicInfo": {
+    "hospital": "北京协和医院",
+    "reportDate": "2025-12-24",
+    "examDate": "2025-12-22",
+    "type": "胸腹盆CT平扫"
+  },
+  "findings": [
+    "左侧肾上腺肿物切除术后改变，大致同前。",
+    "肝内散在囊肿，大致同前。",
+    "右侧附件区囊肿可能，较前稍减小，请结合专科检查。",
+    "左侧髂血管旁饱满淋巴结？左侧附件残端？请结合专科检查。"
+  ],
+  "expectedFields": ["hospital", "reportDate", "examPart", "findings", "comparison"]
+}

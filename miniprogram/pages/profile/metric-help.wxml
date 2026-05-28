@@ -1,0 +1,21 @@
+﻿<view class="page">
+  <view class="nav">
+    <view class="nav-side left" bindtap="goBack">‹ 返回</view>
+    <view class="nav-title">指标说明</view>
+    <view class="nav-side right"></view>
+  </view>
+  <view class="pad mt-12">
+    <view class="notice">指标说明用于帮助理解页面信息，不构成医疗建议。</view>
+  </view>
+  <view class="pad mt-12">
+    <view class="card">
+      <view wx:for="{{groups}}" wx:key="name" class="row help-row">
+        <view class="flex">
+          <view class="body strong">{{item.name}}</view>
+          <view class="tiny mt-8">{{item.text}}</view>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>
+

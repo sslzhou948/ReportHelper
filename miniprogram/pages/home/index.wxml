@@ -1,0 +1,115 @@
+﻿<view class="page page-tab">
+  <view class="banner home-banner" style="padding-top: {{layout.homeBannerPaddingTop}}rpx; min-height: {{layout.homeBannerMinHeight}}rpx;">
+    <view class="home-head">
+      <view class="profile-chip" bindtap="openSwitcher">
+        <view class="avatar">{{profile.avatarText}}</view>
+        <text>{{profile.relation}} · {{profile.realName}}</text>
+        <text>⌄</text>
+      </view>
+      <view class="bell" bindtap="showRecognizing">···</view>
+    </view>
+    <view class="greeting">早上好，愿您今天舒心</view>
+  </view>
+
+  <view wx:if="{{recognizing}}" class="pad mt-12">
+    <view class="ocr-card" bindtap="goOcrTask">
+      <view class="ocr-icon">识</view>
+      <view class="flex">
+        <view class="body strong">正在识别 3 张报告</view>
+        <view class="tiny">识别完成后会通知您，请放心使用其他功能</view>
+      </view>
+      <hh-pill tone="primary">查看 ›</hh-pill>
+    </view>
+  </view>
+
+  <view class="pad home-main-card mt-12">
+    <view class="upload-cta" bindtap="goUpload">
+      <view class="upload-icon">＋</view>
+      <view class="flex">
+        <view class="upload-title">上传{{profile.relation}}的检查报告</view>
+        <view class="upload-sub">拍照 / 相册 · AI 自动识别</view>
+      </view>
+      <view class="upload-arrow">›</view>
+    </view>
+  </view>
+
+  <view wx:if="{{nextPlan}}" class="pad home-main-card mt-12">
+    <view class="card card-pad recheck-card" bindtap="goRecheck">
+      <view class="recheck-icon">复</view>
+      <view class="flex">
+        <view class="body strong">{{profile.relation}}距下次复查还有 {{daysToNext}} 天</view>
+        <view class="sub">{{nextPlan.date}} · {{nextPlan.hospital}} · {{nextPlan.type}}</view>
+      </view>
+      <view class="arrow">›</view>
+    </view>
+  </view>
+
+  <view class="section-title">
+    <view>关注指标</view>
+    <view class="section-action" bindtap="goPinnedManage">管理 ›</view>
+  </view>
+  <scroll-view scroll-x class="metric-scroll">
+    <view wx:for="{{pinnedMetrics}}" wx:key="metricKey" class="metric-card" data-key="{{item.metricKey}}" bindtap="goMetric">
+      <view class="sub">{{item.metricName}}</view>
+      <view class="metric-value {{item.lastTone}}">
+        <text wx:if="{{item.valueType === 'qualitative'}}">{{item.lastValueQualitative}}</text>
+        <text wx:else>{{item.lastValueNumeric}}</text>
+        <text wx:if="{{item.unit}}" class="metric-unit">{{item.unit}}</text>
+      </view>
+      <view class="mini-spark {{item.lastTone}}">
+        <view></view><view></view><view></view><view></view><view></view>
+      </view>
+      <view class="tiny">{{item.lastDate}} · {{item.trendLabel}}</view>
+    </view>
+    <view wx:if="{{pinnedMetrics.length === 0}}" class="metric-card empty-metric" bindtap="goPinnedManage">
+      <view class="body strong">暂无关注指标</view>
+      <view class="tiny mt-8">上传报告后，可把常看的指标加入关注</view>
+    </view>
+  </scroll-view>
+
+  <view class="section-title">
+    <view>最近报告</view>
+    <view class="section-action" bindtap="goHealthTime">查看全部 ›</view>
+  </view>
+  <view class="pad">
+    <view class="card">
+      <view wx:for="{{reports}}" wx:key="id" class="row" data-id="{{item.id}}" bindtap="goReport">
+        <view class="report-type">{{item.type}}</view>
+        <view class="report-main">
+          <view class="body strong">{{item.hospital}}</view>
+          <view class="tiny">{{item.displayDate}}</view>
+        </view>
+        <view wx:if="{{item.abnormalCount > 0}}" class="abnormal">{{item.abnormalCount}} 项异常</view>
+        <view class="arrow">›</view>
+      </view>
+      <view wx:if="{{reports.length === 0}}" class="empty-report" bindtap="goUpload">
+        <view class="body strong">还没有检查报告</view>
+        <view class="tiny mt-8">上传第一份报告后，这里会展示最近记录</view>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{alertMetrics.length > 0}}" class="section-title">
+    <view>健康提醒</view>
+    <view class="section-action" bindtap="goHealthTime">查看全部 ›</view>
+  </view>
+  <view wx:if="{{alertMetrics.length > 0}}" class="pad">
+    <view class="card card-pad alert-card" bindtap="goHealthTime">
+      <view class="body strong">最近 {{alertMetrics.length}} 项指标需要关注</view>
+      <view class="tiny mt-8">{{alertMetrics[0].metricName}}<text wx:if="{{alertMetrics[1]}}">、{{alertMetrics[1].metricName}}</text><text wx:if="{{alertMetrics[2]}}">、{{alertMetrics[2].metricName}}</text></view>
+      <view class="pill-row">
+        <hh-pill wx:for="{{alertMetrics}}" wx:key="metricKey" tone="{{item.lastTone}}">{{item.metricName}}</hh-pill>
+      </view>
+    </view>
+  </view>
+
+  <profile-switcher
+    visible="{{switcherVisible}}"
+    profiles="{{profiles}}"
+    currentProfileId="{{profile.id}}"
+    bind:close="closeSwitcher"
+    bind:switch="switchProfile"
+    bind:add="addProfile"
+    bind:edit="editProfile"
+  />
+</view>

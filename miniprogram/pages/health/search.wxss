@@ -1,0 +1,14 @@
+.search-input {
+  height: 88rpx;
+  padding: 0 28rpx;
+  border-radius: 28rpx;
+  background: #FFFFFF;
+  border: 1rpx solid var(--border-soft);
+  color: var(--ink);
+  font-size: 28rpx;
+}
+
+.strong {
+  font-weight: 700;
+}
+

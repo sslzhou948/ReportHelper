@@ -1,0 +1,1081 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>我的病例夹 · 交互原型</title>
+  <style>
+    :root {
+      --bg: #edeae4;
+      --card: #ffffff;
+      --ink: #3c3630;
+      --ink-2: #7a7065;
+      --ink-3: #9a9085;
+      --border: #d8d4cc;
+      --border-soft: #e5e1da;
+      --primary: #5a7a5a;
+      --primary-soft: #e3eae0;
+      --high: #c07060;
+      --high-soft: #f5e2dc;
+      --low: #5a7aa8;
+      --low-soft: #dde3ee;
+      --warn: #a8682e;
+      --warn-soft: #faf0e0;
+      --shadow: 0 1px 8px rgba(0,0,0,.035);
+      --font: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; min-height: 100%; background: #f0eee9; color: var(--ink); font-family: var(--font); }
+    button, input, textarea, select { font: inherit; }
+    button { border: 0; cursor: pointer; }
+    ::-webkit-scrollbar { display: none; }
+
+    .stage {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: minmax(320px, 420px) minmax(280px, 1fr);
+      gap: 28px;
+      padding: 28px;
+      align-items: start;
+    }
+
+    .phone-shell {
+      width: min(100%, 390px);
+      height: min(860px, calc(100vh - 56px));
+      min-height: 720px;
+      margin: 0 auto;
+      background: #121212;
+      border-radius: 44px;
+      padding: 12px;
+      box-shadow: 0 24px 70px rgba(0,0,0,.24);
+      position: sticky;
+      top: 28px;
+    }
+
+    .phone {
+      height: 100%;
+      border-radius: 34px;
+      overflow: hidden;
+      background: var(--bg);
+      position: relative;
+    }
+
+    .screen {
+      height: 100%;
+      overflow-y: auto;
+      padding-bottom: 96px;
+      background: var(--bg);
+      position: relative;
+    }
+
+    .screen.no-tab { padding-bottom: 22px; }
+    .screen.with-bottom-action { padding-bottom: 112px; }
+
+    .side {
+      max-width: 760px;
+      padding: 8px 0 40px;
+    }
+
+    .side h1 { margin: 0 0 8px; font-size: 30px; letter-spacing: 0; }
+    .side p { color: var(--ink-2); line-height: 1.8; margin: 0 0 18px; }
+    .panel {
+      background: rgba(255,255,255,.68);
+      border: 1px solid var(--border-soft);
+      border-radius: 18px;
+      padding: 16px;
+      margin-bottom: 14px;
+      box-shadow: var(--shadow);
+    }
+    .panel h2 { font-size: 16px; margin: 0 0 10px; }
+    .jump-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+    .jump {
+      padding: 8px 12px;
+      border-radius: 12px;
+      background: #fff;
+      color: var(--ink-2);
+      border: 1px solid var(--border-soft);
+    }
+    .jump.active, .jump:hover { color: var(--primary); border-color: var(--primary); background: var(--primary-soft); }
+    .hint-list { margin: 8px 0 0; padding-left: 18px; color: var(--ink-2); line-height: 1.8; }
+
+    .banner {
+      min-height: 140px;
+      padding: 54px 18px 18px;
+      color: #fff;
+      background: linear-gradient(160deg, #6b8e6b 0%, #5a7a5a 100%);
+      border-bottom-left-radius: 28px;
+      border-bottom-right-radius: 28px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+    }
+    .login-banner { min-height: 280px; align-items: center; justify-content: center; text-align: center; padding-top: 18px; border-radius: 0; }
+    .app-mark {
+      width: 76px; height: 76px; border-radius: 22px; margin: 0 auto 14px;
+      background: rgba(255,255,255,.15);
+      border: 1.5px solid rgba(255,255,255,.5);
+      display: grid; place-items: center;
+    }
+    .nav {
+      height: 76px;
+      padding: 42px 16px 12px;
+      background: #fff;
+      border-bottom: 1px solid var(--border-soft);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+    .nav-title { flex: 1; text-align: center; font-weight: 700; font-size: 17px; }
+    .nav-left, .nav-right { width: 62px; color: var(--primary); font-size: 14px; background: transparent; padding: 0; display: flex; align-items: center; }
+    .nav-left { color: var(--ink); }
+    .nav-right { justify-content: flex-end; }
+    .nav-placeholder { visibility: hidden; }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border-soft);
+      box-shadow: var(--shadow);
+      border-radius: 22px;
+      padding: 16px;
+      overflow: hidden;
+      position: relative;
+    }
+    .pad { padding: 14px 16px 0; }
+    .section-title {
+      padding: 0 16px;
+      margin: 18px 0 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .section-title button, .section-title span.action { color: var(--primary); background: transparent; font-size: 12px; font-weight: 600; }
+    .row {
+      min-height: 48px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid var(--border-soft);
+      background: #fff;
+      width: 100%;
+      color: inherit;
+      text-align: left;
+    }
+    .row:last-child { border-bottom: 0; }
+    .row:active { background: #faf8f3; }
+    .muted { color: var(--ink-3); }
+    .sub { color: var(--ink-2); font-size: 12px; line-height: 1.5; }
+    .tiny { color: var(--ink-3); font-size: 11px; line-height: 1.5; }
+    .big-number { font-size: 42px; line-height: 1; font-weight: 800; }
+
+    .btn {
+      min-height: 48px;
+      border-radius: 16px;
+      padding: 0 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      background: var(--primary);
+      color: #fff;
+      font-weight: 700;
+      font-size: 15px;
+    }
+    .btn.full { width: 100%; }
+    .btn.secondary { background: #fff; color: var(--primary); border: 1.2px solid var(--primary); }
+    .btn.ghost { background: transparent; color: var(--primary); }
+    .btn.danger { background: var(--high); color: #fff; }
+    .btn:disabled { background: var(--border); color: #fff; cursor: not-allowed; }
+
+    .pill {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-height: 22px;
+      padding: 3px 8px;
+      border-radius: 10px;
+      background: #f2eee7;
+      color: var(--ink-2);
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .pill.primary { background: var(--primary-soft); color: var(--primary); }
+    .pill.high { background: var(--high-soft); color: var(--high); }
+    .pill.low { background: var(--low-soft); color: var(--low); }
+    .pill.warn { background: #f7e8d8; color: var(--warn); }
+
+    .tabbar {
+      position: absolute;
+      left: 0; right: 0; bottom: 0;
+      height: 82px;
+      padding: 8px 6px 26px;
+      background: #fff;
+      border-top: 1px solid var(--border-soft);
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      z-index: 40;
+    }
+    .tab {
+      background: transparent;
+      color: var(--ink-3);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 3px;
+      font-size: 10.5px;
+    }
+    .tab svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+    .tab.active { color: var(--primary); font-weight: 700; }
+
+    .profile-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px 5px 5px;
+      border-radius: 18px;
+      background: rgba(255,255,255,.22);
+      border: 1px solid rgba(255,255,255,.35);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .avatar {
+      width: 24px; height: 24px; border-radius: 50%;
+      display: grid; place-items: center;
+      background: rgba(255,255,255,.3);
+      color: #fff;
+      font-weight: 700;
+      font-size: 11px;
+    }
+    .avatar.large { width: 50px; height: 50px; background: var(--primary); font-size: 18px; }
+
+    .h-scroll { display: flex; gap: 10px; overflow-x: auto; padding: 0 16px 4px; }
+    .metric-mini { min-width: 148px; border-radius: 18px; border: 1px solid var(--border-soft); padding: 12px; background: #fff; }
+    .spark { width: 120px; height: 30px; }
+
+    .search {
+      height: 40px;
+      border-radius: 14px;
+      border: 1px solid var(--border-soft);
+      background: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 12px;
+      color: var(--ink-3);
+      font-size: 13px;
+    }
+    .seg {
+      background: #e5e1da;
+      border-radius: 12px;
+      padding: 3px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3px;
+    }
+    .seg button {
+      min-height: 46px;
+      border-radius: 10px;
+      background: transparent;
+      color: var(--ink-2);
+      font-weight: 600;
+      font-size: 13px;
+    }
+    .seg button.active { background: #fff; color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.05); }
+    .seg small { display: block; font-size: 10px; color: var(--ink-3); font-weight: 400; margin-top: 2px; }
+    .chips { display: flex; gap: 8px; overflow-x: auto; padding: 12px 16px 4px; }
+    .chip {
+      padding: 6px 12px;
+      border-radius: 14px;
+      border: 1px solid var(--border-soft);
+      background: #fff;
+      color: var(--ink-2);
+      white-space: nowrap;
+      font-size: 12px;
+      display: inline-flex;
+      gap: 4px;
+      align-items: center;
+    }
+    .chip.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .badge {
+      min-width: 16px;
+      padding: 0 5px;
+      border-radius: 8px;
+      background: var(--high);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      text-align: center;
+    }
+    .chip.active .badge { background: rgba(255,255,255,.3); }
+
+    .topic-head { background: #faf8f3; border-radius: 22px 22px 0 0; font-weight: 700; }
+    .metric-row .value { font-size: 17px; font-weight: 800; }
+    .value.high, .high-text { color: var(--high); }
+    .value.low, .low-text { color: var(--low); }
+
+    .date-block {
+      width: 42px; height: 46px; border-radius: 9px;
+      background: var(--primary-soft); color: var(--primary);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      flex: 0 0 auto;
+    }
+    .date-block b { font-size: 16px; line-height: 1; }
+    .date-block span { font-size: 9px; margin-top: 2px; }
+
+    .chart {
+      height: 180px;
+      border-radius: 14px;
+      background: linear-gradient(#fff, #fff), repeating-linear-gradient(to bottom, transparent 0 43px, #eee8de 44px 45px);
+      position: relative;
+      overflow-x: auto;
+      border: 1px solid var(--border-soft);
+    }
+    .chart svg { min-width: 430px; height: 178px; display: block; }
+    .ref-note { font-size: 10.5px; color: var(--ink-3); line-height: 1.5; margin-top: 8px; }
+
+    .todo-check {
+      width: 22px; height: 22px; border-radius: 6px;
+      border: 1.5px solid var(--border);
+      background: #fff;
+      display: grid; place-items: center;
+      flex: 0 0 auto;
+    }
+    .todo-check.done { background: var(--primary); border-color: var(--primary); color: #fff; }
+    .todo-done { color: var(--ink-3); text-decoration: line-through; font-weight: 400; }
+    .progress { height: 5px; border-radius: 3px; background: var(--border-soft); overflow: hidden; }
+    .progress span { display: block; height: 100%; background: var(--primary); }
+
+    .upload-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .upload-action {
+      min-height: 112px;
+      border-radius: 14px;
+      border: 1.5px dashed var(--primary);
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      color: var(--ink);
+      font-weight: 700;
+    }
+    .icon-soft { width: 38px; height: 38px; border-radius: 10px; background: var(--primary-soft); color: var(--primary); display: grid; place-items: center; }
+    .photos { display: flex; flex-wrap: wrap; gap: 12px; }
+    .photo {
+      width: calc((100% - 24px) / 3);
+      aspect-ratio: 1;
+      border-radius: 12px;
+      background: repeating-linear-gradient(135deg, #ece8e1 0 6px, #f5f2ec 6px 12px);
+      border: 1px solid var(--border);
+      display: grid;
+      place-items: center;
+      position: relative;
+      color: var(--ink-3);
+      font-size: 11px;
+    }
+    .photo.grouped { border: 2px solid var(--primary); }
+    .photo.selected { border: 2.5px solid var(--primary); }
+    .group-label, .order-label {
+      position: absolute;
+      top: 6px;
+      min-width: 22px;
+      height: 22px;
+      border-radius: 11px;
+      background: var(--primary);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 0 6px;
+    }
+    .group-label { left: 6px; }
+    .order-label { right: 6px; }
+    .paperclip {
+      position: absolute;
+      right: 5px; bottom: 5px;
+      width: 24px; height: 24px;
+      border-radius: 12px;
+      display: grid; place-items: center;
+      background: rgba(255,255,255,.92);
+      color: var(--ink-2);
+      box-shadow: 0 1px 3px rgba(0,0,0,.15);
+      font-size: 14px;
+    }
+    .photo.grouped .paperclip { background: var(--primary); color: #fff; }
+    .add-photo { border: 1.5px dashed var(--border); background: #fff; font-size: 26px; color: var(--ink-3); }
+
+    .bottom-action {
+      position: absolute;
+      left: 0; right: 0; bottom: 0;
+      padding: 12px 16px 24px;
+      background: #fff;
+      border-top: 1px solid var(--border-soft);
+      z-index: 45;
+    }
+    .bottom-action.with-tab { bottom: 82px; padding-bottom: 12px; }
+
+    .toast-card {
+      border: 1.5px solid var(--primary);
+      box-shadow: 0 2px 8px rgba(90,122,90,.15);
+      border-radius: 14px;
+      padding: 12px 14px;
+      background: #fff;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    .notice {
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      font-size: 12.5px;
+      line-height: 1.5;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .notice.warn { background: var(--warn-soft); color: var(--warn); }
+
+    .sheet-mask {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,.34);
+      z-index: 70;
+      display: flex;
+      align-items: flex-end;
+    }
+    .sheet {
+      width: 100%;
+      background: #fff;
+      border-radius: 24px 24px 0 0;
+      padding: 12px 16px 26px;
+      box-shadow: 0 -4px 20px rgba(0,0,0,.1);
+      max-height: 80%;
+      overflow-y: auto;
+    }
+    .grab { width: 36px; height: 4px; border-radius: 2px; background: var(--border-soft); margin: 0 auto 14px; }
+    .modal-mask {
+      position: absolute;
+      inset: 0;
+      z-index: 90;
+      background: rgba(0,0,0,.38);
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+    .modal {
+      width: 100%;
+      background: #fff;
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 20px 50px rgba(0,0,0,.22);
+    }
+
+    .empty-illu {
+      height: 140px;
+      border-radius: 18px;
+      background:
+        radial-gradient(circle at 35% 36%, rgba(90,122,90,.16) 0 28px, transparent 29px),
+        radial-gradient(circle at 62% 58%, rgba(192,112,96,.12) 0 24px, transparent 25px),
+        repeating-linear-gradient(135deg, #ece8e1 0 6px, #f5f2ec 6px 12px);
+      border: 1px dashed var(--border);
+    }
+
+    .listless { list-style: none; padding: 0; margin: 0; }
+    .danger-text { color: var(--high); }
+
+    @media (max-width: 850px) {
+      .stage { grid-template-columns: 1fr; padding: 14px; gap: 18px; }
+      .phone-shell { position: relative; top: 0; height: 820px; min-height: 720px; }
+      .side { order: -1; }
+      .side h1 { font-size: 24px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="stage">
+    <section class="phone-shell" aria-label="交互式手机预览">
+      <div id="app" class="phone"></div>
+    </section>
+    <aside class="side">
+      <h1>我的病例夹 · 可交互高保真原型</h1>
+      <p>基于设计包中的线框稿、UX 文档和视觉规范还原。左侧手机可以点击：底部 Tab、上传流程、报告/指标下钻、复查待办、档案切换、弹窗和确认流程。</p>
+      <div class="panel">
+        <h2>快速跳转</h2>
+        <div id="jumpGrid" class="jump-grid"></div>
+      </div>
+      <div class="panel">
+        <h2>已覆盖的关键交互</h2>
+        <ul class="hint-list">
+          <li>首页 4 状态：登录、空数据、有数据、后台识别中。</li>
+          <li>健康数据按指标/按时间切换，指标详情区分数值型与定性型。</li>
+          <li>上传多图、曲别针合并、识别中、确认、编辑、冲突处理。</li>
+          <li>复查 todolist、新增计划、计划详情、完成确认。</li>
+          <li>多档案切换、管理、添加档案、我的档案资料。</li>
+        </ul>
+      </div>
+    </aside>
+  </main>
+
+  <script>
+    const state = {
+      route: 'home',
+      tab: 'home',
+      healthView: 'metric',
+      metricFilter: '全部',
+      profileSheet: null,
+      modal: null,
+      uploadGrouping: false,
+      uploadSelected: [1, 2],
+      uploadGrouped: true,
+      ocrDone: false,
+      todos: [
+        { text: '预约挂号', done: true },
+        { text: '准备身份证和病历本', done: true },
+        { text: '复查前一日清淡饮食', done: true },
+        { text: '复查当天空腹', done: false },
+        { text: '提前 2 小时出发', done: false },
+      ],
+      currentProfile: '妈妈 · 王芬',
+    };
+
+    const routes = [
+      ['home', '首页'],
+      ['health', '健康数据'],
+      ['recheck', '复查'],
+      ['profile', '我的'],
+      ['uploadPick', '上传报告'],
+      ['metricDetail', '指标详情'],
+      ['reportDetail', '报告详情'],
+      ['profileOnboard', '首次建档'],
+    ];
+
+    const $ = (sel) => document.querySelector(sel);
+    const app = $('#app');
+
+    function setRoute(route, patch = {}) {
+      Object.assign(state, patch, { route });
+      if (['home','health','recheck','profile'].includes(route)) state.tab = route;
+      render();
+    }
+    function openSheet(name) { state.profileSheet = name; render(); }
+    function closeSheet() { state.profileSheet = null; render(); }
+    function openModal(type) { state.modal = type; render(); }
+    function closeModal() { state.modal = null; render(); }
+    function esc(s) { return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+    function icon(name) {
+      const paths = {
+        home: '<path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1V11z"/>',
+        health: '<path d="M4 19V5"/><path d="M8 17V9"/><path d="M12 17V6"/><path d="M16 17v-4"/><path d="M20 17V8"/>',
+        recheck: '<rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 10h16"/>',
+        profile: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+        plus: '<path d="M12 5v14M5 12h14"/>',
+        back: '<path d="M15 18l-6-6 6-6"/>',
+        arrow: '<path d="M9 18l6-6-6-6"/>',
+        search: '<circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/>',
+        camera: '<path d="M3 8a2 2 0 0 1 2-2h2l2-2h6l2 2h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8z"/><circle cx="12" cy="13" r="4"/>',
+        image: '<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8" cy="10" r="2"/><path d="M21 16l-5-5-9 8"/>',
+        file: '<path d="M6 3h8l4 4v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v4h4M8 13h8M8 17h6"/>',
+        edit: '<path d="M3 17.25V21h3.75L18 9.75 14.25 6 3 17.25z"/><path d="M15 5l4 4"/>',
+        bell: '<path d="M6 9a6 6 0 1 1 12 0v4l2 3H4l2-3V9z"/><path d="M10 19a2 2 0 0 0 4 0"/>',
+        check: '<path d="M5 12l5 5 9-11"/>',
+        clip: '<path d="M21.4 11.05l-9.19 9.19a6 6 0 1 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 1 1-2.83-2.83l8.49-8.48"/>',
+      };
+      return `<svg viewBox="0 0 24 24" aria-hidden="true">${paths[name] || ''}</svg>`;
+    }
+
+    function nav(title, opts = {}) {
+      const left = opts.left === false ? '<button class="nav-left nav-placeholder"></button>' :
+        `<button class="nav-left" onclick="${opts.leftAction || 'historyBack()'}">${icon('back')}<span>${opts.left || ''}</span></button>`;
+      const right = opts.right ? `<button class="nav-right" onclick="${opts.rightAction || ''}">${opts.right}</button>` : '<button class="nav-right nav-placeholder"></button>';
+      return `<div class="nav">${left}<div class="nav-title">${title}</div>${right}</div>`;
+    }
+
+    function historyBack() {
+      const fallback = { metricDetail: 'health', reportDetail: 'health', uploadPick: 'home', uploadRecognizing: 'home', uploadConfirm: 'home', uploadEdit: 'uploadConfirm', uploadConflict: 'uploadConfirm', recheckNew: 'recheck', recheckDetail: 'recheck', archive: 'profile', profileAdd: 'home', profileOnboard: 'home' };
+      setRoute(fallback[state.route] || state.tab || 'home');
+    }
+    window.historyBack = historyBack;
+
+    function tabbar() {
+      const tabs = [
+        ['home', '首页', 'home'],
+        ['health', '健康数据', 'health'],
+        ['recheck', '复查', 'recheck'],
+        ['profile', '我的', 'profile'],
+      ];
+      return `<div class="tabbar">${tabs.map(([r,l,i]) => `
+        <button class="tab ${state.tab === r ? 'active' : ''}" onclick="setRoute('${r}')">${icon(i)}<span>${l}</span></button>
+      `).join('')}</div>`;
+    }
+
+    function spark(data, abnormal) {
+      const w = 120, h = 30, min = Math.min(...data), max = Math.max(...data), range = max - min || 1;
+      const pts = data.map((v, i) => {
+        const x = 2 + i * ((w - 4) / (data.length - 1));
+        const y = h - 4 - ((v - min) / range) * (h - 8);
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      }).join(' ');
+      const last = data[data.length - 1];
+      const lastY = h - 4 - ((last - min) / range) * (h - 8);
+      const c = abnormal ? 'var(--high)' : 'var(--primary)';
+      return `<svg class="spark" viewBox="0 0 ${w} ${h}"><polyline points="${pts}" fill="none" stroke="${c}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="${w-2}" cy="${lastY}" r="2.5" fill="${c}"/></svg>`;
+    }
+
+    function arrow() { return `<span class="muted" style="font-size:18px">›</span>`; }
+    function pill(text, tone='') { return `<span class="pill ${tone}">${text}</span>`; }
+    function section(title, right='') { return `<div class="section-title"><div>${title}</div>${right ? `<span class="action">${right}</span>` : ''}</div>`; }
+
+    function homeScreen() {
+      if (state.route === 'homeLogin') return homeLogin();
+      if (state.route === 'homeEmpty') return homeEmpty();
+      const recognizing = state.route === 'homeRecognizing';
+      return `<div class="screen">
+        <div class="banner">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+            <button class="profile-chip" onclick="openSheet('switch')"><span class="avatar">芬</span>${state.currentProfile}<span>⌄</span></button>
+            <div style="flex:1"></div>
+            <button class="profile-chip" style="padding:6px;border-radius:15px" onclick="setRoute('homeRecognizing')">${icon('bell')}</button>
+          </div>
+          <div style="font-size:16px;font-weight:600;opacity:.94">早上好，愿您今天舒心</div>
+        </div>
+        ${recognizing ? `<div class="pad"><button class="toast-card" style="width:100%;text-align:left" onclick="setRoute('${state.ocrDone ? 'uploadConfirm' : 'uploadRecognizing'}')">
+          <span class="icon-soft" style="border-radius:16px">${icon('file')}</span>
+          <span style="flex:1"><b>${state.ocrDone ? '识别完成，请确认' : '正在识别 3 张报告'}</b><br><span class="tiny">${state.ocrDone ? '共识别出 3 份报告，点击核对' : '识别完成后会通知您，请放心使用其他功能'}</span></span>
+          <span class="pill primary">查看 ›</span>
+        </button></div>` : ''}
+        <div class="pad"><button class="card" style="width:100%;padding:0;text-align:left" onclick="setRoute('uploadPick')">
+          <div style="padding:14px 16px;display:flex;align-items:center;gap:12px;background:var(--primary);border-radius:22px;color:#fff">
+            <span class="icon-soft" style="background:rgba(255,255,255,.18);color:#fff">${icon('plus')}</span>
+            <span style="flex:1"><b>上传妈妈的检查报告</b><br><span style="font-size:11px;opacity:.86">拍照 / 相册 · AI 自动识别</span></span>${arrow()}
+          </div>
+        </button></div>
+        <div class="pad"><button class="card" style="width:100%;text-align:left" onclick="setRoute('recheck')">
+          <div style="display:flex;align-items:center;gap:12px">
+            <span class="icon-soft">${icon('recheck')}</span>
+            <span style="flex:1"><b>妈妈距下次复查还有 5 天</b><br><span class="sub">5月5日 · 协和医院 · 常规复查</span></span>${arrow()}
+          </div>
+        </button></div>
+        ${section('关注指标', "<button onclick=\"openSheet('pinned')\">管理</button>")}
+        <div class="h-scroll">${[
+          ['白细胞','3.2','×10⁹/L',[5,4,5,4,3.5,3.2],'low'],
+          ['血红蛋白','128','g/L',[120,123,125,127,128,128],''],
+          ['CEA','6.8','ng/mL',[3,4,5,5.5,6,6.8],'high'],
+        ].map(m => `<button class="metric-mini" onclick="setRoute('metricDetail',{metricType:'quant'})" style="text-align:left">
+          <div class="sub">${m[0]}</div>
+          <div style="display:flex;align-items:baseline;gap:4px;margin-top:4px"><span class="big-number ${m[4]==='high'?'high-text':m[4]==='low'?'low-text':''}" style="font-size:22px">${m[1]}</span><span class="tiny">${m[2]}</span></div>
+          ${spark(m[3], !!m[4])}
+        </button>`).join('')}</div>
+        ${section('最近报告', "<button onclick=\"setRoute('health',{healthView:'time'})\">查看全部 ›</button>")}
+        <div class="pad" style="padding-top:0"><div class="card" style="padding:0">${[
+          ['血常规','协和医院','4月28日',2],
+          ['CT 胸部','肿瘤医院','4月15日',0],
+          ['肝功能','协和医院','4月10日',1],
+        ].map(r => `<button class="row" onclick="setRoute('reportDetail')">${pill(r[0])}<span style="flex:1"><b>${r[1]}</b><br><span class="tiny">${r[2]}</span></span>${r[3] ? `<span class="high-text" style="font-size:11px;font-weight:700">${r[3]} 项异常</span>` : ''}${arrow()}</button>`).join('')}</div></div>
+        <div class="pad"><button class="card" style="width:100%;text-align:left;border-left:4px solid var(--high)" onclick="setRoute('health',{metricFilter:'异常'})">
+          <b>最近 3 项指标偏离正常</b><br><span class="tiny">白细胞、CEA、总胆红素需要关注</span>
+          <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap">${pill('白细胞 ↓','low')}${pill('CEA ↑','high')}${pill('总胆红素 ↑','high')}</div>
+        </button></div>
+        ${tabbar()}
+      </div>`;
+    }
+
+    function homeLogin() {
+      return `<div class="screen no-tab">
+        <div class="banner login-banner">
+          <div class="app-mark">${icon('file')}</div>
+          <div style="font-size:22px;font-weight:800">我的病例夹</div>
+          <div style="font-size:12px;opacity:.86;margin-top:6px">电子病例夹 · 公益免费</div>
+        </div>
+        <div style="padding:32px 24px;text-align:center">
+          <div style="font-size:17px;font-weight:700">轻松管理检查报告</div>
+          <div class="sub" style="margin-top:8px">追踪健康指标，规划复查日程</div>
+        </div>
+        <div style="position:absolute;left:24px;right:24px;bottom:60px">
+          <button class="btn full" onclick="setRoute('profileOnboard')">微信一键登录</button>
+          <div class="tiny" style="text-align:center;margin-top:12px">登录即同意《用户协议》和《隐私政策》</div>
+        </div>
+      </div>`;
+    }
+
+    function homeEmpty() {
+      return `<div class="screen">
+        <div class="banner"><button class="profile-chip" onclick="openSheet('switch')"><span class="avatar">芬</span>妈妈 · 王芬<span>⌄</span></button><div style="font-size:18px;font-weight:700;margin-top:8px">早上好</div></div>
+        <div style="padding:40px 24px 0;text-align:center">
+          <div class="empty-illu"></div>
+          <div style="margin-top:24px;font-size:16px;font-weight:700">还没有妈妈的检查报告</div>
+          <div class="sub" style="margin-top:6px">上传一份开始管理健康指标</div>
+          <button class="btn full" style="margin-top:24px" onclick="setRoute('uploadPick')">${icon('plus')} 上传第一份报告</button>
+        </div>${tabbar()}
+      </div>`;
+    }
+
+    function healthScreen() {
+      const view = state.healthView || 'metric';
+      return `<div class="screen">
+        ${nav('健康数据', {left:false, right:'上传', rightAction:"setRoute('uploadPick')"})}
+        <div class="pad"><button class="search" onclick="openModal('search')">${icon('search')}<span>搜索指标 / 报告 / 医院</span></button></div>
+        <div class="pad"><div class="seg">
+          <button class="${view==='metric'?'active':''}" onclick="setRoute('health',{healthView:'metric'})">按指标<small>48 项</small></button>
+          <button class="${view==='time'?'active':''}" onclick="setRoute('health',{healthView:'time'})">按时间<small>12 份报告</small></button>
+        </div></div>
+        ${view === 'metric' ? healthByMetric() : healthByTime()}
+        ${tabbar()}
+      </div>`;
+    }
+
+    function healthByMetric() {
+      const chips = ['全部','异常','血常规','肝功能','肾功能','肿瘤标志物'];
+      const groups = [
+        ['血常规','4·28',false,true,[
+          ['白细胞','3.2','×10⁹/L','low','2 天前','↘ 持续下降'],
+          ['血红蛋白','128','g/L','ok','2 天前','→ 平稳'],
+          ['血小板','189','×10⁹/L','ok','2 天前','↗ 略上升'],
+        ],9],
+        ['肝功能','3·15',false,true,[
+          ['ALT','32','U/L','ok','45 天前','→ 平稳'],
+          ['AST','28','U/L','ok','45 天前','↘ 改善中'],
+          ['总胆红素','24','μmol/L','high','45 天前','↗ 略上升'],
+        ],0],
+        ['肿瘤标志物','2·10',true,true,[
+          ['CEA','6.8','ng/mL','high','79 天前','↗ 持续上升'],
+          ['CA15-3','18','U/mL','ok','79 天前','→ 平稳'],
+        ],3],
+        ['肾功能','3·15',false,false,[],0],
+      ];
+      return `<div>
+        <div class="chips">${chips.map(c => `<button class="chip ${state.metricFilter===c?'active':''}" onclick="setRoute('health',{metricFilter:'${c}',healthView:'metric'})">${c}${c==='异常'?'<span class="badge">3</span>':''}</button>`).join('')}</div>
+        ${groups.map(g => {
+          const abnormal = g[4].filter(i => i[3] !== 'ok').length;
+          return `<div class="pad"><div class="card" style="padding:0">
+            <button class="row topic-head" onclick="openModal('fold')"><span style="font-size:16px">${g[3]?'⌄':'›'}</span><b>${g[0]}</b><span class="tiny">${g[4].length || 6} 项</span>${abnormal?pill(abnormal+' 异常','high'):pill('全部正常','primary')}<span style="flex:1"></span><span class="tiny" style="color:${g[2]?'var(--warn)':'var(--ink-3)'}">最近 ${g[1]} ${g[2]?'⚠':''}</span></button>
+            ${g[3] ? g[4].map(i => metricRow(i)).join('') : ''}
+            ${g[5] ? `<button class="row" style="justify-content:center;color:var(--primary)" onclick="openModal('more')">▼ 展开剩余 ${g[5]} 项</button>` : ''}
+          </div></div>`;
+        }).join('')}
+      </div>`;
+    }
+
+    function metricRow(i) {
+      const tone = i[3] === 'high' ? 'high' : i[3] === 'low' ? 'low' : '';
+      return `<button class="row metric-row" onclick="setRoute('metricDetail',{metricType:'quant'})">
+        <span style="flex:1"><b>${i[0]}</b><br><span class="tiny">${i[4]} · <span class="${tone ? tone+'-text' : ''}">${i[5]}</span></span></span>
+        <span style="text-align:right"><span class="value ${tone}">${i[1]}</span>${tone ? `<span class="${tone}-text" style="font-weight:800">${tone==='high'?' ↑':' ↓'}</span>` : ''}<br><span class="tiny">${i[2]}</span></span>${arrow()}
+      </button>`;
+    }
+
+    function healthByTime() {
+      const months = [
+        ['2026年4月', [['28','4月','血常规','协和医院',2], ['15','4月','CT 胸部','肿瘤医院',0], ['10','4月','肝功能','协和医院',1]]],
+        ['2026年3月', [['22','3月','肿瘤标志物','协和医院',1], ['08','3月','血常规','社区医院',0]]],
+      ];
+      return months.map(m => `${section(m[0], `<span>${m[1].length} 份</span>`)}<div class="pad" style="padding-top:0"><div class="card" style="padding:0">
+        ${m[1].map(r => `<button class="row" onclick="setRoute('reportDetail')"><span class="date-block"><b>${r[0]}</b><span>${r[1]}</span></span><span style="flex:1"><b>${r[2]}</b><br><span class="tiny">${r[3]}</span></span>${r[4]?pill(r[4]+' 异常','high'):''}${arrow()}</button>`).join('')}
+      </div></div>`).join('');
+    }
+
+    function metricDetail() {
+      const qualitative = state.metricType === 'qual';
+      return `<div class="screen no-tab">
+        ${nav(qualitative ? 'HBsAg 乙肝表面抗原' : '白细胞', {right: '★', rightAction:"openModal('pin')"})}
+        <div class="pad"><div class="card">
+          <div class="big-number ${qualitative ? '' : 'low-text'}">${qualitative ? '阴性' : '3.2'} ${qualitative ? '' : '<span class="tiny">×10⁹/L</span>'}</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">${qualitative ? pill('正常','primary') + pill('参考 阴性') : pill('↓ 偏低','low') + pill('参考 3.5-10.0')}</div>
+          <div class="tiny" style="margin-top:12px">最近一次：4 月 28 日 · 协和医院</div>
+        </div></div>
+        ${qualitative ? `<div class="pad"><div class="notice warn">此项为定性指标，结果为阴性 / 阳性，不显示趋势曲线</div></div>` : metricChart()}
+        ${section('历史记录', '<span>4 次</span>')}
+        <div class="pad" style="padding-top:0"><div class="card" style="padding:0">
+          ${qualitative ? [
+            ['4·28','2026','阴性','primary'],['3·15','2026','阴性','primary'],['1·05','2026','阳性','high']
+          ].map(r => `<button class="row" onclick="setRoute('reportDetail')"><span style="flex:1"><b>${r[0]}</b><br><span class="tiny">${r[1]}</span></span>${pill(r[2],r[3])}${arrow()}</button>`).join('') :
+          [
+            ['4·28','2026','3.2 ↓','参考 3.5-10.0','low'],['3·15','2026','3.5 ↓','参考 4.0-10.0','low'],['2·10','2026','3.8 ↓','参考 4.0-10.0','low'],['1·05','2026','4.5','参考 4.0-10.0','']
+          ].map(r => `<button class="row" onclick="setRoute('reportDetail')"><span style="flex:1"><b>${r[0]}</b><br><span class="tiny">${r[1]}</span></span><span style="text-align:right"><b class="${r[4]}-text">${r[2]}</b><br><span class="tiny">${r[3]}</span></span>${arrow()}</button>`).join('')}
+        </div><div class="tiny" style="padding:10px 4px 0">点击任意行，跳转到该次报告详情</div></div>
+      </div>`;
+    }
+
+    function metricChart() {
+      return `<div class="pad"><div class="card">
+        <div style="display:flex;align-items:center;margin-bottom:10px"><b>趋势</b><span style="flex:1"></span><span class="tiny">← 滑动查看更早 →</span></div>
+        <div class="chart"><svg viewBox="0 0 430 178">
+          <line x1="26" y1="55" x2="410" y2="55" stroke="#d8d4cc" stroke-dasharray="5 5"/>
+          <line x1="26" y1="105" x2="410" y2="105" stroke="#d8d4cc" stroke-dasharray="5 5"/>
+          <text x="8" y="58" font-size="10" fill="#9a9085">4.0</text>
+          <polyline points="40,70 110,78 180,88 250,106 320,116 390,126" fill="none" stroke="#5a7aa8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          ${[[40,70,0],[110,78,0],[180,88,0],[250,106,1],[320,116,1],[390,126,1]].map(p => `<circle cx="${p[0]}" cy="${p[1]}" r="${p[0]===390?5:3.5}" fill="${p[2]?'#5a7aa8':'#5a7a5a'}"/>`).join('')}
+          ${['11月','12月','1月','2月','3月','4月'].map((t,i)=>`<text x="${34+i*70}" y="160" font-size="10" fill="#9a9085">${t}</text>`).join('')}
+        </svg></div>
+        <div class="ref-note">参考范围可能因医院不同有差异，每次报告的参考值见下方历史记录</div>
+      </div></div>`;
+    }
+
+    function reportDetail() {
+      const groups = [
+        ['白细胞系列', [['白细胞','3.2','×10⁹/L','3.5-10.0','low'],['中性粒细胞%','45','%','40-75','ok']]],
+        ['红细胞系列', [['血红蛋白','128','g/L','115-150','ok'],['红细胞','4.2','×10¹²/L','3.8-5.1','ok']]],
+        ['血小板', [['血小板','189','×10⁹/L','125-350','ok']]],
+      ];
+      return `<div class="screen with-bottom-action">
+        ${nav('血常规报告', {right:'编辑', rightAction:"openModal('editReport')"})}
+        <div class="pad"><div class="card"><div style="display:flex;align-items:center"><b>协和医院</b><span style="flex:1"></span>${pill('2 项异常','high')}</div><div class="sub" style="margin-top:6px">2026 年 4 月 28 日</div><div class="tiny" style="margin-top:10px">备注：术后第 24 个月常规复查</div></div></div>
+        ${groups.map(g => `${section(g[0])}<div class="pad" style="padding-top:0"><div class="card" style="padding:0">${g[1].map(i => `<button class="row" style="${i[4]==='low'?'background:var(--low-soft)':i[4]==='high'?'background:var(--high-soft)':''}" onclick="setRoute('metricDetail',{metricType:'quant'})"><span style="flex:1"><b>${i[0]}</b><br><span class="tiny">参考 ${i[3]}</span></span><span style="text-align:right"><b class="${i[4]}-text">${i[1]}</b><br><span class="tiny">${i[2]}</span></span><span class="icon-soft" style="width:28px;height:28px;border-radius:8px">${icon('health')}</span></button>`).join('')}</div></div>`).join('')}
+        <div class="bottom-action"><div style="display:flex;gap:10px"><button class="btn secondary" style="flex:1" onclick="openModal('editReport')">编辑</button><button class="btn danger" style="flex:1" onclick="openModal('deleteReport')">删除报告</button></div></div>
+      </div>`;
+    }
+
+    function recheckScreen() {
+      const done = state.todos.filter(t => t.done).length;
+      return `<div class="screen">
+        ${nav('复查计划', {left:false, right:'+ 新增', rightAction:"setRoute('recheckNew')"})}
+        ${section('下次复查')}
+        <div class="pad" style="padding-top:0"><div class="card"><div style="display:flex;align-items:flex-end;gap:8px"><div style="font-size:28px;font-weight:800">5月5日</div><div class="sub" style="margin-bottom:3px">周一</div><span style="flex:1"></span>${pill('还有 5 天','warn')}</div><div class="sub" style="margin-top:8px">协和医院 · 常规复查</div><div style="display:flex;align-items:center;gap:10px;margin-top:12px"><div class="progress" style="flex:1"><span style="width:${done/state.todos.length*100}%"></span></div><span class="sub">${done}/${state.todos.length} 准备就绪</span></div>${done===state.todos.length?"<button class=\"btn full\" style=\"margin-top:14px\" onclick=\"openModal('finishRecheck')\">标记为已完成</button>":''}</div></div>
+        ${section('待办事项')}
+        <div class="pad" style="padding-top:0"><div class="card" style="padding:0">${state.todos.map((t,i)=>`<button class="row" onclick="toggleTodo(${i})"><span class="todo-check ${t.done?'done':''}">${t.done?'✓':''}</span><span class="${t.done?'todo-done':''}" style="flex:1">${esc(t.text)}</span></button>`).join('')}<button class="row" style="justify-content:center;color:var(--primary)" onclick="openModal('addTodo')">+ 添加待办</button></div></div>
+        ${section('之后还有', '<span>2 项</span>')}
+        <div class="pad" style="padding-top:0"><div class="card" style="padding:0">${[
+          ['6·12','周五','CT 检查','肿瘤医院','43 天后'],['7·03','周五','门诊随访','协和医院','64 天后']
+        ].map(r=>`<button class="row" onclick="setRoute('recheckDetail')"><span class="date-block"><b>${r[0]}</b><span>${r[1]}</span></span><span style="flex:1"><b>${r[2]}</b><br><span class="tiny">${r[3]}</span></span><span class="sub">${r[4]}</span>${arrow()}</button>`).join('')}</div></div>
+        <div style="padding:20px 16px 0;text-align:center"><button class="btn ghost" onclick="openModal('doneList')">已完成 (12) ›</button></div>
+        ${tabbar()}
+      </div>`;
+    }
+    function toggleTodo(i) { state.todos[i].done = !state.todos[i].done; render(); }
+    window.toggleTodo = toggleTodo;
+
+    function recheckNew() {
+      return `<div class="screen no-tab">
+        ${nav('新增复查', {left:'取消', right:'保存', rightAction:"setRoute('recheck')"})}
+        <div class="pad"><div class="card" style="padding:0">${[
+          ['检查类型','常规复查'],['日期','2026 年 5 月 5 日'],['医院','协和医院']
+        ].map(r=>`<button class="row" onclick="openModal('picker')"><span class="sub" style="min-width:76px">${r[0]}</span><span style="flex:1;text-align:right">${r[1]}</span>${arrow()}</button>`).join('')}</div></div>
+        ${section('待办事项', "<button onclick=\"openModal('selectAll')\">全选</button>")}
+        <div class="pad" style="padding-top:0"><div class="card" style="padding:0">${['预约挂号','准备身份证和病历本','复查前一日清淡饮食','复查当天空腹','提前 2 小时出发'].map(t=>`<button class="row"><span class="todo-check done">✓</span><span style="flex:1">${t}</span></button>`).join('')}<button class="row" style="justify-content:center;color:var(--primary)" onclick="openModal('addTodo')">+ 自定义待办</button></div></div>
+        <div class="pad"><button class="btn full" onclick="setRoute('recheck')">保存</button></div>
+      </div>`;
+    }
+
+    function recheckDetail() {
+      return `<div class="screen no-tab">
+        ${nav('复查详情')}
+        ${section('基本信息')}
+        <div class="pad" style="padding-top:0"><div class="card" style="padding:0">${[
+          ['检查类型','CT 检查'],['日期','2026 年 6 月 12 日 周五'],['时段','上午'],['医院','肿瘤医院'],['科室','影像科'],['医生','未指定']
+        ].map(r=>`<button class="row" onclick="openModal('picker')"><span class="sub" style="min-width:76px">${r[0]}</span><span style="flex:1;text-align:right" class="${r[1]==='未指定'?'muted':''}">${r[1]}</span>${arrow()}</button>`).join('')}</div></div>
+        <div style="display:flex;justify-content:center;padding:12px 16px 0">${pill('43 天后','primary')}</div>
+        ${section('待办事项','<span>0/4</span>')}
+        <div class="pad" style="padding-top:0"><div class="card" style="padding:0">${['预约挂号','准备身份证和病历本','检查前 6 小时禁食','提前 2 小时出发'].map(t=>`<button class="row"><span class="todo-check"></span><span style="flex:1">${t}</span>${icon('edit')}</button>`).join('')}<button class="row" style="justify-content:center;color:var(--primary)">+ 添加待办</button></div></div>
+        ${section('提醒')}
+        <div class="pad" style="padding-top:0"><div class="card" style="padding:0">${['提前 3 天','提前 1 天','当天上午'].map((t,i)=>`<div class="row"><span style="flex:1">${t}</span><span style="width:36px;height:22px;border-radius:11px;background:${i<2?'var(--primary)':'var(--border)'};position:relative"><span style="position:absolute;top:2px;left:${i<2?'16px':'2px'};width:18px;height:18px;border-radius:50%;background:#fff"></span></span></div>`).join('')}</div></div>
+        <div class="pad" style="padding-top:24px;display:flex;flex-direction:column;gap:8px"><button class="btn secondary full" onclick="openModal('cancelRecheck')">取消此次复查</button><button class="btn secondary full danger-text" onclick="openModal('deleteRecheck')">删除此计划</button></div>
+      </div>`;
+    }
+
+    function profileScreen() {
+      return `<div class="screen">
+        ${nav('我的', {left:false})}
+        <div class="pad"><div class="card"><div style="display:flex;gap:12px;align-items:center"><span class="avatar large">芬</span><span style="flex:1"><b style="font-size:17px">王芬</b><br><span class="sub">乳腺癌术后 · 第 24 个月</span><br><span class="tiny">当前档案：妈妈</span></span><button class="btn secondary" style="height:36px;min-height:36px;padding:0 12px" onclick="setRoute('archive')">编辑</button></div><div style="display:grid;grid-template-columns:repeat(3,1fr);text-align:center;margin-top:16px;border-top:1px solid var(--border-soft);padding-top:14px"><div><b>12</b><br><span class="tiny">报告</span></div><div><b>48</b><br><span class="tiny">指标</span></div><div><b>3</b><br><span class="tiny">复查</span></div></div></div></div>
+        ${section('档案')}
+        <div class="pad" style="padding-top:0"><div class="card" style="padding:0"><button class="row" onclick="setRoute('archive')"><span style="flex:1">我的档案</span><span class="tiny">当前档案：妈妈（王芬）</span>${arrow()}</button><button class="row" onclick="openSheet('manage')"><span style="flex:1">档案管理</span><span class="tiny">3 份档案</span>${arrow()}</button><button class="row" onclick="openModal('clearData')"><span class="danger-text" style="flex:1">清空当前档案数据</span>${arrow()}</button></div></div>
+        ${section('工具')}
+        <div class="pad" style="padding-top:0"><div class="card" style="padding:0"><button class="row" onclick="openModal('guide')"><span style="flex:1">使用指南</span>${arrow()}</button><button class="row" onclick="setRoute('metricDetail',{metricType:'qual'})"><span style="flex:1">指标说明</span>${arrow()}</button></div></div>
+        ${section('关于')}
+        <div class="pad" style="padding-top:0"><div class="card" style="padding:0"><button class="row" onclick="openModal('feedback')"><span style="flex:1">意见反馈</span>${arrow()}</button><button class="row" onclick="openModal('about')"><span style="flex:1">关于我们</span><span class="tiny">v1.0.0</span>${arrow()}</button></div></div>
+        <div class="pad" style="padding-top:22px"><button class="btn secondary full danger-text" onclick="setRoute('homeLogin')">退出登录</button></div>
+        ${tabbar()}
+      </div>`;
+    }
+
+    function archiveScreen() {
+      const rows = [
+        ['姓名','王芬'],['性别','女'],['出生日期','1958 年 3 月 12 日'],['手机号','138****1234'],
+        ['病种','乳腺癌'],['确诊日期','2024 年 4 月 10 日'],['分期','IIA 期'],['治疗阶段','康复随访'],
+        ['主治医院','协和医院'],['主治医生','李医生'],['科室','肿瘤科']
+      ];
+      return `<div class="screen no-tab">
+        ${nav('档案资料 · 妈妈（王芬）', {right:'保存', rightAction:"setRoute('profile')"})}
+        <div class="pad"><div class="notice">本页数据仅用于健康记录参考，严格遵守隐私保护</div></div>
+        ${section('基本与病情信息')}
+        <div class="pad" style="padding-top:0"><div class="card" style="padding:0">${rows.map(r=>`<button class="row" onclick="openModal('field')"><span class="sub" style="min-width:76px">${r[0]}</span><span style="flex:1;text-align:right">${r[1]}</span>${arrow()}</button>`).join('')}</div></div>
+        ${section('用药记录', "<button onclick=\"openModal('med')\">+ 添加</button>")}
+        <div class="pad" style="padding-top:0"><div class="card" style="padding:0"><button class="row" onclick="openModal('med')"><span style="flex:1"><b>他莫昔芬</b><br><span class="tiny">10mg · 每日 2 次 · 2024 年 5 月起</span></span>${arrow()}</button></div></div>
+      </div>`;
+    }
+
+    function profileOnboard() {
+      return `<div class="screen no-tab">
+        <div class="banner" style="min-height:180px"><div style="font-size:20px;font-weight:800">欢迎使用病例夹</div><div style="font-size:13px;opacity:.9;margin-top:6px">创建第一份档案</div></div>
+        <div style="padding:24px 16px 16px"><div class="sub" style="font-size:14px;margin-bottom:14px">这份档案是谁的？后续可以创建更多档案，同时管理自己和亲属的健康数据。</div>
+          <button class="card" style="width:100%;text-align:left;margin-bottom:10px" onclick="setRoute('profileAdd')"><div style="display:flex;align-items:center;gap:14px"><span class="icon-soft">${icon('profile')}</span><span style="flex:1"><b>为我自己</b><br><span class="tiny">管理自己的健康数据</span></span>${arrow()}</div></button>
+          <button class="card" style="width:100%;text-align:left" onclick="setRoute('profileAdd')"><div style="display:flex;align-items:center;gap:14px"><span class="icon-soft" style="background:#faf5ec;color:#c99b5c">${icon('profile')}</span><span style="flex:1"><b>为我的亲属</b><br><span class="tiny">帮父母 / 长辈管理报告与复查</span></span>${arrow()}</div></button>
+          <div class="tiny" style="text-align:center;margin-top:20px">所有档案的数据归患者本人所有，<br>本应用严格保护隐私</div>
+        </div>
+      </div>`;
+    }
+
+    function profileAdd() {
+      const fields = [['关系','妈妈'],['姓名','王芬'],['性别','女'],['出生日期','1958 年 3 月 12 日'],['病种','乳腺癌'],['确诊日期','2024 年 4 月 10 日'],['治疗阶段','康复随访']];
+      return `<div class="screen no-tab">
+        ${nav('添加档案', {left:'取消', right:'保存', rightAction:"setRoute('homeEmpty')"})}
+        <div class="pad"><div class="sub">请填写基本信息，后续可在档案中补全用药等详细记录</div></div>
+        ${section('档案信息')}
+        <div class="pad" style="padding-top:0"><div class="card" style="padding:0">${fields.map(r=>`<button class="row" onclick="openModal('field')"><span class="sub" style="min-width:76px">${r[0]}</span><span style="flex:1;text-align:right">${r[1]}</span>${arrow()}</button>`).join('')}</div></div>
+        <div class="pad"><button class="btn full" onclick="setRoute('homeEmpty')">保存档案</button></div>
+      </div>`;
+    }
+
+    function uploadPick() {
+      const photos = [1,2,3,4];
+      const reportCount = state.uploadGrouped ? 3 : 4;
+      return `<div class="screen with-bottom-action">
+        ${nav('上传检查报告', {left:'取消'})}
+        <div class="pad"><div class="sub">默认每张图为独立报告。同一份报告的多页，点曲别针建立关联。</div></div>
+        <div class="pad"><div class="upload-actions"><button class="upload-action" onclick="openModal('camera')"><span class="icon-soft">${icon('camera')}</span>拍照<span class="tiny">使用相机</span></button><button class="upload-action" onclick="openModal('album')"><span class="icon-soft">${icon('image')}</span>从相册<span class="tiny">可选多张</span></button></div></div>
+        ${state.uploadGrouping ? uploadGroupingView() : `${section(`已选 ${photos.length} 张 → 将识别为 ${reportCount} 份报告`)}<div class="pad" style="padding-top:0"><div class="photos">${photos.map(i => photoTile(i)).join('')}<button class="photo add-photo" onclick="openModal('album')">+</button></div></div><div class="pad"><div class="tiny">点击图片放大预览<br>点曲别针，再点其他图，建立“同一份报告”关联</div></div>`}
+        <div class="bottom-action"><button class="btn full" onclick="setRoute('uploadRecognizing')">开始识别（4 张 → ${reportCount} 份报告）</button></div>
+      </div>`;
+    }
+    function photoTile(i) {
+      const grouped = state.uploadGrouped && (i === 1 || i === 2);
+      return `<button class="photo ${grouped?'grouped':''}" onclick="openModal('preview')">${grouped?'<span class="group-label">组 1</span>':''}第 ${i} 张<button class="paperclip" onclick="event.stopPropagation();state.uploadGrouping=true;render()">⌘</button></button>`;
+    }
+    function uploadGroupingView() {
+      return `<div><div class="pad"><div class="notice">${icon('clip')} 正在建立关联：按拍摄顺序点击属于同一份报告的图片</div></div><div class="pad"><div class="photos">${[1,2,3,4].map(i=>`<button class="photo ${state.uploadSelected.includes(i)?'selected':''}" onclick="toggleUploadSelect(${i})">${state.uploadSelected.includes(i)?`<span class="order-label">${state.uploadSelected.indexOf(i)+1}</span>`:''}第 ${i} 张</button>`).join('')}</div></div><div style="text-align:center;padding:20px 16px 0" class="sub">已选 <b style="font-size:16px;color:var(--primary)">${state.uploadSelected.length}</b> 张，按选中顺序合并</div><div class="pad" style="display:flex;gap:10px"><button class="btn secondary" style="flex:1" onclick="state.uploadGrouping=false;render()">取消</button><button class="btn" style="flex:2" onclick="state.uploadGrouping=false;state.uploadGrouped=true;render()">完成合并（${state.uploadSelected.length} 张）</button></div></div>`;
+    }
+    function toggleUploadSelect(i) {
+      const at = state.uploadSelected.indexOf(i);
+      if (at >= 0) state.uploadSelected.splice(at,1); else state.uploadSelected.push(i);
+      render();
+    }
+    window.toggleUploadSelect = toggleUploadSelect;
+
+    function uploadRecognizing() {
+      setTimeout(() => { if (state.route === 'uploadRecognizing') { state.ocrDone = true; render(); } }, 1200);
+      return `<div class="screen no-tab">${nav('识别中', {left:false})}<div style="padding:72px 32px 0;text-align:center"><div style="width:104px;height:104px;border-radius:52px;background:var(--primary-soft);display:grid;place-items:center;margin:0 auto 24px;color:var(--primary)">${icon('file')}</div><div style="font-size:18px;font-weight:800">AI 正在识别报告</div><div class="sub" style="margin-top:8px">${state.ocrDone?'已识别完成':'已识别 2 / 3 份报告'}</div><div class="progress" style="height:7px;margin-top:28px"><span style="width:${state.ocrDone?100:66}%"></span></div><div class="tiny" style="margin-top:12px">通常需要 5-15 秒<br>请保持网络畅通</div><button class="btn full" style="margin-top:28px" onclick="setRoute('${state.ocrDone?'uploadConfirm':'homeRecognizing'}')">${state.ocrDone?'去确认':'回首页继续使用'}</button></div></div>`;
+    }
+
+    function uploadConfirm() {
+      return `<div class="screen with-bottom-action">
+        ${nav('确认识别结果', {left:'取消'})}
+        <div class="pad"><div class="sub">共识别出 3 份报告。请逐份查看详情核对，有冲突的请优先处理。</div></div>
+        ${confirmCard('报告 ① · 已合并 2 页','血常规','协和医院 · 4月28日','12 项指标','2 项异常',false)}
+        ${confirmCard('报告 ② · 已合并 2 页 ⚠','综合生化','协和医院 · 4月28日','18 项指标','3 项异常',true)}
+        ${confirmCard('报告 ③','CT 胸部','肿瘤医院 · 4月15日','影像学描述','',false)}
+        <div class="bottom-action"><button class="btn full" onclick="openModal('saveReports')">全部保存到病例夹（3 份）</button></div>
+      </div>`;
+    }
+    function confirmCard(title, type, meta, count, abnormal, conflict) {
+      return `${section(title)}<div class="pad" style="padding-top:0"><div class="card" style="${conflict?'border-left:4px solid #d89a5c':''}"><div style="display:flex;align-items:center;gap:10px"><span class="date-block"><b>图</b><span>页</span></span><span style="flex:1"><b>${type}</b><br><span class="tiny">${meta}</span></span></div><div style="border-top:1px solid var(--border-soft);padding-top:10px;margin-top:12px" class="sub"><span style="color:var(--ink)">${count}</span>${abnormal?` · <span class="high-text">${abnormal}</span>`:''}${type==='综合生化'?'<div class="tiny">包含 肝功能 · 肾功能 · 血脂 多类指标</div>':''}</div>${conflict?`<button class="notice warn" style="width:100%;margin:10px 0;border:0;text-align:left" onclick="setRoute('uploadConflict')"><b>!</b><span style="flex:1">1 项重复识别，值不一致</span><b>处理 ›</b></button>`:''}<button class="btn secondary full" onclick="setRoute('uploadEdit')">查看 / 编辑详情 ›</button><button class="btn ghost full" style="height:34px;min-height:34px;margin-top:4px" onclick="openModal('split')">拆分页面</button></div></div>`;
+    }
+
+    function uploadEdit() {
+      const groups = [
+        ['肝功能', [['ALT','32','U/L','0-40','ok'],['AST','28','U/L','0-40','ok'],['总胆红素','24','μmol/L','3-22','high','!']]],
+        ['肾功能', [['肌酐','68','μmol/L','44-133','ok'],['尿素氮','5.2','mmol/L','2.5-7.5','ok']]],
+        ['血脂', [['总胆固醇','5.8','mmol/L','<5.2','high'],['甘油三酯','1.6','mmol/L','<1.7','ok']]],
+      ];
+      return `<div class="screen with-bottom-action">
+        ${nav('编辑报告详情', {left:'返回', right:'完成', rightAction:"setRoute('uploadConfirm')"})}
+        <div class="pad"><div class="notice warn"><b>!</b> 黄色标记的项 OCR 不确定，请重点检查</div></div>
+        ${section('基本信息')}
+        <div class="pad" style="padding-top:0"><div class="card" style="padding:0">${[['报告类型','综合生化'],['医院','协和医院'],['检查日期','2026 年 4 月 28 日']].map(r=>`<button class="row" onclick="openModal('field')"><span class="sub">${r[0]}</span><span style="flex:1;text-align:right">${r[1]}</span>${arrow()}</button>`).join('')}</div></div>
+        ${groups.map(g=>`${section(g[0], `<span>${g[1].length} 项</span>`)}<div class="pad" style="padding-top:0"><div class="card" style="padding:0">${g[1].map(i=>`<button class="row" style="${i[5]?'background:var(--warn-soft)':''}" onclick="openModal('field')">${i[5]?'<span class="pill warn">!</span>':''}<span style="flex:1"><b>${i[0]}</b></span><span><b class="${i[4]}-text">${i[1]}</b></span><span class="tiny">${i[2]}</span><span class="tiny">参考 ${i[3]}</span>${icon('edit')}</button>`).join('')}<button class="row" style="justify-content:center;color:var(--primary)" onclick="openModal('addMetric')">+ 添加指标</button></div></div>`).join('')}
+        <div class="bottom-action"><button class="btn full" onclick="setRoute('uploadConfirm')">完成编辑</button></div>
+      </div>`;
+    }
+
+    function uploadConflict() {
+      return `<div class="screen with-bottom-action">
+        ${nav('处理重复识别', {left:'返回'})}
+        <div class="pad"><div class="sub">以下指标在多页中被识别了多次，请确认保留哪个值。</div></div>
+        ${section('报告 ② · 综合生化')}
+        <div class="pad" style="padding-top:0"><div class="card"><b>白细胞</b><div style="height:12px"></div>${[
+          ['3.2','第 3 页',true],['3.5','第 4 页',false]
+        ].map(o=>`<button class="row" style="border:1.5px solid ${o[2]?'var(--primary)':'var(--border-soft)'};border-radius:12px;margin-bottom:8px;background:${o[2]?'var(--primary-soft)':'#fff'}" onclick="openModal('chooseConflict')"><span class="todo-check ${o[2]?'done':''}">${o[2]?'•':''}</span><span><b class="low-text" style="font-size:18px">${o[0]} ↓</b></span><span class="tiny">×10⁹/L</span><span style="flex:1"></span><span class="tiny">来自 ${o[1]}</span></button>`).join('')}<button class="row" style="justify-content:center;border:1px dashed var(--border);border-radius:12px;color:var(--ink-3)" onclick="openModal('deleteMetric')">都不要 · 删除此项</button></div></div>
+        <div class="pad"><div class="tiny">提示：通常是 OCR 在分页边界识别错位。保留更可信的那个即可。</div></div>
+        <div class="bottom-action"><button class="btn full" onclick="setRoute('uploadConfirm')">应用选择</button></div>
+      </div>`;
+    }
+
+    function activeScreen() {
+      const map = {
+        home: homeScreen, homeLogin, homeEmpty, homeRecognizing: homeScreen,
+        health: healthScreen, metricDetail, reportDetail,
+        recheck: recheckScreen, recheckNew, recheckDetail,
+        profile: profileScreen, archive: archiveScreen, profileOnboard, profileAdd,
+        uploadPick, uploadRecognizing, uploadConfirm, uploadEdit, uploadConflict,
+      };
+      return (map[state.route] || homeScreen)();
+    }
+
+    function sheetHtml() {
+      if (!state.profileSheet) return '';
+      if (state.profileSheet === 'pinned') {
+        return `<div class="sheet-mask" onclick="closeSheet()"><div class="sheet" onclick="event.stopPropagation()"><div class="grab"></div><div style="display:flex;align-items:center;margin-bottom:12px"><b style="font-size:16px;flex:1">管理关注指标</b><button class="btn ghost" onclick="closeSheet()">完成</button></div>${['白细胞','血红蛋白','CEA','CA15-3','总胆红素','ALT'].map((m,i)=>`<button class="row"><span style="flex:1">${m}</span><span class="todo-check ${i<3?'done':''}">${i<3?'✓':''}</span></button>`).join('')}<div class="tiny" style="padding:12px">最多关注 8 个指标，可在首页快速查看。</div></div></div>`;
+      }
+      const manage = state.profileSheet === 'manage';
+      return `<div class="sheet-mask" onclick="closeSheet()"><div class="sheet" onclick="event.stopPropagation()"><div class="grab"></div><div style="display:flex;align-items:center;margin-bottom:12px"><b style="font-size:16px;flex:1">${manage?'管理档案':'切换档案'}</b><button class="btn ghost" onclick="${manage?'closeSheet()':"openSheet('manage')"}">${manage?'完成':'管理 ›'}</button></div>${[
+        ['王芬','妈妈','乳腺癌术后 · 第 24 个月','芬',true],['李建国','我自己','高血压随访','建',false],['李大山','爸爸','糖尿病','山',false]
+      ].map(p=>`<button class="row" onclick="${manage?"setRoute('archive');closeSheet()":`state.currentProfile='${p[1]} · ${p[0]}';closeSheet()`}" style="${p[4]&&!manage?'background:var(--primary-soft);border-radius:14px;margin-bottom:6px':''}"><span class="avatar" style="background:${p[4]&&!manage?'var(--primary)':'#e5e1da'};color:${p[4]&&!manage?'#fff':'var(--ink-2)'};width:40px;height:40px;font-size:16px">${p[3]}</span><span style="flex:1"><b>${p[0]}</b> <span class="pill">${p[1]}</span><br><span class="tiny">${p[2]}</span></span>${manage?'<span class="tiny" style="color:var(--primary)">编辑</span><span class="tiny danger-text">删除</span>':p[4]?'✓':''}</button>`).join('')}<button class="row" style="border-top:1px solid var(--border-soft);margin-top:8px;padding-top:14px;color:var(--primary)" onclick="setRoute('profileAdd');closeSheet()"><span class="icon-soft" style="border:1.5px dashed var(--primary);background:#fff">${icon('plus')}</span><b style="flex:1">添加新档案</b></button></div></div>`;
+    }
+
+    function modalHtml() {
+      if (!state.modal) return '';
+      const copy = {
+        search: ['搜索暂未开放', 'v1.0 可以先保留入口，后续支持搜索指标、报告和医院。'],
+        fold: ['折叠分组', '这里会在原地展开或收起该主题。'],
+        more: ['展开剩余指标', '完整实现时会在当前卡片内展开剩余指标行。'],
+        pin: ['已收藏到关注指标', '该指标会出现在首页“关注指标”横滑区。'],
+        editReport: ['进入编辑态', '报告详情页会原地切换为可编辑字段，便于修正 OCR。'],
+        deleteReport: ['删除报告？', '报告将软删除，30 天后物理删除。'],
+        addTodo: ['添加待办', '这里会弹出底部输入框，新增一条自定义待办。'],
+        finishRecheck: ['标记为已完成？', '计划状态将变为 done，并移入“已完成”折叠区。'],
+        doneList: ['已完成复查', '这里会展开历史复查列表。'],
+        picker: ['选择器', '在小程序中会使用 picker 或底部 chip 选择器。'],
+        clearData: ['清空当前档案数据？', '这是危险操作，正式版需要二次确认。'],
+        guide: ['使用指南', '正式版建议用 webview 加载 H5 内容，便于运营更新。'],
+        feedback: ['意见反馈', '这里会进入反馈表单。'],
+        about: ['关于我们', '我的病例夹 · 公益免费 · v1.0.0'],
+        field: ['编辑字段', '这里会弹出输入框、日期选择器或 chip 选择器。'],
+        med: ['用药记录', '可新增或编辑药名、剂量、频次和起始日期。'],
+        camera: ['调用相机', '小程序中使用 wx.chooseMedia({ sourceType: [camera] })。'],
+        album: ['打开相册', '小程序中使用 wx.chooseMedia({ count: 9, sourceType: [album] })。'],
+        preview: ['图片预览', '小程序中使用 wx.previewImage。'],
+        split: ['拆分页面', '会取消该报告内的多页合并，重新拆成独立报告。'],
+        saveReports: ['已保存 3 份报告', '保存后会跳转到健康数据的按时间视图。'],
+        addMetric: ['添加指标', '这里会打开指标选择器，支持搜索和新增未知指标。'],
+        chooseConflict: ['已选择该值', '冲突处理会记录保留值，回到确认页后允许保存。'],
+        deleteMetric: ['删除此项？', '该冲突指标不会保存到报告中。'],
+        cancelRecheck: ['取消此次复查？', '计划状态将变为 cancelled。'],
+        deleteRecheck: ['删除此计划？', '删除后无法在主页列表中看到。'],
+        selectAll: ['全选待办', '可以批量选择或取消默认待办模板。'],
+      }[state.modal] || ['提示', '交互占位'];
+      return `<div class="modal-mask" onclick="closeModal()"><div class="modal" onclick="event.stopPropagation()"><h3 style="margin:0 0 8px">${copy[0]}</h3><p class="sub" style="margin:0 0 18px">${copy[1]}</p><div style="display:flex;gap:10px;justify-content:flex-end"><button class="btn secondary" onclick="closeModal()">取消</button><button class="btn" onclick="${state.modal==='saveReports' ? "closeModal();setRoute('health',{healthView:'time'})" : "closeModal()"}">确定</button></div></div></div>`;
+    }
+
+    function renderJumps() {
+      const grid = $('#jumpGrid');
+      grid.innerHTML = routes.map(([r,l]) => `<button class="jump ${state.route===r?'active':''}" onclick="setRoute('${r}')">${l}</button>`).join('');
+    }
+
+    function render() {
+      app.innerHTML = activeScreen() + sheetHtml() + modalHtml();
+      renderJumps();
+    }
+
+    Object.assign(window, { setRoute, openSheet, closeSheet, openModal, closeModal, state, render });
+    render();
+  </script>
+</body>
+</html>

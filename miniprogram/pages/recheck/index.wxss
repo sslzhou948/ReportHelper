@@ -1,0 +1,105 @@
+.plan-head {
+  display: flex;
+  align-items: flex-end;
+  gap: 16rpx;
+}
+
+.plan-date {
+  font-size: 52rpx;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.plan-weekday {
+  flex: 1;
+  margin-bottom: 4rpx;
+  color: var(--ink-2);
+  font-size: 24rpx;
+}
+
+.progress-line {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.progress {
+  flex: 1;
+  height: 10rpx;
+  border-radius: 5rpx;
+  background: var(--border-soft);
+  overflow: hidden;
+}
+
+.progress view {
+  height: 100%;
+  background: var(--primary);
+}
+
+.todo-box {
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: 12rpx;
+  border: 3rpx solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.todo-box.done {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #FFFFFF;
+}
+
+.todo-done {
+  color: var(--ink-3);
+  text-decoration: line-through;
+}
+
+.add-row {
+  justify-content: center;
+  color: var(--primary);
+}
+
+.date-block {
+  width: 88rpx;
+  height: 96rpx;
+  border-radius: 18rpx;
+  background: var(--primary-soft);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  text-align: center;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.date-day {
+  font-size: 30rpx;
+  line-height: 1;
+}
+
+.date-month {
+  margin-top: 6rpx;
+  font-size: 18rpx;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.strong {
+  font-weight: 700;
+}
+
+.arrow {
+  color: var(--ink-3);
+  font-size: 40rpx;
+}
+
+.done-link {
+  padding: 40rpx 32rpx;
+  text-align: center;
+  color: var(--ink-3);
+}

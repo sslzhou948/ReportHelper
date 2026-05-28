@@ -1,0 +1,36 @@
+﻿<view class="page">
+  <view class="nav">
+    <view class="nav-side left" bindtap="goBack">‹ 返回</view>
+    <view class="nav-title">搜索</view>
+    <view class="nav-side right"></view>
+  </view>
+  <view class="pad mt-12">
+    <input class="search-input" value="{{keyword}}" placeholder="搜索指标 / 报告 / 医院" bindinput="onInput" focus />
+  </view>
+  <view class="section-title">指标</view>
+  <view class="pad">
+    <view class="card">
+      <view wx:for="{{metrics}}" wx:key="metricKey" class="row" data-key="{{item.metricKey}}" bindtap="goMetric">
+        <view class="flex">
+          <view class="body strong">{{item.metricName}}</view>
+          <view class="tiny">{{item.categoryCn}} · {{item.trendLabel}}</view>
+        </view>
+        <hh-pill wx:if="{{item.lastTone !== 'ok'}}" tone="high">异常</hh-pill>
+        <view class="arrow">›</view>
+      </view>
+    </view>
+  </view>
+  <view class="section-title">报告</view>
+  <view class="pad">
+    <view class="card">
+      <view wx:for="{{reports}}" wx:key="id" class="row" data-id="{{item.id}}" bindtap="goReport">
+        <view class="flex">
+          <view class="body strong">{{item.type}}</view>
+          <view class="tiny">{{item.hospital}} · {{item.displayDate}}</view>
+        </view>
+        <hh-pill wx:if="{{item.abnormalCount > 0}}" tone="high">{{item.abnormalCount}} 异常</hh-pill>
+        <view class="arrow">›</view>
+      </view>
+    </view>
+  </view>
+</view>

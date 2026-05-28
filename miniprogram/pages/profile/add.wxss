@@ -1,0 +1,12 @@
+.label {
+  min-width: 150rpx;
+}
+
+.arrow {
+  color: var(--ink-3);
+  font-size: 40rpx;
+}
+
+.btn.disabled {
+  opacity: 0.58;
+}

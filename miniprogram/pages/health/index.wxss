@@ -1,0 +1,120 @@
+.search {
+  width: 100%;
+  height: 80rpx;
+  padding: 0 24rpx;
+  border-radius: 28rpx;
+  background: #FFFFFF;
+  border: 1rpx solid var(--border-soft);
+  color: var(--ink-3);
+  font-size: 26rpx;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.segmented {
+  padding: 6rpx;
+  border-radius: 24rpx;
+  background: #E5E1DA;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6rpx;
+}
+
+.segment-item {
+  min-height: 86rpx;
+  border-radius: 20rpx;
+  color: var(--ink-2);
+  text-align: center;
+  font-weight: 700;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.segment-item.active {
+  background: #FFFFFF;
+  color: var(--ink);
+  box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.05);
+}
+
+.chips {
+  white-space: nowrap;
+  padding: 24rpx 0 8rpx 32rpx;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8rpx;
+  margin-right: 16rpx;
+  padding: 12rpx 24rpx;
+  border-radius: 28rpx;
+  border: 1rpx solid var(--border-soft);
+  background: #FFFFFF;
+  color: var(--ink-2);
+  font-size: 24rpx;
+}
+
+.chip.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #FFFFFF;
+}
+
+.badge {
+  min-width: 28rpx;
+  padding: 0 8rpx;
+  border-radius: 14rpx;
+  background: var(--high);
+  color: #FFFFFF;
+  font-size: 20rpx;
+}
+
+.topic-head {
+  background: #FAF8F3;
+  border-top-left-radius: 44rpx;
+  border-top-right-radius: 44rpx;
+}
+
+.topic-title {
+  font-size: 28rpx;
+  font-weight: 700;
+}
+
+.date-block {
+  width: 88rpx;
+  height: 96rpx;
+  border-radius: 18rpx;
+  background: var(--primary-soft);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.date-day {
+  font-size: 30rpx;
+  line-height: 1;
+}
+
+.date-month {
+  margin-top: 6rpx;
+  font-size: 18rpx;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.strong {
+  font-weight: 700;
+}
+
+.arrow {
+  color: var(--ink-3);
+  font-size: 40rpx;
+}

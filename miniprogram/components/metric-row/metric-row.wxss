@@ -1,0 +1,55 @@
+.metric-row {
+  min-height: 112rpx;
+  padding: 24rpx 28rpx;
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+  border-bottom: 1rpx solid var(--border-soft);
+  background: #FFFFFF;
+}
+
+.metric-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.metric-name {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.metric-sub {
+  margin-top: 4rpx;
+  font-size: 22rpx;
+  color: var(--ink-3);
+}
+
+.metric-value {
+  min-width: 112rpx;
+  text-align: right;
+  font-size: 34rpx;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.metric-value.high,
+.metric-value.positive {
+  color: var(--high);
+}
+
+.metric-value.low {
+  color: var(--low);
+}
+
+.metric-unit {
+  margin-top: 2rpx;
+  font-size: 20rpx;
+  color: var(--ink-3);
+  font-weight: 400;
+}
+
+.metric-arrow {
+  color: var(--ink-3);
+  font-size: 36rpx;
+}

@@ -1,0 +1,64 @@
+﻿<view class="page">
+  <view class="nav">
+    <view class="nav-side left" bindtap="goBack">‹ 返回</view>
+    <view class="nav-title">{{latest.metricName}}</view>
+    <view class="pin-action {{isPinned ? 'active' : ''}}" bindtap="togglePin">
+      <view class="pin-dot">{{isPinned ? '✓' : '+'}}</view>
+      <view>{{isPinned ? '已关注' : '关注'}}</view>
+    </view>
+  </view>
+  <view class="pad mt-12">
+    <view class="card card-pad">
+      <view class="metric-big {{latest.tone}}">
+        <text wx:if="{{isQualitative}}">{{latest.valueQualitative}}</text>
+        <text wx:else>{{latest.valueNumeric}}</text>
+        <text wx:if="{{!isQualitative}}" class="metric-unit">{{latest.unit}}</text>
+      </view>
+      <view class="pill-row">
+        <hh-pill wx:if="{{latest.tone === 'low'}}" tone="low">↓ 偏低</hh-pill>
+        <hh-pill wx:elif="{{latest.tone === 'high' || latest.tone === 'positive'}}" tone="high">↑ 偏高</hh-pill>
+        <hh-pill wx:else tone="primary">正常</hh-pill>
+        <hh-pill wx:if="{{!isQualitative}}">参考 {{latest.refRangeLow}}-{{latest.refRangeHigh}}</hh-pill>
+        <hh-pill wx:else>参考 阴性</hh-pill>
+      </view>
+      <view class="tiny mt-12">最近一次：{{latest.reportDate}} · {{latest.hospital}}</view>
+    </view>
+  </view>
+
+  <view wx:if="{{isQualitative}}" class="pad mt-12">
+    <view class="notice">此项为定性指标，结果为阴性 / 阳性，不显示趋势曲线</view>
+  </view>
+  <view wx:else class="pad mt-12">
+    <view class="card card-pad">
+      <view class="report-head">
+        <view class="title">趋势</view>
+        <view class="tiny">← 滑动查看更早 →</view>
+      </view>
+      <trend-chart history="{{history}}" />
+      <view class="tiny mt-12">参考范围可能因医院不同有差异，每次报告的参考值见下方历史记录</view>
+    </view>
+  </view>
+
+  <view class="section-title">
+    <view>历史记录</view>
+    <view class="tiny">{{history.length}} 次</view>
+  </view>
+  <view class="pad">
+    <view class="card">
+      <view wx:for="{{history}}" wx:key="reportId" class="row" data-id="{{item.reportId}}" bindtap="goReport">
+        <view class="flex">
+          <view class="body strong">{{item.reportDate}}</view>
+          <view class="tiny">{{item.hospital}}</view>
+        </view>
+        <view class="right">
+          <view class="history-value {{item.tone}}">
+            <text wx:if="{{item.valueType === 'qualitative'}}">{{item.valueQualitative}}</text>
+            <text wx:else>{{item.valueNumeric}}</text>
+          </view>
+          <view class="tiny" wx:if="{{item.valueType !== 'qualitative'}}">参考 {{item.refRangeLow}}-{{item.refRangeHigh}}</view>
+        </view>
+        <view class="arrow">›</view>
+      </view>
+    </view>
+  </view>
+</view>

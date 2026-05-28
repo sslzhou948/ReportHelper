@@ -1,0 +1,74 @@
+﻿<view class="page page-tab">
+  <view class="nav">
+    <view class="nav-side left"></view>
+    <view class="nav-title">健康数据</view>
+    <view class="nav-side right" bindtap="goUpload">上传</view>
+  </view>
+
+  <view class="pad mt-12">
+    <view class="search" bindtap="goSearch">搜索指标 / 报告 / 医院</view>
+  </view>
+
+  <view class="pad mt-12">
+    <view class="segmented">
+      <view class="segment-item {{view === 'metric' ? 'active' : ''}}" data-view="metric" bindtap="switchView">
+        按指标<view class="tiny">{{metricCount}} 项</view>
+      </view>
+      <view class="segment-item {{view === 'time' ? 'active' : ''}}" data-view="time" bindtap="switchView">
+        按时间<view class="tiny">{{reportCount}} 份报告</view>
+      </view>
+    </view>
+  </view>
+
+  <block wx:if="{{view === 'metric'}}">
+    <scroll-view scroll-x class="chips">
+      <view wx:for="{{chips}}" wx:key="*this" data-filter="{{item}}" bindtap="switchFilter" class="chip {{filter === item ? 'active' : ''}}">
+        {{item}}<text wx:if="{{item === '异常'}}" class="badge">{{abnormalCount}}</text>
+      </view>
+    </scroll-view>
+
+    <view wx:for="{{groupedMetrics}}" wx:key="category" class="pad mt-12">
+      <view class="card">
+        <view class="topic-head row">
+          <view class="topic-title">{{item.categoryCn}}</view>
+          <view class="tiny">{{item.items.length}} 项</view>
+          <hh-pill wx:if="{{item.abnormalCount > 0}}" tone="high">{{item.abnormalCount}} 异常</hh-pill>
+          <hh-pill wx:else tone="primary">全部正常</hh-pill>
+          <view class="flex"></view>
+          <view class="tiny">最近 {{item.latestDate}}</view>
+        </view>
+        <metric-row
+          wx:for="{{item.items}}"
+          wx:key="metricKey"
+          metric="{{item}}"
+          bind:metrictap="goMetric"
+        />
+      </view>
+    </view>
+  </block>
+
+  <block wx:else>
+    <view wx:for="{{reportsByMonth}}" wx:key="month">
+      <view class="section-title">
+        <view>{{item.title}}</view>
+        <view class="tiny">{{item.items.length}} 份</view>
+      </view>
+      <view class="pad">
+        <view class="card">
+          <view wx:for="{{item.items}}" wx:key="id" class="row" data-id="{{item.id}}" bindtap="goReport">
+            <view class="date-block">
+              <view class="date-day">{{item.dayText}}</view>
+              <view class="date-month">{{item.monthText}}</view>
+            </view>
+            <view class="flex">
+              <view class="body strong">{{item.type}}</view>
+              <view class="tiny">{{item.hospital}}</view>
+            </view>
+            <hh-pill wx:if="{{item.abnormalCount > 0}}" tone="high">{{item.abnormalCount}} 异常</hh-pill>
+            <view class="arrow">›</view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </block>
+</view>

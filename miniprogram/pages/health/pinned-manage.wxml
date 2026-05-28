@@ -1,0 +1,21 @@
+﻿<view class="page">
+  <view class="nav">
+    <view class="nav-side left" bindtap="goBack">‹ 返回</view>
+    <view class="nav-title">关注指标</view>
+    <view class="nav-side right" bindtap="goBack">完成</view>
+  </view>
+  <view class="pad mt-12">
+    <view class="notice">选择需要展示在首页的指标。异常指标会优先显示，方便复查前快速查看。</view>
+  </view>
+  <view class="pad mt-12">
+    <view class="card">
+      <view wx:for="{{metrics}}" wx:key="metricKey" class="row" data-key="{{item.metricKey}}" bindtap="toggle">
+        <view class="check {{item.isPinned ? 'on' : ''}}">{{item.isPinned ? '✓' : ''}}</view>
+        <view class="flex">
+          <view class="body strong">{{item.metricName}}</view>
+          <view class="tiny">{{item.categoryCn}} · {{item.lastDate}}</view>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

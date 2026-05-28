@@ -1,0 +1,22 @@
+{
+  "caseId": "cortisol",
+  "status": "structured",
+  "modality": "laboratory",
+  "basicInfo": {
+    "hospital": "北京协和医院",
+    "reportDate": "2025-12-22",
+    "type": "血清总皮质醇(8AM)"
+  },
+  "metrics": [
+    {
+      "metricKey": "cortisol_8am",
+      "metricName": "血总皮质醇[8AM]",
+      "valueNumeric": 4.3,
+      "unit": "μg/dl",
+      "refRangeLow": 4,
+      "refRangeHigh": 22.3,
+      "tone": "ok"
+    }
+  ],
+  "expectedFields": ["hospital", "reportDate", "metricName", "value", "unit", "referenceRange", "tone"]
+}

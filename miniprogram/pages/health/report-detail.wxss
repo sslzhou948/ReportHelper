@@ -1,0 +1,107 @@
+.page {
+  padding-bottom: calc(168rpx + env(safe-area-inset-bottom));
+}
+
+.report-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20rpx;
+}
+
+.strong {
+  font-weight: 700;
+}
+
+.report-tags {
+  margin-top: 16rpx;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+
+.tag {
+  height: 44rpx;
+  padding: 0 16rpx;
+  border-radius: 22rpx;
+  background: var(--primary-soft);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  font-size: 22rpx;
+  font-weight: 700;
+}
+
+.tag.muted {
+  background: #F1EEE8;
+  color: var(--ink-2);
+}
+
+.metric-row.low {
+  background: var(--low-soft);
+}
+
+.metric-row.high,
+.metric-row.positive {
+  background: var(--high-soft);
+}
+
+.metric-value {
+  font-size: 32rpx;
+  font-weight: 800;
+}
+
+.metric-value.low {
+  color: var(--low);
+}
+
+.metric-value.high,
+.metric-value.positive {
+  color: var(--high);
+}
+
+.trend-icon {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 16rpx;
+  background: var(--primary-soft);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22rpx;
+  font-weight: 700;
+}
+
+.finding-row {
+  display: grid;
+  grid-template-columns: 16rpx 1fr;
+  gap: 16rpx;
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid var(--border-soft);
+}
+
+.finding-row:last-child {
+  border-bottom: 0;
+}
+
+.finding-dot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 6rpx;
+  background: var(--primary);
+  margin-top: 12rpx;
+}
+
+.bottom-actions {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 24rpx 32rpx calc(24rpx + env(safe-area-inset-bottom));
+  background: #FFFFFF;
+  border-top: 1rpx solid var(--border-soft);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20rpx;
+}

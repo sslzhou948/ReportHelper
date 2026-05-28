@@ -1,0 +1,7 @@
+.hh-card {
+  background: var(--card);
+  border: 1rpx solid var(--border-soft);
+  border-radius: 44rpx;
+  box-shadow: 0 2rpx 16rpx rgba(0, 0, 0, 0.035);
+  overflow: hidden;
+}

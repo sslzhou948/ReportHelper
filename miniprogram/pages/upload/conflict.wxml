@@ -1,0 +1,30 @@
+﻿<view class="page conflict-page">
+  <view class="nav">
+    <view class="nav-side left" bindtap="goBack">返回</view>
+    <view class="nav-title">处理重复识别</view>
+    <view class="nav-side right"></view>
+  </view>
+  <view class="pad mt-12">
+    <view class="sub">以下指标在多页中被识别了多次，请确认保留哪个值。</view>
+  </view>
+  <view class="section-title">{{reportTitle}}</view>
+  <view class="pad">
+    <view class="card card-pad">
+      <view class="body strong">{{metricName}}</view>
+      <view wx:for="{{candidates}}" wx:key="index" data-index="{{index}}" class="option {{selectedIndex === index ? 'active' : ''}}" bindtap="choose">
+        <view class="radio">{{selectedIndex === index ? '●' : ''}}</view>
+        <view class="option-value value-low">{{item.value}} ↓</view>
+        <view class="tiny">{{item.unit}}</view>
+        <view class="flex"></view>
+        <view class="tiny">{{item.sourceLabel}}</view>
+      </view>
+      <view class="delete-option">都不要 · 删除此项</view>
+    </view>
+  </view>
+  <view class="pad mt-12">
+    <view class="tiny">提示：通常是 OCR 在分页边界识别错位。保留更可信的那个即可。</view>
+  </view>
+  <view class="bottom-action">
+    <view class="btn" bindtap="apply">应用选择</view>
+  </view>
+</view>

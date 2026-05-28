@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>我的病例夹 · 线框稿</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; padding: 0; background: #f0eee9; font-family: -apple-system, system-ui, sans-serif; }
+  *::-webkit-scrollbar { display: none; }
+  * { scrollbar-width: none; }
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" src="ios-frame.jsx"></script>
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="wireframe-primitives.jsx"></script>
+<script type="text/babel" src="screens-home.jsx"></script>
+<script type="text/babel" src="screens-reports.jsx"></script>
+<script type="text/babel" src="screens-metrics.jsx"></script>
+<script type="text/babel" src="screens-schedule.jsx"></script>
+<script type="text/babel" src="screens-profile.jsx"></script>
+<script type="text/babel" src="screens-profiles-multi.jsx"></script>
+<script type="text/babel" src="screens-health-data.jsx"></script>
+<script type="text/babel" src="screens-upload.jsx"></script>
+
+<script type="text/babel">
+function Phone({ children }) {
+  return (
+    <IOSDevice width={360} height={780}>
+      <div style={{ position: 'absolute', inset: 0, background: '#EDEAE4', overflow: 'hidden', borderRadius: 48 }}>
+        {children}
+      </div>
+    </IOSDevice>
+  );
+}
+
+const W = 360, H = 780;
+
+function App() {
+  return (
+    <DesignCanvas>
+      <DCSection id="home" title="① 首页 / 工作台" subtitle="4 状态：未登录、空档案、有数据、后台识别中">
+        <DCArtboard id="home-a" label="A · 未登录" width={W} height={H}><Phone><HomeStateA/></Phone></DCArtboard>
+        <DCArtboard id="home-b" label="B · 已有档案 · 空数据" width={W} height={H}><Phone><HomeStateB/></Phone></DCArtboard>
+        <DCArtboard id="home-c" label="C · 有数据 · 默认主页" width={W} height={H}><Phone><HomeStateC/></Phone></DCArtboard>
+        <DCArtboard id="home-d" label="D · 后台识别进行中" width={W} height={H}><Phone><HomeStateD/></Phone></DCArtboard>
+      </DCSection>
+
+      <DCSection id="health" title="② 健康数据 Tab" subtitle="按指标默认 / 折叠主题 / 行内趋势文字 / 首次气泡引导 / 按时间">
+        <DCArtboard id="hd-metric" label="A · 按指标（默认）" width={W} height={H}><Phone><HealthDataMetricsView/></Phone></DCArtboard>
+        <DCArtboard id="hd-tip" label="B · 首次进入 · 气泡引导" width={W} height={H}><Phone><HealthDataFirstView/></Phone></DCArtboard>
+        <DCArtboard id="hd-time" label="C · 按时间（报告时间线）" width={W} height={H}><Phone><HealthDataReportsView/></Phone></DCArtboard>
+      </DCSection>
+
+      <DCSection id="health-detail" title="② · 下钻详情页" subtitle="从健康数据点击进入：报告详情 / 指标详情（数值型 + 定性型）">
+        <DCArtboard id="hd-rep-d" label="A · 报告详情（按时间钻取）" width={W} height={H}><Phone><ReportDetailV1/></Phone></DCArtboard>
+        <DCArtboard id="hd-met-d" label="B · 指标详情 · 数值型（白细胞）" width={W} height={H}><Phone><MetricDetailV1/></Phone></DCArtboard>
+        <DCArtboard id="hd-met-q" label="C · 指标详情 · 定性型（HBsAg）" width={W} height={H}><Phone><MetricDetailQualitative/></Phone></DCArtboard>
+      </DCSection>
+
+      <DCSection id="schedule" title="③ 复查计划 Tab（精简版）" subtitle="主页（待办内联）+ 新增（单页表单）+ 详情（完整编辑器）">
+        <DCArtboard id="sch-hub" label="A · 主页 · 待办内联" width={W} height={H}><Phone><ScheduleHubV3/></Phone></DCArtboard>
+        <DCArtboard id="sch-new" label="B · 新增（单页表单 + 待办模板）" width={W} height={H}><Phone><ScheduleNewV3/></Phone></DCArtboard>
+        <DCArtboard id="sch-d" label="C · 计划详情（编辑 / 待办 / 提醒 / 删除）" width={W} height={H}><Phone><ScheduleDetailV3/></Phone></DCArtboard>
+      </DCSection>
+
+      <DCSection id="profile" title="④ 我的 Tab" subtitle="账号 + 档案入口 + 数据 + 工具">
+        <DCArtboard id="pro-main" label="A · 我的 Tab 主页" width={W} height={H}><Phone><ProfileMain/></Phone></DCArtboard>
+        <DCArtboard id="pro-a" label="B · 档案资料 · 当前档案编辑" width={W} height={H}><Phone><ArchiveV1/></Phone></DCArtboard>
+      </DCSection>
+
+      <DCSection id="upload" title="⑥ 上传流程 v3 · 5 步" subtitle="选图（曲别针合并）→ 识别 → 确认 → 编辑详情 → 冲突处理">
+        <DCArtboard id="up-1a" label="A · 选图（默认 · 含已分组）" width={W} height={H}><Phone><UploadStep1PickV2/></Phone></DCArtboard>
+        <DCArtboard id="up-1b" label="B · 曲别针建立关联中" width={W} height={H}><Phone><UploadStep1Grouping/></Phone></DCArtboard>
+        <DCArtboard id="up-2" label="C · AI 识别中" width={W} height={H}><Phone><UploadStep2RecognizingV2/></Phone></DCArtboard>
+        <DCArtboard id="up-3" label="D · 确认 · 多份报告概览" width={W} height={H}><Phone><UploadStep3ConfirmV2/></Phone></DCArtboard>
+        <DCArtboard id="up-4" label="E · 编辑详情（多类型 + 不确定项）" width={W} height={H}><Phone><UploadStep4Detail/></Phone></DCArtboard>
+        <DCArtboard id="up-5" label="F · 处理重复识别（冲突）" width={W} height={H}><Phone><UploadStep5Conflict/></Phone></DCArtboard>
+      </DCSection>
+
+      <DCSection id="multi-profile" title="⑤ 多档案管理" subtitle="首次创建 · 切换 · 管理 · 添加">
+        <DCArtboard id="mp-first" label="A · 首次登录 · 创建档案选择" width={W} height={H}><Phone><FirstTimeProfileChoice/></Phone></DCArtboard>
+        <DCArtboard id="mp-sheet" label="B · 切换档案弹层（高频）" width={W} height={H}><Phone><ProfileSwitcherSheet/></Phone></DCArtboard>
+        <DCArtboard id="mp-sheet-m" label="C · 管理档案弹层（编辑/删除）" width={W} height={H}><Phone><ProfileSwitcherSheetManage/></Phone></DCArtboard>
+        <DCArtboard id="mp-add" label="D · 添加新档案" width={W} height={H}><Phone><AddProfileForm/></Phone></DCArtboard>
+      </DCSection>
+    </DesignCanvas>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

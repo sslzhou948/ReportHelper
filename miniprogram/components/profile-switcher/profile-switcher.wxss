@@ -1,0 +1,122 @@
+.mask {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: rgba(0, 0, 0, 0.36);
+  display: flex;
+  align-items: flex-end;
+}
+
+.sheet {
+  width: 100%;
+  max-height: 80vh;
+  padding: 24rpx 32rpx calc(52rpx + env(safe-area-inset-bottom));
+  background: #FFFFFF;
+  border-top-left-radius: 48rpx;
+  border-top-right-radius: 48rpx;
+}
+
+.grab {
+  width: 72rpx;
+  height: 8rpx;
+  margin: 0 auto 28rpx;
+  border-radius: 4rpx;
+  background: var(--border-soft);
+}
+
+.sheet-head {
+  display: flex;
+  align-items: center;
+  margin-bottom: 18rpx;
+}
+
+.sheet-title {
+  flex: 1;
+  font-size: 32rpx;
+  font-weight: 700;
+}
+
+.sheet-action {
+  color: var(--primary);
+  font-size: 24rpx;
+}
+
+.profile-row {
+  min-height: 112rpx;
+  padding: 20rpx 24rpx;
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  border-radius: 28rpx;
+}
+
+.profile-row.active {
+  background: var(--primary-soft);
+}
+
+.avatar {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 40rpx;
+  background: var(--primary);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30rpx;
+  font-weight: 700;
+}
+
+.profile-name {
+  font-size: 30rpx;
+  font-weight: 700;
+}
+
+.relation {
+  margin-left: 8rpx;
+  padding: 2rpx 12rpx;
+  border-radius: 12rpx;
+  background: #F2EEE7;
+  color: var(--ink-3);
+  font-size: 20rpx;
+  font-weight: 500;
+}
+
+.row-actions {
+  display: flex;
+  gap: 20rpx;
+  color: var(--primary);
+  font-size: 22rpx;
+}
+
+.danger {
+  color: var(--high);
+}
+
+.check {
+  color: var(--primary);
+  font-size: 32rpx;
+  font-weight: 700;
+}
+
+.add-row {
+  margin-top: 12rpx;
+  padding: 24rpx;
+  border-top: 1rpx solid var(--border-soft);
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.add-icon {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 40rpx;
+  border: 2rpx dashed var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36rpx;
+}

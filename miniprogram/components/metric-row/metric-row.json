@@ -1,0 +1,6 @@
+{
+  "component": true,
+  "usingComponents": {
+    "hh-pill": "/components/pill/pill"
+  }
+}

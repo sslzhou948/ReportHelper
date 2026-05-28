@@ -1,0 +1,20 @@
+.textarea {
+  width: 100%;
+  min-height: 260rpx;
+  padding: 24rpx;
+  border-radius: 32rpx;
+  background: #FFFFFF;
+  border: 1rpx solid var(--border-soft);
+  color: var(--ink);
+  font-size: 28rpx;
+}
+
+.input {
+  height: 88rpx;
+  padding: 0 24rpx;
+  border-radius: 28rpx;
+  background: #FFFFFF;
+  border: 1rpx solid var(--border-soft);
+  color: var(--ink);
+}
+

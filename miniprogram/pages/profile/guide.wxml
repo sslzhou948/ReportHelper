@@ -1,0 +1,19 @@
+﻿<view class="page">
+  <view class="nav">
+    <view class="nav-side left" bindtap="goBack">‹ 返回</view>
+    <view class="nav-title">使用指南</view>
+    <view class="nav-side right"></view>
+  </view>
+  <view class="pad mt-12">
+    <view class="card card-pad">
+      <view class="title">三步整理检查报告</view>
+      <view class="guide-step">1. 拍照或从相册选择报告</view>
+      <view class="guide-step">2. 核对识别结果，修正不确定项</view>
+      <view class="guide-step">3. 在健康数据里按指标或时间查看</view>
+    </view>
+  </view>
+  <view class="pad mt-12">
+    <view class="notice">当前版本只做数据整理和异常标记，不提供诊断结论。任何治疗决定请以医生意见为准。</view>
+  </view>
+</view>
+

@@ -1,0 +1,9 @@
+.guide-step {
+  margin-top: 24rpx;
+  padding: 22rpx 24rpx;
+  border-radius: 24rpx;
+  background: #FAF8F3;
+  color: var(--ink);
+  font-size: 28rpx;
+}
+

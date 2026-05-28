@@ -1,0 +1,8 @@
+.help-row {
+  align-items: flex-start;
+}
+
+.strong {
+  font-weight: 700;
+}
+

@@ -1,0 +1,46 @@
+﻿<view class="page confirm-page">
+  <view class="nav">
+    <view class="nav-side left" bindtap="goBack">取消</view>
+    <view class="nav-title">确认识别结果</view>
+    <view class="nav-side right"></view>
+  </view>
+  <view class="pad mt-12">
+    <view class="sub">共识别出 {{reportCount}} 份报告。请逐份查看详情核对，有冲突的请优先处理。</view>
+  </view>
+  <view wx:for="{{reports}}" wx:key="title">
+    <view class="section-title">{{item.title}}</view>
+    <view class="pad">
+      <view class="card card-pad {{item.conflict ? 'conflict' : ''}}">
+        <view class="report-card-head">
+          <view class="page-thumb">图</view>
+          <view class="flex">
+            <view class="body strong">{{item.type}}</view>
+            <view class="tiny">{{item.meta}}</view>
+          </view>
+        </view>
+        <view class="report-tags">
+          <view wx:if="{{item.canonicalTypeName && item.canonicalTypeName !== item.type}}" class="tag">归一：{{item.canonicalTypeName}}</view>
+          <view wx:if="{{item.modality === 'imaging'}}" class="tag">影像报告</view>
+          <view wx:if="{{item.examPart}}" class="tag">{{item.examPart}}</view>
+          <view wx:if="{{item.analysisPolicy === 'view_only'}}" class="tag muted">仅归档查看</view>
+        </view>
+        <view class="divider"></view>
+        <view class="sub">{{item.count}} <text wx:if="{{item.abnormal}}">· </text><text class="value-high">{{item.abnormal}}</text></view>
+        <view wx:if="{{item.pendingText || item.inferredText}}" class="hint-lines">
+          <view wx:if="{{item.pendingText}}" class="tiny">{{item.pendingText}}</view>
+          <view wx:if="{{item.inferredText}}" class="tiny">{{item.inferredText}}</view>
+        </view>
+        <view wx:if="{{item.conflict}}" class="conflict-bar" data-index="{{index}}" bindtap="goConflict">
+          <view class="conflict-mark">!</view>
+          <view class="flex">{{item.conflictCount}} 项重复识别，值不一致</view>
+          <view>处理 ›</view>
+        </view>
+        <view class="btn secondary mt-12" data-index="{{index}}" bindtap="goEdit">查看 / 编辑详情 ›</view>
+        <view class="split">拆分页面</view>
+      </view>
+    </view>
+  </view>
+  <view class="bottom-action">
+    <view class="btn {{saving ? 'disabled' : ''}}" bindtap="saveAll">全部保存到病例夹（{{reportCount}} 份）</view>
+  </view>
+</view>

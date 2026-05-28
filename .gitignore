@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.DS_Store
+*.log
+coverage/
+miniprogram_npm/
+.wechat-localappdata/
+tmp/
+project.private.config.json
+.env
+.env.*

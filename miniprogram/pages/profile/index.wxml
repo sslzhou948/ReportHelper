@@ -1,0 +1,70 @@
+﻿<view class="page page-tab">
+  <view class="nav">
+    <view class="nav-side left"></view>
+    <view class="nav-title">我的</view>
+    <view class="nav-side right"></view>
+  </view>
+  <view class="pad mt-12">
+    <view class="card card-pad">
+      <view class="profile-card-head">
+        <view class="avatar-large">{{profile.avatarText}}</view>
+        <view class="flex">
+          <view class="title">{{profile.realName}}</view>
+          <view class="sub">{{profile.summary}}</view>
+          <view class="tiny">当前档案：{{profile.relation}}</view>
+        </view>
+        <view class="mini-btn" bindtap="goArchive">编辑</view>
+      </view>
+      <view class="stats">
+        <view><view class="stat-num">{{reportsCount}}</view><view class="tiny">报告</view></view>
+        <view><view class="stat-num">{{metricsCount}}</view><view class="tiny">指标</view></view>
+        <view><view class="stat-num">{{recheckCount}}</view><view class="tiny">复查</view></view>
+      </view>
+    </view>
+  </view>
+
+  <view class="section-title">档案</view>
+  <view class="pad">
+    <view class="card">
+      <view class="row" bindtap="goArchive"><view class="flex">我的档案</view><view class="tiny">当前档案：{{profile.relation}}（{{profile.realName}}）</view><view class="arrow">›</view></view>
+      <view class="row" bindtap="openSwitcher"><view class="flex">档案管理</view><view class="tiny">{{profiles.length}} 份档案</view><view class="arrow">›</view></view>
+    </view>
+  </view>
+
+  <view class="section-title">数据</view>
+  <view class="pad">
+    <view class="card">
+      <view class="row" data-title="数据导出" bindtap="showStatic"><view class="flex">数据导出</view><view class="tiny">报告与指标记录</view><view class="arrow">›</view></view>
+      <view class="row" data-title="报告归档管理" bindtap="showStatic"><view class="flex">报告归档管理</view><view class="tiny">{{reportsCount}} 份报告</view><view class="arrow">›</view></view>
+      <view class="row danger" data-title="清空当前档案数据" bindtap="showStatic"><view class="flex">清空当前档案数据</view><view class="arrow">›</view></view>
+    </view>
+  </view>
+
+  <view class="section-title">工具</view>
+  <view class="pad">
+    <view class="card">
+      <view class="row" data-title="使用指南" bindtap="showStatic"><view class="flex">使用指南</view><view class="arrow">›</view></view>
+      <view class="row" data-title="指标说明" bindtap="showStatic"><view class="flex">指标说明</view><view class="arrow">›</view></view>
+    </view>
+  </view>
+
+  <view class="section-title">关于</view>
+  <view class="pad">
+    <view class="card">
+      <view class="row" data-title="意见反馈" bindtap="showStatic"><view class="flex">意见反馈</view><view class="arrow">›</view></view>
+      <view class="row" data-title="关于我们 v1.0.0" bindtap="showStatic"><view class="flex">关于我们</view><view class="tiny">v1.0.0</view><view class="arrow">›</view></view>
+    </view>
+  </view>
+  <view class="pad mt-16">
+    <view class="btn secondary logout" bindtap="logout">退出登录</view>
+  </view>
+  <profile-switcher
+    visible="{{switcherVisible}}"
+    profiles="{{profiles}}"
+    currentProfileId="{{profile.id}}"
+    bind:close="closeSwitcher"
+    bind:switch="switchProfile"
+    bind:add="addProfile"
+    bind:edit="goArchive"
+  />
+</view>

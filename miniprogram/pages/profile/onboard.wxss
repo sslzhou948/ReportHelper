@@ -1,0 +1,50 @@
+.onboard-banner {
+  min-height: 360rpx;
+}
+
+.white {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.choice {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+}
+
+.choice-icon {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 24rpx;
+  background: var(--primary-soft);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+}
+
+.choice-icon.warm {
+  background: #FAF5EC;
+  color: #C99B5C;
+}
+
+.choice-icon.muted {
+  background: #FFFFFF;
+  border: 3rpx solid var(--border);
+  color: var(--ink-3);
+}
+
+.strong {
+  font-weight: 700;
+}
+
+.arrow {
+  color: var(--ink-3);
+  font-size: 40rpx;
+}
+
+.center {
+  text-align: center;
+}

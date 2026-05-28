@@ -1,0 +1,46 @@
+.label {
+  min-width: 150rpx;
+}
+
+.arrow {
+  color: var(--ink-3);
+  font-size: 40rpx;
+}
+
+.todo-box {
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 10rpx;
+  border: 3rpx solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.todo-box.done {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #FFFFFF;
+}
+
+.add-row {
+  justify-content: center;
+  color: var(--primary);
+}
+
+.field-error {
+  background: var(--warn-soft);
+}
+
+.error-text {
+  color: var(--warn);
+  margin-top: 4rpx;
+}
+
+.todo-muted {
+  color: var(--ink-3);
+}
+
+.btn.disabled {
+  opacity: 0.58;
+}

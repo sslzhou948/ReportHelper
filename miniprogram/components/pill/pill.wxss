@@ -1,0 +1,33 @@
+.hh-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44rpx;
+  padding: 6rpx 16rpx;
+  border-radius: 20rpx;
+  background: #F2EEE7;
+  color: var(--ink-2);
+  font-size: 22rpx;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.hh-pill.primary {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+.hh-pill.high {
+  background: var(--high-soft);
+  color: var(--high);
+}
+
+.hh-pill.low {
+  background: var(--low-soft);
+  color: var(--low);
+}
+
+.hh-pill.warn {
+  background: #F7E8D8;
+  color: var(--warn);
+}

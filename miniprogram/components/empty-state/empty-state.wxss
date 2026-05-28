@@ -1,0 +1,30 @@
+.empty {
+  padding: 80rpx 48rpx 0;
+  text-align: center;
+}
+
+.empty-illustration {
+  height: 280rpx;
+  border-radius: 36rpx;
+  background:
+    radial-gradient(circle at 35% 36%, rgba(90, 122, 90, 0.16) 0 56rpx, transparent 58rpx),
+    radial-gradient(circle at 62% 58%, rgba(192, 112, 96, 0.12) 0 48rpx, transparent 50rpx),
+    repeating-linear-gradient(135deg, #ECE8E1 0 12rpx, #F5F2EC 12rpx 24rpx);
+  border: 1rpx dashed var(--border);
+}
+
+.empty-title {
+  margin-top: 48rpx;
+  font-size: 32rpx;
+  font-weight: 700;
+}
+
+.empty-desc {
+  margin-top: 12rpx;
+  font-size: 26rpx;
+  color: var(--ink-2);
+}
+
+.empty-btn {
+  margin-top: 48rpx;
+}

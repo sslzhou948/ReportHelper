@@ -1,0 +1,16 @@
+{
+  "caseId": "thyroid",
+  "status": "structured",
+  "modality": "laboratory",
+  "basicInfo": {
+    "hospital": "北京协和医院",
+    "reportDate": "2025-12-22",
+    "type": "甲功1"
+  },
+  "metrics": [
+    { "metricKey": "ft3", "metricName": "游离三碘甲状腺原氨酸", "valueNumeric": 3.65, "unit": "pg/ml", "refRangeLow": 1.8, "refRangeHigh": 4.1, "tone": "ok" },
+    { "metricKey": "ft4", "metricName": "游离甲状腺素", "valueNumeric": 1.04, "unit": "ng/dl", "refRangeLow": 0.81, "refRangeHigh": 1.89, "tone": "ok" },
+    { "metricKey": "tsh", "metricName": "促甲状腺激素", "valueNumeric": 3.596, "unit": "μIU/mL", "refRangeLow": 0.38, "refRangeHigh": 4.34, "tone": "ok" }
+  ],
+  "expectedFields": ["hospital", "reportDate", "metricName", "value", "unit", "referenceRange", "tone"]
+}

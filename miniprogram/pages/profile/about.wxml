@@ -1,0 +1,19 @@
+﻿<view class="page">
+  <view class="nav">
+    <view class="nav-side left" bindtap="goBack">‹ 返回</view>
+    <view class="nav-title">关于我们</view>
+    <view class="nav-side right"></view>
+  </view>
+  <view class="pad mt-12">
+    <view class="card card-pad center">
+      <view class="app-mark">病</view>
+      <view class="title mt-12">我的病例夹</view>
+      <view class="sub mt-8">电子病例夹 · 公益免费</view>
+      <view class="tiny mt-16">v1.0.0</view>
+    </view>
+  </view>
+  <view class="pad mt-12">
+    <view class="notice">我们希望帮助患者和家属更轻松地整理检查报告、追踪指标和安排复查。</view>
+  </view>
+</view>
+

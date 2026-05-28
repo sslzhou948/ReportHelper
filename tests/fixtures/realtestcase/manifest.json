@@ -1,0 +1,48 @@
+{
+  "sourceDir": "../../../realtestcase",
+  "cases": [
+    {
+      "id": "acth",
+      "file": "ACTH.jpg",
+      "modality": "laboratory",
+      "expectedGolden": "../../golden/acth.json"
+    },
+    {
+      "id": "uric_electrolyte_lipid",
+      "file": "尿酸、电解质、血脂.jpg",
+      "modality": "laboratory",
+      "expectedGolden": "../../golden/uric_electrolyte_lipid.json"
+    },
+    {
+      "id": "thyroid",
+      "file": "甲功.jpg",
+      "modality": "laboratory",
+      "expectedGolden": "../../golden/thyroid.json"
+    },
+    {
+      "id": "cortisol",
+      "file": "皮质醇.jpg",
+      "modality": "laboratory",
+      "expectedGolden": "../../golden/cortisol.json"
+    },
+    {
+      "id": "liver_function",
+      "file": "肝功.jpg",
+      "modality": "laboratory",
+      "expectedGolden": "../../golden/liver_function.json"
+    },
+    {
+      "id": "chest_ct_plain",
+      "file": "胸部CT平扫.png",
+      "modality": "imaging",
+      "expectedGolden": "../../golden/chest_ct_plain.json"
+    },
+    {
+      "id": "abdomen_pelvis_ct_plain",
+      "file": "腹盆CT平扫.png",
+      "modality": "imaging",
+      "expectedGolden": "../../golden/abdomen_pelvis_ct_plain.json"
+    }
+  ]
+}
+

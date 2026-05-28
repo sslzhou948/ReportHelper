@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>我的病例夹 · 视觉验收基线</title>
+  <style>
+    :root {
+      --bg: #EDEAE4;
+      --card: #FFFFFF;
+      --ink: #3C3630;
+      --ink-2: #7A7065;
+      --ink-3: #9A9085;
+      --border: #E5E1DA;
+      --primary: #5A7A5A;
+      --primary-soft: #E3EAE0;
+      --high: #C07060;
+      --low: #5A7AA8;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #f0eee9;
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    header {
+      padding: 28px 32px 12px;
+    }
+    h1 { margin: 0; font-size: 24px; }
+    p { color: var(--ink-2); margin: 8px 0 0; line-height: 1.6; }
+    .grid {
+      display: flex;
+      gap: 28px;
+      align-items: flex-start;
+      overflow-x: auto;
+      padding: 20px 32px 40px;
+    }
+    .device-wrap { flex: 0 0 auto; }
+    .label {
+      margin: 0 0 8px;
+      font-size: 13px;
+      color: var(--ink-2);
+      font-weight: 700;
+    }
+    .phone {
+      height: 780px;
+      background: var(--bg);
+      border: 10px solid #242424;
+      border-radius: 42px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 18px 50px rgba(0,0,0,.18);
+    }
+    .capsule {
+      position: absolute;
+      right: 12px;
+      top: 54px;
+      width: 84px;
+      height: 32px;
+      border-radius: 18px;
+      background: rgba(0,0,0,.68);
+      z-index: 5;
+    }
+    .banner {
+      min-height: 170px;
+      padding: 96px 18px 18px;
+      color: #fff;
+      background: linear-gradient(160deg, #6B8E6B 0%, #5A7A5A 100%);
+      border-bottom-left-radius: 28px;
+      border-bottom-right-radius: 28px;
+    }
+    .head {
+      display: flex;
+      gap: 10px;
+      padding-right: 100px;
+      align-items: center;
+    }
+    .chip {
+      display: inline-flex;
+      gap: 6px;
+      align-items: center;
+      padding: 5px 12px 5px 5px;
+      border-radius: 18px;
+      background: rgba(255,255,255,.22);
+      border: 1px solid rgba(255,255,255,.35);
+      max-width: 220px;
+      white-space: nowrap;
+    }
+    .avatar {
+      width: 24px;
+      height: 24px;
+      border-radius: 12px;
+      background: rgba(255,255,255,.3);
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      font-size: 12px;
+    }
+    .greeting { margin-top: 9px; font-size: 18px; font-weight: 700; }
+    .pad { padding: 0 16px; }
+    .main-card {
+      width: 100%;
+      min-height: 72px;
+      margin-top: 12px;
+      border-radius: 16px;
+      background: var(--primary);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      text-align: left;
+    }
+    .icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      background: rgba(255,255,255,.18);
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      flex: 0 0 auto;
+    }
+    .copy { min-width: 0; flex: 1; }
+    .copy strong { display: block; font-size: 16px; line-height: 1.25; }
+    .copy span { display: block; margin-top: 4px; font-size: 12px; opacity: .86; }
+    .white-card {
+      background: #fff;
+      color: var(--ink);
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 8px rgba(0,0,0,.03);
+    }
+    .white-card .icon {
+      background: var(--primary-soft);
+      color: var(--primary);
+    }
+    .section {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 18px 16px 10px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .section a { color: var(--primary); font-size: 12px; }
+    .metrics {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      padding-left: 16px;
+    }
+    .metric {
+      flex: 0 0 148px;
+      min-height: 87px;
+      padding: 12px;
+      background: #fff;
+      border-radius: 18px;
+      border: 1px solid var(--border);
+    }
+    .metric .name { color: var(--ink-2); font-size: 12px; }
+    .metric .value { margin-top: 4px; font-size: 22px; font-weight: 800; }
+    .tabbar {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 78px;
+      background: #fff;
+      border-top: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      padding-top: 8px;
+      color: var(--ink-3);
+      font-size: 11px;
+      text-align: center;
+    }
+    .tabbar .active { color: var(--primary); font-weight: 700; }
+    .report-card {
+      margin: 0 16px;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      overflow: hidden;
+    }
+    .report-row {
+      min-height: 48px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .report-row:last-child { border-bottom: 0; }
+    .report-type {
+      max-width: 75px;
+      min-height: 22px;
+      padding: 3px 8px;
+      border-radius: 10px;
+      background: #F2EEE7;
+      color: var(--ink-2);
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 0 0 auto;
+    }
+    .report-main {
+      flex: 1;
+      min-width: 0;
+    }
+    .report-main strong {
+      display: block;
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .report-main span {
+      display: block;
+      margin-top: 2px;
+      font-size: 11px;
+      color: var(--ink-3);
+    }
+    .abnormal {
+      color: var(--high);
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+      flex: 0 0 auto;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>我的病例夹 · 视觉验收基线</h1>
+    <p>来源：healthhelper_design 线框稿。验收重点：顶部胶囊避让、16px 内容栅格、卡片不压缩、TabBar 安全区。</p>
+  </header>
+  <main class="grid">
+    <section class="device-wrap">
+      <div class="label">360px compact baseline</div>
+      <div class="phone" style="width:360px">
+        <div class="capsule"></div>
+        <div class="banner">
+          <div class="head">
+            <div class="chip"><span class="avatar">芬</span><span>妈妈 · 王芬</span></div>
+          </div>
+          <div class="greeting">早上好，愿您今天舒心</div>
+        </div>
+        <div class="pad">
+          <div class="main-card"><div class="icon">＋</div><div class="copy"><strong>上传妈妈的检查报告</strong><span>拍照 / 相册 · AI 自动识别</span></div><b>›</b></div>
+          <div class="main-card white-card"><div class="icon">复</div><div class="copy"><strong>妈妈距下次复查还有 5 天</strong><span>2026-06-01 · 协和医院 · 常规复查</span></div><b>›</b></div>
+        </div>
+        <div class="section"><span>关注指标</span><a>管理 ›</a></div>
+        <div class="metrics">
+          <div class="metric"><div class="name">白细胞</div><div class="value" style="color:var(--low)">3.2</div><div class="name">2026-04-28 · 首次记录</div></div>
+          <div class="metric"><div class="name">CEA 癌胚抗原</div><div class="value" style="color:var(--high)">6.8</div><div class="name">2026-03-22 · 首次记录</div></div>
+        </div>
+        <div class="section"><span>最近报告</span><a>查看全部 ›</a></div>
+        <div class="report-card">
+          <div class="report-row"><div class="report-type">血常规</div><div class="report-main"><strong>协和医院</strong><span>4月28日</span></div><div class="abnormal">2 项异常</div><b>›</b></div>
+          <div class="report-row"><div class="report-type">CT 胸部</div><div class="report-main"><strong>肿瘤医院</strong><span>4月15日</span></div><b>›</b></div>
+        </div>
+        <div class="tabbar"><div class="active">⌂<br>首页</div><div>▤<br>健康数据</div><div>▣<br>复查</div><div>♙<br>我的</div></div>
+      </div>
+    </section>
+    <section class="device-wrap">
+      <div class="label">375px mainstream baseline</div>
+      <div class="phone" style="width:375px">
+        <div class="capsule"></div>
+        <div class="banner"><div class="head"><div class="chip"><span class="avatar">芬</span><span>妈妈 · 王芬</span></div></div><div class="greeting">早上好，愿您今天舒心</div></div>
+        <div class="pad"><div class="main-card"><div class="icon">＋</div><div class="copy"><strong>上传妈妈的检查报告</strong><span>拍照 / 相册 · AI 自动识别</span></div><b>›</b></div><div class="main-card white-card"><div class="icon">复</div><div class="copy"><strong>妈妈距下次复查还有 5 天</strong><span>2026-06-01 · 协和医院 · 常规复查</span></div><b>›</b></div></div>
+        <div class="section"><span>关注指标</span><a>管理 ›</a></div><div class="metrics"><div class="metric"><div class="name">白细胞</div><div class="value" style="color:var(--low)">3.2</div><div class="name">2026-04-28 · 首次记录</div></div><div class="metric"><div class="name">CEA 癌胚抗原</div><div class="value" style="color:var(--high)">6.8</div><div class="name">2026-03-22 · 首次记录</div></div></div>
+        <div class="tabbar"><div class="active">⌂<br>首页</div><div>▤<br>健康数据</div><div>▣<br>复查</div><div>♙<br>我的</div></div>
+      </div>
+    </section>
+    <section class="device-wrap">
+      <div class="label">414px large baseline</div>
+      <div class="phone" style="width:414px">
+        <div class="capsule"></div>
+        <div class="banner"><div class="head"><div class="chip"><span class="avatar">芬</span><span>妈妈 · 王芬</span></div></div><div class="greeting">早上好，愿您今天舒心</div></div>
+        <div class="pad"><div class="main-card"><div class="icon">＋</div><div class="copy"><strong>上传妈妈的检查报告</strong><span>拍照 / 相册 · AI 自动识别</span></div><b>›</b></div><div class="main-card white-card"><div class="icon">复</div><div class="copy"><strong>妈妈距下次复查还有 5 天</strong><span>2026-06-01 · 协和医院 · 常规复查</span></div><b>›</b></div></div>
+        <div class="section"><span>关注指标</span><a>管理 ›</a></div><div class="metrics"><div class="metric"><div class="name">白细胞</div><div class="value" style="color:var(--low)">3.2</div><div class="name">2026-04-28 · 首次记录</div></div><div class="metric"><div class="name">CEA 癌胚抗原</div><div class="value" style="color:var(--high)">6.8</div><div class="name">2026-03-22 · 首次记录</div></div></div>
+        <div class="tabbar"><div class="active">⌂<br>首页</div><div>▤<br>健康数据</div><div>▣<br>复查</div><div>♙<br>我的</div></div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

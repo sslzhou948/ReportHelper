@@ -1,0 +1,227 @@
+const { api } = require('../../utils/api');
+const { calculateTone } = require('../../utils/trend');
+
+function formatRef(metric) {
+  if (metric.refText) return metric.refText;
+  if (metric.refQualitative) return metric.refQualitative;
+  const low = metric.refRangeLow;
+  const high = metric.refRangeHigh;
+  if (low !== undefined && low !== null && high !== undefined && high !== null) return `${low}-${high}`;
+  if (low !== undefined && low !== null) return `>=${low}`;
+  if (high !== undefined && high !== null) return `<=${high}`;
+  return '待确认';
+}
+
+function formatValue(metric) {
+  if (metric.valueType === 'qualitative') return metric.valueQualitative || '';
+  return metric.valueNumeric !== undefined && metric.valueNumeric !== null ? String(metric.valueNumeric) : '';
+}
+
+function toNumberOrNull(value) {
+  if (value === '' || value === undefined || value === null) return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+function groupMetrics(metrics) {
+  const groups = {};
+  (metrics || []).forEach((metric, index) => {
+    const key = metric.category || 'other';
+    if (!groups[key]) {
+      groups[key] = {
+        key,
+        name: metric.categoryCn || '其他',
+        items: []
+      };
+    }
+    groups[key].items.push({
+      index,
+      name: metric.metricName || metric.metricKey,
+      value: formatValue(metric),
+      valueType: metric.valueType || 'quantitative',
+      valueQualitative: metric.valueQualitative || '',
+      unit: metric.unit || '',
+      refLow: metric.refRangeLow === undefined || metric.refRangeLow === null ? '' : String(metric.refRangeLow),
+      refHigh: metric.refRangeHigh === undefined || metric.refRangeHigh === null ? '' : String(metric.refRangeHigh),
+      refText: metric.refText || '',
+      ref: formatRef(metric),
+      tone: metric.tone || 'ok',
+      mappingStatus: metric.mappingStatus || 'confirmed',
+      uncertain: metric.ocrConfidence !== undefined && metric.ocrConfidence < 0.85
+    });
+  });
+  return Object.keys(groups).map((key) => groups[key]);
+}
+
+function clone(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+Page({
+  taskId: '',
+  reportIdx: 0,
+  draftId: '',
+  draft: null,
+
+  data: {
+    loading: false,
+    saving: false,
+    editing: false,
+    basicInfo: {
+      type: '待确认报告',
+      hospital: '待确认医院',
+      reportDate: '待确认日期',
+      canonicalTypeName: '',
+      modality: 'laboratory',
+      examPart: '',
+      examMethod: '',
+      hospitalSource: 'unknown',
+      reportDateSource: 'unknown'
+    },
+    groups: [],
+    findings: [],
+    warnings: []
+  },
+
+  onLoad(query = {}) {
+    this.taskId = query.taskId || '';
+    this.reportIdx = Number(query.reportIdx || 0);
+    this.loadDraft();
+  },
+
+  refreshData() {
+    const draft = this.draft || {};
+    const info = draft.basicInfo || {};
+    this.setData({
+      basicInfo: {
+        type: info.type || '待确认报告',
+        hospital: info.hospital || '待确认医院',
+        reportDate: info.reportDate || '待确认日期',
+        canonicalTypeName: info.canonicalTypeName || '',
+        modality: info.modality || 'laboratory',
+        examPart: info.examPart || '',
+        examMethod: info.examMethod || '',
+        hospitalSource: info.hospitalSource || 'unknown',
+        reportDateSource: info.reportDateSource || 'unknown'
+      },
+      groups: groupMetrics(draft.metrics || []),
+      findings: draft.findings || [],
+      warnings: draft.warnings || []
+    });
+  },
+
+  loadDraft() {
+    if (!this.taskId) {
+      wx.showToast({ title: '未找到识别任务', icon: 'none' });
+      return;
+    }
+    this.setData({ loading: true });
+    api.getOcrTask(this.taskId).then((task) => {
+      this.draft = clone((task.drafts || [])[this.reportIdx] || {});
+      this.draftId = this.draft.draftId || '';
+      this.setData({ loading: false });
+      this.refreshData();
+    }).catch(() => {
+      this.setData({ loading: false });
+      wx.showToast({ title: '加载报告详情失败', icon: 'none' });
+    });
+  },
+
+  goBack() {
+    wx.navigateBack();
+  },
+
+  startEdit() {
+    this.setData({ editing: true });
+  },
+
+  cancelEdit() {
+    this.setData({ editing: false });
+    this.loadDraft();
+  },
+
+  onBasicInput(event) {
+    const field = event.currentTarget.dataset.field;
+    if (!field || !this.draft) return;
+    this.draft.basicInfo = {
+      ...(this.draft.basicInfo || {}),
+      [field]: event.detail.value
+    };
+    if (field === 'hospital') this.draft.basicInfo.hospitalSource = 'user_edited';
+    if (field === 'reportDate') this.draft.basicInfo.reportDateSource = 'user_edited';
+    this.refreshData();
+  },
+
+  onDateChange(event) {
+    if (!this.draft) return;
+    this.draft.basicInfo = {
+      ...(this.draft.basicInfo || {}),
+      reportDate: event.detail.value,
+      reportDateSource: 'user_edited'
+    };
+    this.refreshData();
+  },
+
+  onMetricInput(event) {
+    const index = Number(event.currentTarget.dataset.index);
+    const field = event.currentTarget.dataset.field;
+    if (!this.draft || !this.draft.metrics || !this.draft.metrics[index] || !field) return;
+    const metric = {
+      ...this.draft.metrics[index],
+      isManuallyEdited: true
+    };
+    const value = event.detail.value;
+    if (field === 'valueNumeric') metric.valueNumeric = toNumberOrNull(value);
+    else if (field === 'valueQualitative') metric.valueQualitative = value;
+    else if (field === 'refRangeLow') metric.refRangeLow = toNumberOrNull(value);
+    else if (field === 'refRangeHigh') metric.refRangeHigh = toNumberOrNull(value);
+    else metric[field] = value;
+
+    const valueForTone = metric.valueType === 'qualitative' ? metric.valueQualitative : metric.valueNumeric;
+    metric.tone = calculateTone(valueForTone, metric.refRangeLow, metric.refRangeHigh, metric.valueType || 'quantitative');
+    this.draft.metrics[index] = metric;
+    this.refreshData();
+  },
+
+  onQualitativeChange(event) {
+    const options = ['阴性', '阳性', '弱阳性', '可疑'];
+    const index = Number(event.currentTarget.dataset.index);
+    if (!this.draft || !this.draft.metrics || !this.draft.metrics[index]) return;
+    const value = options[Number(event.detail.value)] || '';
+    const metric = {
+      ...this.draft.metrics[index],
+      valueType: 'qualitative',
+      valueQualitative: value,
+      isManuallyEdited: true
+    };
+    metric.tone = calculateTone(metric.valueQualitative, metric.refRangeLow, metric.refRangeHigh, 'qualitative');
+    this.draft.metrics[index] = metric;
+    this.refreshData();
+  },
+
+  onFindingInput(event) {
+    const index = Number(event.currentTarget.dataset.index);
+    if (!this.draft || !this.draft.findings || !this.draft.findings[index]) return;
+    this.draft.findings[index] = event.detail.value;
+    this.refreshData();
+  },
+
+  saveAndBack() {
+    if (!this.draftId || this.data.saving) return Promise.resolve(false);
+    this.setData({ saving: true });
+    return api.updateOcrDraft({
+      taskId: this.taskId,
+      draftId: this.draftId,
+      draft: this.draft
+    }, {
+      idempotencyKey: `edit_draft_${this.taskId}_${this.draftId}`
+    }).then(() => {
+      wx.showToast({ title: '已保存修改', icon: 'success' });
+      this.setData({ saving: false, editing: false });
+      this.loadDraft();
+    }).catch(() => {
+      this.setData({ saving: false });
+      wx.showToast({ title: '保存修改失败', icon: 'none' });
+    });
+  }
+});

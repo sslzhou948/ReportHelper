@@ -1,0 +1,6 @@
+{
+  "usingComponents": {
+    "profile-switcher": "/components/profile-switcher/profile-switcher",
+    "hh-pill": "/components/pill/pill"
+  }
+}

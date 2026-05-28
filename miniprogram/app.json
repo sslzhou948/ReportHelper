@@ -1,0 +1,68 @@
+{
+  "pages": [
+    "pages/home/index",
+    "pages/health/index",
+    "pages/recheck/index",
+    "pages/profile/index",
+    "pages/health/report-detail",
+    "pages/health/metric-detail",
+    "pages/health/search",
+    "pages/health/pinned-manage",
+    "pages/recheck/new",
+    "pages/recheck/detail",
+    "pages/profile/archive",
+    "pages/profile/export",
+    "pages/profile/reports-archive",
+    "pages/profile/guide",
+    "pages/profile/metric-help",
+    "pages/profile/feedback",
+    "pages/profile/about",
+    "pages/profile/onboard",
+    "pages/profile/add",
+    "pages/upload/pick",
+    "pages/upload/confirm",
+    "pages/upload/edit-detail",
+    "pages/upload/conflict"
+  ],
+  "window": {
+    "navigationStyle": "custom",
+    "backgroundTextStyle": "dark",
+    "backgroundColor": "#EDEAE4"
+  },
+  "tabBar": {
+    "custom": false,
+    "color": "#9A9085",
+    "selectedColor": "#5A7A5A",
+    "backgroundColor": "#FFFFFF",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/home/index",
+        "text": "首页",
+        "iconPath": "assets/tab/home-idle.png",
+        "selectedIconPath": "assets/tab/home-active.png"
+      },
+      {
+        "pagePath": "pages/health/index",
+        "text": "健康数据",
+        "iconPath": "assets/tab/health-idle.png",
+        "selectedIconPath": "assets/tab/health-active.png"
+      },
+      {
+        "pagePath": "pages/recheck/index",
+        "text": "复查",
+        "iconPath": "assets/tab/recheck-idle.png",
+        "selectedIconPath": "assets/tab/recheck-active.png"
+      },
+      {
+        "pagePath": "pages/profile/index",
+        "text": "我的",
+        "iconPath": "assets/tab/profile-idle.png",
+        "selectedIconPath": "assets/tab/profile-active.png"
+      }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

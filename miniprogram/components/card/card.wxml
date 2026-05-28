@@ -1,0 +1,3 @@
+﻿<view class="hh-card {{extraClass}}">
+  <slot />
+</view>

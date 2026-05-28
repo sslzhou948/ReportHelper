@@ -1,0 +1,62 @@
+.profile-card-head {
+  display: flex;
+  gap: 24rpx;
+  align-items: flex-start;
+}
+
+.avatar-large {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 50rpx;
+  background: var(--primary);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36rpx;
+  font-weight: 800;
+}
+
+.mini-btn {
+  flex: 0 0 auto;
+  align-self: flex-start;
+  min-width: 88rpx;
+  height: 56rpx;
+  padding: 0 20rpx;
+  border-radius: 28rpx;
+  background: var(--primary-soft);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24rpx;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.stats {
+  margin-top: 32rpx;
+  padding-top: 28rpx;
+  border-top: 1rpx solid var(--border-soft);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  text-align: center;
+}
+
+.stat-num {
+  font-size: 36rpx;
+  font-weight: 900;
+}
+
+.arrow {
+  color: var(--ink-3);
+  font-size: 40rpx;
+}
+
+.danger {
+  color: var(--high);
+}
+
+.logout {
+  color: var(--high);
+}

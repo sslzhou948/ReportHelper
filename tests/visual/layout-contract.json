@@ -1,0 +1,50 @@
+{
+  "source": {
+    "wireframeEntry": "healthhelper_design/我的病例夹 线框稿.html",
+    "tokens": "healthhelper_design/wireframe-primitives.jsx",
+    "home": "healthhelper_design/screens-home.jsx",
+    "health": "healthhelper_design/screens-health-data.jsx",
+    "schedule": "healthhelper_design/screens-schedule.jsx",
+    "profile": "healthhelper_design/screens-profile.jsx"
+  },
+  "devices": [
+    { "name": "iPhone SE / compact", "cssWidth": 360, "cssHeight": 780 },
+    { "name": "iPhone 12/13/14", "cssWidth": 375, "cssHeight": 812 },
+    { "name": "iPhone Plus / large", "cssWidth": 414, "cssHeight": 896 }
+  ],
+  "tokensPx": {
+    "pagePadding": 16,
+    "cardRadius": 22,
+    "cardPadding": 16,
+    "buttonHeight": 48,
+    "buttonRadius": 16,
+    "sectionTop": 18,
+    "sectionBottom": 10,
+    "tabBarHeight": 78,
+    "homeBannerHeight": 156,
+    "navBarContentHeight": 56,
+    "pillRadius": 10
+  },
+  "tokensRpx": {
+    "pagePadding": 32,
+    "cardRadius": 44,
+    "cardPadding": 32,
+    "buttonHeight": 96,
+    "buttonRadius": 32,
+    "homePrimaryCardMinHeight": 128,
+    "homeBannerMinHeight": 312,
+    "homeBannerContentExtra": 124,
+    "tabBarReserved": 156,
+    "metricCardWidth": 296,
+    "metricCardMinHeight": 174
+  },
+  "rules": [
+    "Custom top areas must use wx.getMenuButtonBoundingClientRect and place content below capsule bottom.",
+    "Primary cards inside .pad must fill the content width.",
+    "No CTA or information card may shrink to text-content width.",
+    "All clickable visual containers use view + bindtap during the visual baseline phase; native button layout is disallowed.",
+    "Horizontal metric cards may scroll, but each card keeps a stable width.",
+    "Native tab bar content must reserve at least 78px plus safe-area bottom.",
+    "All secondary pages must leave enough top space for the WeChat capsule when using custom nav."
+  ]
+}

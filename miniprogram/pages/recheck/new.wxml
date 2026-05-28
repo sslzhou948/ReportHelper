@@ -1,0 +1,35 @@
+﻿<view class="page">
+  <view class="nav">
+    <view class="nav-side left" bindtap="goBack">取消</view>
+    <view class="nav-title">新增复查</view>
+    <view class="nav-side right" bindtap="save">保存</view>
+  </view>
+  <view class="pad mt-12">
+    <view class="card">
+      <view wx:for="{{fields}}" wx:key="key" class="row {{item.error ? 'field-error' : ''}}" data-key="{{item.key}}" bindtap="pick">
+        <view class="sub label">{{item.label}}</view>
+        <view class="flex right">
+          <view>{{item.value}}</view>
+          <view wx:if="{{item.error}}" class="tiny error-text">{{item.error}}</view>
+        </view>
+        <view class="arrow">›</view>
+      </view>
+    </view>
+  </view>
+  <view class="section-title">
+    <view>待办事项</view>
+    <view class="section-action">全选</view>
+  </view>
+  <view class="pad">
+    <view class="card">
+      <view wx:for="{{todos}}" wx:key="id" data-index="{{index}}" class="row" bindtap="toggleTodo">
+        <view class="todo-box {{item.isDone ? 'done' : ''}}">{{item.isDone ? '✓' : ''}}</view>
+        <view class="flex {{item.isDone ? '' : 'todo-muted'}}">{{item.text}}</view>
+      </view>
+      <view class="row add-row">+ 自定义待办</view>
+    </view>
+  </view>
+  <view class="pad mt-16">
+    <view class="btn {{saving ? 'disabled' : ''}}" bindtap="save">保存</view>
+  </view>
+</view>

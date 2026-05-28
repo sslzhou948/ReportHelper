@@ -1,0 +1,6 @@
+{
+  "usingComponents": {
+    "hh-pill": "/components/pill/pill",
+    "trend-chart": "/components/trend-chart/trend-chart"
+  }
+}

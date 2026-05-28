@@ -1,0 +1,25 @@
+﻿<view class="page">
+  <view class="nav">
+    <view class="nav-side left" bindtap="goBack">‹ 返回</view>
+    <view class="nav-title">数据导出</view>
+    <view class="nav-side right"></view>
+  </view>
+  <view class="pad mt-12">
+    <view class="card card-pad">
+      <view class="title">导出当前档案数据</view>
+      <view class="sub mt-8">包含检查报告、指标记录和复查计划。导出文件会在后端生成后通过安全链接提供。</view>
+    </view>
+  </view>
+  <view class="section-title">导出内容</view>
+  <view class="pad">
+    <view class="card">
+      <view class="row"><view class="flex">报告原始记录</view><view class="tiny">PDF / 图片索引</view></view>
+      <view class="row"><view class="flex">结构化指标</view><view class="tiny">CSV</view></view>
+      <view class="row"><view class="flex">复查计划</view><view class="tiny">JSON</view></view>
+    </view>
+  </view>
+  <view class="pad mt-16">
+    <view class="btn" bindtap="exportData">创建导出文件</view>
+  </view>
+</view>
+

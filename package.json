@@ -1,0 +1,23 @@
+{
+  "name": "healthhelper-miniprogram",
+  "version": "0.1.0",
+  "private": true,
+  "description": "我的病例夹微信小程序工程",
+  "scripts": {
+    "test": "node tests/run-unit-tests.js && node tests/static-check.js && node --check tests/devtools-flow.js",
+    "static:check": "node tests/static-check.js",
+    "visual:check": "node tests/check-visual-contracts.js",
+    "fixtures:check": "node tests/check-fixtures.js",
+    "assets:tabs": "node scripts/generate-tab-icons.js",
+    "devtools:open": "node scripts/wechat-devtools.js open",
+    "devtools:preview": "node scripts/wechat-devtools.js preview",
+    "devtools:cli-check": "node scripts/wechat-devtools.js check",
+    "devtools:flow": "node tests/devtools-flow.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "miniprogram-automator": "^0.12.1"
+  }
+}

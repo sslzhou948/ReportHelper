@@ -1,0 +1,23 @@
+﻿<view class="page">
+  <view class="nav">
+    <view class="nav-side left" bindtap="goBack">取消</view>
+    <view class="nav-title">添加档案</view>
+    <view class="nav-side right" bindtap="save">保存</view>
+  </view>
+  <view class="pad mt-12">
+    <view class="sub">请填写基本信息，后续可在档案中补全用药等详细记录</view>
+  </view>
+  <view class="section-title">档案信息</view>
+  <view class="pad">
+    <view class="card">
+      <view wx:for="{{fields}}" wx:key="key" class="row" bindtap="editField">
+        <view class="sub label">{{item.label}}</view>
+        <view class="flex right">{{item.value}}</view>
+        <view class="arrow">›</view>
+      </view>
+    </view>
+  </view>
+  <view class="pad mt-16">
+    <view class="btn {{saving ? 'disabled' : ''}}" bindtap="save">保存档案</view>
+  </view>
+</view>
