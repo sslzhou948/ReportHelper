@@ -1,4 +1,5 @@
 const { api } = require('../../utils/api');
+const { bindNetworkStatus, refreshNetworkStatus } = require('../../utils/network');
 const { isProfileRequiredError } = require('../../utils/profile');
 
 const ROUTE_MAP = {
@@ -18,9 +19,11 @@ Page({
     metricsCount: 0,
     recheckCount: 0,
     switcherVisible: false,
+    networkOffline: false,
     loading: false
   },
   onShow() {
+    bindNetworkStatus(this);
     this.load();
   },
   load() {
@@ -99,5 +102,8 @@ Page({
         });
       }
     });
+  },
+  retryAfterNetwork() {
+    refreshNetworkStatus(this).then(() => this.load());
   }
 });

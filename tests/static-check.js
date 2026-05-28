@@ -163,4 +163,20 @@ assert.ok(!profileWxml.includes('<button class="row danger"'), 'profile danger r
 assert.ok(!profileWxml.includes('<button class="btn secondary logout"'), 'profile logout control must not use native button layout');
 assert.ok(!profileArchiveWxml.includes('他莫昔芬'), 'profile archive must not show hardcoded medication records');
 
+const mainTabPages = [
+  ['home', 'pages/home/index'],
+  ['health', 'pages/health/index'],
+  ['recheck', 'pages/recheck/index'],
+  ['profile', 'pages/profile/index']
+];
+for (const [name, pagePath] of mainTabPages) {
+  const js = fs.readFileSync(path.join(miniprogramRoot, `${pagePath}.js`), 'utf8');
+  const wxml = fs.readFileSync(path.join(miniprogramRoot, `${pagePath}.wxml`), 'utf8');
+  const json = fs.readFileSync(path.join(miniprogramRoot, `${pagePath}.json`), 'utf8');
+  assert.ok(js.includes('bindNetworkStatus(this)'), `${name} tab must subscribe to network status`);
+  assert.ok(js.includes('retryAfterNetwork()'), `${name} tab must expose network retry`);
+  assert.ok(wxml.includes('<network-banner'), `${name} tab must show the offline network banner`);
+  assert.ok(json.includes('/components/network-banner/network-banner'), `${name} tab must register the network banner component`);
+}
+
 console.log(`Static checks passed: ${app.pages.length} pages, ${wxmlFiles.length} WXML files`);

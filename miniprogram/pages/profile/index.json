@@ -1,5 +1,6 @@
 {
   "usingComponents": {
-    "profile-switcher": "/components/profile-switcher/profile-switcher"
+    "profile-switcher": "/components/profile-switcher/profile-switcher",
+    "network-banner": "/components/network-banner/network-banner"
   }
 }

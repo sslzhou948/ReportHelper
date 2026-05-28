@@ -4,6 +4,7 @@
     <view class="nav-title">我的</view>
     <view class="nav-side right"></view>
   </view>
+  <network-banner offline="{{networkOffline}}" bind:retry="retryAfterNetwork" />
   <view class="pad mt-12">
     <view class="card card-pad">
       <view class="profile-card-head">

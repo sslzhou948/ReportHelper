@@ -14,6 +14,8 @@
     <view class="greeting">早上好，愿您今天舒心</view>
   </view>
 
+  <network-banner offline="{{networkOffline}}" bind:retry="retryAfterNetwork" />
+
   <view wx:if="{{recognizing}}" class="pad mt-12">
     <view class="ocr-card" bindtap="goOcrTask">
       <view class="ocr-icon">识</view>

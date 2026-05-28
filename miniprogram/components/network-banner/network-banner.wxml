@@ -1,0 +1,5 @@
+<view wx:if="{{offline}}" class="network-banner">
+  <view class="network-dot"></view>
+  <view class="network-text">网络断开，部分数据可能无法更新</view>
+  <view class="network-retry" bindtap="retry">重试</view>
+</view>

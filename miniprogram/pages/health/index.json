@@ -1,6 +1,7 @@
 {
   "usingComponents": {
     "metric-row": "/components/metric-row/metric-row",
-    "hh-pill": "/components/pill/pill"
+    "hh-pill": "/components/pill/pill",
+    "network-banner": "/components/network-banner/network-banner"
   }
 }

@@ -1,5 +1,6 @@
 const { api } = require('../../utils/api');
 const { formatMonthDay } = require('../../utils/date');
+const { bindNetworkStatus, refreshNetworkStatus } = require('../../utils/network');
 const { isProfileRequiredError } = require('../../utils/profile');
 
 const FILTER_ALL = '\u5168\u90e8';
@@ -69,6 +70,7 @@ Page({
     groupedMetrics: [],
     reportsByMonth: [],
     chips: DEFAULT_CHIPS,
+    networkOffline: false,
     loading: false
   },
 
@@ -77,6 +79,7 @@ Page({
   },
 
   onShow() {
+    bindNetworkStatus(this);
     const defaultView = wx.getStorageSync('healthDefaultView');
     if (defaultView) {
       wx.removeStorageSync('healthDefaultView');
@@ -135,5 +138,9 @@ Page({
 
   goReport(event) {
     wx.navigateTo({ url: `/pages/health/report-detail?id=${event.currentTarget.dataset.id}` });
+  },
+
+  retryAfterNetwork() {
+    refreshNetworkStatus(this).then(() => this.load());
   }
 });

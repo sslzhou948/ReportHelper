@@ -5,6 +5,8 @@
     <view class="nav-side right" bindtap="goUpload">上传</view>
   </view>
 
+  <network-banner offline="{{networkOffline}}" bind:retry="retryAfterNetwork" />
+
   <view class="pad mt-12">
     <view class="search" bindtap="goSearch">搜索指标 / 报告 / 医院</view>
   </view>

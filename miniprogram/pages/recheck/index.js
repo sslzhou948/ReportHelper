@@ -1,5 +1,6 @@
 const { api } = require('../../utils/api');
 const { daysBetween, formatMonthDay } = require('../../utils/date');
+const { bindNetworkStatus, refreshNetworkStatus } = require('../../utils/network');
 const { isProfileRequiredError } = require('../../utils/profile');
 
 function decoratePlan(plan) {
@@ -46,9 +47,11 @@ Page({
     progressPercent: 0,
     allReady: false,
     daysToNext: 0,
+    networkOffline: false,
     loading: false
   },
   onShow() {
+    bindNetworkStatus(this);
     this.load();
   },
   load() {
@@ -144,5 +147,8 @@ Page({
         });
       }
     });
+  },
+  retryAfterNetwork() {
+    refreshNetworkStatus(this).then(() => this.load());
   }
 });

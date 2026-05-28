@@ -4,6 +4,7 @@
     <view class="nav-title">复查计划</view>
     <view class="nav-side right" bindtap="goNew">+ 新增</view>
   </view>
+  <network-banner offline="{{networkOffline}}" bind:retry="retryAfterNetwork" />
   <block wx:if="{{nextPlan}}">
     <view class="section-title">下次复查</view>
     <view class="pad">

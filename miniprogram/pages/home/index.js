@@ -1,5 +1,6 @@
 const { api } = require('../../utils/api');
 const { formatMonthDay, daysBetween } = require('../../utils/date');
+const { bindNetworkStatus, refreshNetworkStatus } = require('../../utils/network');
 const { isProfileRequiredError } = require('../../utils/profile');
 
 const ACTIVE_OCR_STATUSES = ['queued', 'processing', 'needs_confirmation', 'ready_to_save', 'failed'];
@@ -82,10 +83,12 @@ Page({
     switcherVisible: false,
     recognizing: false,
     pendingOcrTask: null,
+    networkOffline: false,
     loading: false
   },
 
   onShow() {
+    bindNetworkStatus(this);
     this.load();
   },
 
@@ -202,5 +205,9 @@ Page({
       return;
     }
     wx.navigateTo({ url: `/pages/upload/confirm?taskId=${task.taskId}` });
+  },
+
+  retryAfterNetwork() {
+    refreshNetworkStatus(this).then(() => this.load());
   }
 });
