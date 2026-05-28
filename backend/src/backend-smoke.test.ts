@@ -690,6 +690,32 @@ assert.equal(signedPhotoTaskPayload.data.drafts.length, 0);
 assert.equal(prisma.ocrTaskPhotos.length, 2);
 assert.ok(prisma.reportPhotos.every((photo) => photo.status === 'attached'));
 
+await prisma.ocrTask.update({
+  where: { id: signedPhotoTaskPayload.data.id },
+  data: {
+    status: 'failed',
+    errorCode: 'OCR_TIMEOUT',
+    errorMessage: 'OCR timed out'
+  }
+});
+const failedPhotoTaskResponse = await app.inject({
+  method: 'GET',
+  url: `/api/ocr/tasks/${signedPhotoTaskPayload.data.id}`
+});
+assert.equal(failedPhotoTaskResponse.statusCode, 200);
+assert.equal(failedPhotoTaskResponse.json().data.status, 'failed');
+assert.equal(failedPhotoTaskResponse.json().data.errorCode, 'OCR_TIMEOUT');
+const retryPhotoTaskResponse = await app.inject({
+  method: 'POST',
+  url: `/api/ocr/tasks/${signedPhotoTaskPayload.data.id}/retry`,
+  payload: {
+    photoIds: signUploadsPayload.data.uploads.map((upload: Row) => upload.photoId)
+  }
+});
+assert.equal(retryPhotoTaskResponse.statusCode, 200);
+assert.equal(retryPhotoTaskResponse.json().data.status, 'queued');
+assert.equal(retryPhotoTaskResponse.json().data.errorCode, '');
+
 const createProfileResponse = await app.inject({
   method: 'POST',
   url: '/api/profiles',

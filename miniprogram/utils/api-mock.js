@@ -639,6 +639,22 @@ function createMockApi() {
       return ok(task);
     },
 
+    retryOcrTask(taskId) {
+      const task = ocrTasks[taskId];
+      if (!task) return ok({ id: taskId, status: 'queued', drafts: [], errorCode: '', errorMessage: '' });
+      if (['confirmed', 'cancelled'].includes(task.status)) {
+        return Promise.reject(new ApiError({
+          code: 'CONFLICT',
+          statusCode: 409,
+          message: 'OCR task cannot be retried in its current status'
+        }));
+      }
+      task.status = 'queued';
+      task.errorCode = '';
+      task.errorMessage = '';
+      return ok(task);
+    },
+
     resolveOcrConflict({ taskId, draftId, metricKey, selectedCandidateIndex = 0 }) {
       const task = ocrTasks[taskId];
       if (!task) return ok({ taskId, draftId, metricKey, selectedCandidateIndex, status: 'resolved' });

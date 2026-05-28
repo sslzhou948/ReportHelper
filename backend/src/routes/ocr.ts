@@ -35,6 +35,11 @@ const resolveConflictSchema = z.object({
   selectedCandidateIndex: z.number().int().nonnegative().optional()
 });
 
+const retryOcrTaskSchema = z.object({
+  draftId: z.string().uuid().optional(),
+  photoIds: z.array(z.string().uuid()).optional()
+});
+
 function toJson(value: unknown): Prisma.InputJsonValue {
   return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
 }
@@ -71,7 +76,9 @@ function serializeTask(task: {
   status: string;
   photoCount: number;
   reportCount: number;
-  drafts: ReturnType<typeof serializeDraft>[];
+  errorCode?: string | null;
+  errorMessage?: string | null;
+  drafts: Array<ReturnType<typeof serializeDraft> | Parameters<typeof serializeDraft>[0]>;
 }) {
   return {
     id: task.id,
@@ -79,11 +86,13 @@ function serializeTask(task: {
     status: task.status,
     photoCount: task.photoCount,
     reportCount: task.reportCount,
+    errorCode: task.errorCode || '',
+    errorMessage: task.errorMessage || '',
     progress: {
-      processedReports: task.reportCount,
+      processedReports: ['needs_confirmation', 'ready_to_save', 'confirmed'].includes(task.status) ? task.reportCount : 0,
       totalReports: task.reportCount
     },
-    drafts: task.drafts
+    drafts: task.drafts.map((draft) => ('draftId' in draft ? draft : serializeDraft(draft)))
   };
 }
 
@@ -434,6 +443,76 @@ export async function registerOcrRoutes(app: FastifyInstance) {
         ...updatedTask,
         drafts: updatedTask.drafts.map(serializeDraft)
       }),
+      requestId
+    };
+  });
+
+  app.post<{ Params: { taskId: string } }>('/api/ocr/tasks/:taskId/retry', async (request, reply) => {
+    const requestId = getRequestId(request);
+    const parsed = retryOcrTaskSchema.safeParse(request.body || {});
+    if (!parsed.success) {
+      return reply.status(400).send({
+        error: {
+          code: 'VALIDATION_FAILED',
+          message: 'OCR retry payload is invalid',
+          details: parsed.error.flatten()
+        },
+        requestId
+      });
+    }
+
+    const session = await requireSession(app, request, reply);
+    if (!session) return;
+    const { user } = session;
+    const task = await findTaskForUser(app, request.params.taskId, user.id);
+
+    if (!task) {
+      return reply.status(404).send({
+        error: {
+          code: 'NOT_FOUND',
+          message: 'OCR task not found'
+        },
+        requestId
+      });
+    }
+
+    if (['confirmed', 'cancelled'].includes(task.status)) {
+      return reply.status(409).send({
+        error: {
+          code: 'CONFLICT',
+          message: 'OCR task cannot be retried in its current status'
+        },
+        requestId
+      });
+    }
+
+    const updatedTask = await app.prisma.$transaction(async (tx) => {
+      if (parsed.data.draftId) {
+        await tx.recognizedReportDraft.updateMany({
+          where: {
+            ocrTaskId: task.id,
+            id: parsed.data.draftId
+          },
+          data: { status: 'needs_review' }
+        });
+      }
+      return tx.ocrTask.update({
+        where: { id: task.id },
+        data: {
+          status: 'queued',
+          errorCode: null,
+          errorMessage: null
+        },
+        include: {
+          drafts: {
+            orderBy: { createdAt: 'asc' }
+          }
+        }
+      });
+    });
+
+    return {
+      data: serializeTask(updatedTask),
       requestId
     };
   });

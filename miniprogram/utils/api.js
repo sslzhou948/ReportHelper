@@ -134,6 +134,9 @@ function createBackendApi(client) {
     cancelOcrTask(taskId, config) {
       return client.post(`/api/ocr/tasks/${taskId}/cancel`, {}, config);
     },
+    retryOcrTask(taskId, payload = {}, config) {
+      return client.post(`/api/ocr/tasks/${taskId}/retry`, payload, config);
+    },
     resolveOcrConflict(payload, config) {
       return client.patch(`/api/ocr/tasks/${payload.taskId}/drafts/${payload.draftId}/conflicts/${payload.metricKey}`, payload, config);
     },
@@ -191,6 +194,9 @@ function createHybridUploadApi(options = {}) {
     },
     cancelOcrTask(taskId, config) {
       return backendApi.cancelOcrTask(taskId, config);
+    },
+    retryOcrTask(taskId, payload, config) {
+      return backendApi.retryOcrTask(taskId, payload, config);
     },
     resolveOcrConflict(payload, config) {
       return backendApi.resolveOcrConflict(payload, config);

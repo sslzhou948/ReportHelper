@@ -16,7 +16,7 @@ This is the self-managed backend for the mini program. v1 uses local PostgreSQL 
 1. Sign image uploads and persist report photo metadata.
 2. Mark signed uploads as completed after the client upload succeeds.
 3. Create OCR task from completed photos or fixture drafts.
-4. List or cancel unfinished OCR tasks.
+4. List, retry, or cancel unfinished OCR tasks.
 5. Confirm/edit drafts.
 6. Run duplicate check.
 7. Save reports with replace/skip decisions.

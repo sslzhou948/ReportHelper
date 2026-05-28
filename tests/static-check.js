@@ -82,6 +82,8 @@ assert.ok(uploadConfirmJs.includes("itemList: ['覆盖旧报告', '跳过重复�
 assert.ok(!uploadConfirmJs.includes('仍保存为新报告'), 'duplicate prompt must not expose keep-both to normal users');
 assert.ok(uploadConfirmJs.includes('cancelTaskAndLeave()'), 'upload confirm cancel must explicitly discard the OCR task');
 assert.ok(uploadConfirmJs.includes('api.cancelOcrTask(this.taskId)'), 'upload confirm cancel must call the cancel OCR API');
+assert.ok(uploadConfirmJs.includes('retryTask()'), 'upload confirm must expose OCR retry handling');
+assert.ok(uploadConfirmJs.includes('api.retryOcrTask(this.taskId'), 'upload confirm retry must call the retry OCR API');
 assert.ok(uploadEditDetailJs.includes('api.getOcrTask(this.taskId)'), 'upload edit detail must load the selected OCR draft');
 assert.ok(!uploadEditDetailJs.includes("value: '32'"), 'upload edit detail must not ship hardcoded metric fixtures');
 assert.ok(!reportDetailJs.includes('api.updateReport(this.reportId'), 'report detail edit entry must not auto-save report data');

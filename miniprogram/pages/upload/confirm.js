@@ -72,7 +72,10 @@ Page({
     profileId: '',
     reports: [],
     reportCount: 0,
-    unresolvedConflictCount: 0
+    unresolvedConflictCount: 0,
+    taskStatus: '',
+    errorMessage: '',
+    retrying: false
   },
 
   onLoad(query = {}) {
@@ -93,12 +96,15 @@ Page({
     api.getOcrTask(this.taskId).then((task) => {
       this.drafts = task.drafts || [];
       const reports = this.drafts.map(toDisplayReport);
+      const failed = task.status === 'failed';
       this.setData({
         loading: false,
         profileId: task.profileId || '',
-        reports,
+        reports: failed ? [] : reports,
         reportCount: task.reportCount || reports.length,
-        unresolvedConflictCount: reports.reduce((sum, report) => sum + (report.conflictCount || 0), 0)
+        unresolvedConflictCount: reports.reduce((sum, report) => sum + (report.conflictCount || 0), 0),
+        taskStatus: task.status || '',
+        errorMessage: task.errorMessage || '\u8bc6\u522b\u670d\u52a1\u6682\u65f6\u672a\u8fd4\u56de\u7ed3\u679c\uff0c\u8bf7\u91cd\u8bd5'
       });
       if (task.profileId) wx.setStorageSync('healthhelperBackendProfileId', task.profileId);
     }).catch(() => {
@@ -143,6 +149,30 @@ Page({
     wx.navigateTo({ url: `/pages/upload/conflict?taskId=${this.taskId}&reportIdx=${event.currentTarget.dataset.index}&metricKey=${report.metricKey || 'wbc'}` });
   },
 
+  retryTask() {
+    if (this.data.retrying || !this.taskId) return Promise.resolve(false);
+    this.setData({ retrying: true });
+    return api.retryOcrTask(this.taskId, {}, {
+      idempotencyKey: `retry_${this.taskId}_${Date.now()}`
+    }).then((task) => {
+      const pending = wx.getStorageSync('pendingOcrTasks') || [];
+      wx.setStorageSync('pendingOcrTasks', [{
+        taskId: task.id,
+        profileId: task.profileId,
+        status: task.status,
+        photoCount: task.photoCount,
+        reportCount: task.reportCount
+      }].concat(pending.filter((item) => item.taskId !== task.id)));
+      wx.showToast({ title: '\u5df2\u91cd\u65b0\u53d1\u8d77\u8bc6\u522b', icon: 'success' });
+      setTimeout(() => wx.switchTab({ url: '/pages/home/index' }), 500);
+      return task;
+    }).catch(() => {
+      this.setData({ retrying: false });
+      wx.showToast({ title: '\u91cd\u8bd5\u5931\u8d25\uff0c\u8bf7\u7a0d\u540e\u518d\u8bd5', icon: 'none' });
+      return false;
+    });
+  },
+
   buildDuplicateDecisions(candidates, decision) {
     return (candidates || []).map((candidate) => ({
       draftId: candidate.draftId,
@@ -179,6 +209,10 @@ Page({
 
   saveAll() {
     if (this.data.saving) return Promise.resolve(false);
+    if (this.data.taskStatus === 'failed') {
+      wx.showToast({ title: '\u8bf7\u5148\u91cd\u8bd5\u8bc6\u522b', icon: 'none' });
+      return Promise.resolve(false);
+    }
     if (this.data.unresolvedConflictCount > 0) {
       wx.showToast({
         title: `\u8bf7\u5148\u5904\u7406 ${this.data.unresolvedConflictCount} \u4e2a\u51b2\u7a81`,

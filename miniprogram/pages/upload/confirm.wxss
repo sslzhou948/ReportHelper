@@ -55,6 +55,23 @@
   color: var(--ink-2);
 }
 
+.failed-card {
+  border-left: 8rpx solid var(--high);
+}
+
+.failed-title {
+  font-size: 32rpx;
+  font-weight: 800;
+  color: var(--high);
+}
+
+.failed-actions {
+  margin-top: 28rpx;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20rpx;
+}
+
 .hint-lines {
   margin-top: 12rpx;
   color: var(--warn);

@@ -7,6 +7,16 @@
   <view class="pad mt-12">
     <view class="sub">共识别出 {{reportCount}} 份报告。请逐份查看详情核对，有冲突的请优先处理。</view>
   </view>
+  <view wx:if="{{taskStatus === 'failed'}}" class="pad mt-12">
+    <view class="card card-pad failed-card">
+      <view class="failed-title">识别失败</view>
+      <view class="sub mt-8">{{errorMessage}}</view>
+      <view class="failed-actions">
+        <view class="btn secondary" bindtap="goBack">取消</view>
+        <view class="btn {{retrying ? 'disabled' : ''}}" bindtap="retryTask">重新识别</view>
+      </view>
+    </view>
+  </view>
   <view wx:for="{{reports}}" wx:key="title">
     <view class="section-title">{{item.title}}</view>
     <view class="pad">
@@ -41,6 +51,6 @@
     </view>
   </view>
   <view class="bottom-action">
-    <view class="btn {{saving ? 'disabled' : ''}}" bindtap="saveAll">全部保存到病例夹（{{reportCount}} 份）</view>
+    <view class="btn {{saving || taskStatus === 'failed' ? 'disabled' : ''}}" bindtap="saveAll">全部保存到病例夹（{{reportCount}} 份）</view>
   </view>
 </view>
