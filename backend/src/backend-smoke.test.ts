@@ -825,6 +825,19 @@ assert.equal(updateRecheckPlanResponse.statusCode, 200);
 assert.equal(updateRecheckPlanResponse.json().data.hospital, '协和东院');
 assert.equal(updateRecheckPlanResponse.json().data.department, '影像科');
 
+const updateReminderResponse = await app.inject({
+  method: 'PATCH',
+  url: `/api/recheck-plans/${recheckPlan.id}`,
+  payload: {
+    reminderConfig: {
+      advanceDays: [1],
+      subscribeAccepted: false
+    }
+  }
+});
+assert.equal(updateReminderResponse.statusCode, 200);
+assert.deepEqual(updateReminderResponse.json().data.reminderConfig.advanceDays, [1]);
+
 const invalidUpdateRecheckPlanResponse = await app.inject({
   method: 'PATCH',
   url: `/api/recheck-plans/${recheckPlan.id}`,

@@ -722,6 +722,11 @@ asyncChecks.push(mockApi.createRecheckPlan('profile_mom', {
 }).then((plan) => {
   assert.strictEqual(plan.hospital, '协和东院');
   assert.strictEqual(plan.department, '影像科');
+  return mockApi.updateRecheckPlan(plan.id, {
+    reminderConfig: { advanceDays: [1], subscribeAccepted: false }
+  });
+}).then((plan) => {
+  assert.deepStrictEqual(plan.reminderConfig.advanceDays, [1]);
   return mockApi.addRecheckTodo(plan.id, { text: '自定义待办' });
 }).then((plan) => {
   assert.strictEqual(plan.todos.length, 6);

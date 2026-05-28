@@ -12,10 +12,31 @@ function daysToPlan(plan) {
   return plan ? Math.max(0, daysBetween(new Date(), plan.date)) : 0;
 }
 
+function buildReminderRows(plan) {
+  const config = (plan && plan.reminderConfig) || {};
+  const advanceDays = Array.isArray(config.advanceDays) ? config.advanceDays : [3, 1, 0];
+  const enabled = new Set(advanceDays.map(Number));
+  return [
+    { day: 3, label: '\u63d0\u524d 3 \u5929', checked: enabled.has(3) },
+    { day: 1, label: '\u63d0\u524d 1 \u5929', checked: enabled.has(1) },
+    { day: 0, label: '\u5f53\u5929\u4e0a\u5348', checked: enabled.has(0) }
+  ];
+}
+
+function applyPlan(page, plan, extra = {}) {
+  page.setData({
+    plan,
+    days: daysToPlan(plan),
+    reminderRows: buildReminderRows(plan),
+    ...extra
+  });
+}
+
 Page({
   data: {
     plan: null,
     days: 0,
+    reminderRows: [],
     loading: false
   },
   onLoad(query) {
@@ -27,11 +48,7 @@ Page({
     api.listRecheckPlans(getApp().getCurrentProfileId()).then((recheck) => {
       const plans = [recheck.nextPlan].concat(recheck.otherPlans || []).filter(Boolean);
       const plan = plans.find((item) => item.id === this.planId) || plans[0] || null;
-      this.setData({
-        plan,
-        days: daysToPlan(plan),
-        loading: false
-      });
+      applyPlan(this, plan, { loading: false });
     }).catch(() => {
       this.setData({ loading: false });
       wx.showToast({ title: '\u52a0\u8f7d\u590d\u67e5\u8be6\u60c5\u5931\u8d25', icon: 'none' });
@@ -66,10 +83,7 @@ Page({
         }, {
           idempotencyKey: `recheck_edit_${this.data.plan.id}_${key}_${Date.now()}`
         }).then((plan) => {
-          this.setData({
-            plan,
-            days: daysToPlan(plan)
-          });
+          applyPlan(this, plan);
           wx.showToast({ title: '\u5df2\u4fdd\u5b58', icon: 'success' });
         }).catch((error) => {
           const title = error && error.code === 'VALIDATION_FAILED'
@@ -107,6 +121,37 @@ Page({
           wx.showToast({ title: '\u6dfb\u52a0\u5f85\u529e\u5931\u8d25', icon: 'none' });
         });
       }
+    });
+  },
+  toggleReminder(event) {
+    if (!this.data.plan) return;
+    const day = Number(event.currentTarget.dataset.day);
+    const checked = !!event.detail.value;
+    const currentConfig = this.data.plan.reminderConfig || {};
+    const currentDays = Array.isArray(currentConfig.advanceDays) ? currentConfig.advanceDays.map(Number) : [3, 1, 0];
+    const nextDays = currentDays
+      .filter((item) => item !== day)
+      .concat(checked ? [day] : [])
+      .sort((a, b) => b - a);
+    const nextConfig = {
+      ...currentConfig,
+      advanceDays: nextDays,
+      subscribeAccepted: !!currentConfig.subscribeAccepted
+    };
+    const optimisticPlan = {
+      ...this.data.plan,
+      reminderConfig: nextConfig
+    };
+    applyPlan(this, optimisticPlan);
+    api.updateRecheckPlan(this.data.plan.id, {
+      reminderConfig: nextConfig
+    }, {
+      idempotencyKey: `recheck_reminder_${this.data.plan.id}_${day}_${Date.now()}`
+    }).then((plan) => {
+      applyPlan(this, plan);
+    }).catch(() => {
+      wx.showToast({ title: '\u66f4\u65b0\u63d0\u9192\u5931\u8d25', icon: 'none' });
+      this.load();
     });
   },
   cancelPlan() {
