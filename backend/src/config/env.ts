@@ -9,6 +9,23 @@ const envSchema = z.object({
   WECHAT_APP_SECRET: z.string().min(1),
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(8787)
+}).superRefine((env, ctx) => {
+  if (env.NODE_ENV !== 'production') return;
+
+  const placeholders = [
+    ['JWT_SECRET', env.JWT_SECRET, 'replace-with-local-dev-secret'],
+    ['WECHAT_APP_SECRET', env.WECHAT_APP_SECRET, 'put-secret-in-local-env-only']
+  ] as const;
+
+  for (const [field, value, placeholder] of placeholders) {
+    if (value === placeholder) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: [field],
+        message: `${field} must not use the local placeholder in production`
+      });
+    }
+  }
 });
 
 export type Env = z.infer<typeof envSchema>;

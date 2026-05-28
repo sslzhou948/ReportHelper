@@ -33,6 +33,14 @@ const parsedEnv = loadEnv({
 });
 assert.equal(parsedEnv.PORT, 8789);
 assert.equal(parsedEnv.NODE_ENV, 'test');
+assert.throws(() => loadEnv({
+  DATABASE_URL: 'postgresql://test:test@localhost:5432/test',
+  JWT_SECRET: 'replace-with-local-dev-secret',
+  WECHAT_APP_ID: 'test-app-id',
+  WECHAT_APP_SECRET: 'put-secret-in-local-env-only',
+  NODE_ENV: 'production',
+  PORT: '8789'
+}));
 
 const env: Env = {
   DATABASE_URL: 'postgresql://test:test@localhost:5432/test',
