@@ -657,6 +657,22 @@ const unsupportedUploadResponse = await app.inject({
 assert.equal(unsupportedUploadResponse.statusCode, 415);
 assert.equal(unsupportedUploadResponse.json().error.code, 'UNSUPPORTED_MEDIA_TYPE');
 
+const unsupportedWebpUploadResponse = await app.inject({
+  method: 'POST',
+  url: '/api/uploads/sign',
+  payload: {
+    profileId,
+    files: [{
+      clientFileId: 'bad_webp',
+      fileName: 'report.webp',
+      mimeType: 'image/webp',
+      size: 1024
+    }]
+  }
+});
+assert.equal(unsupportedWebpUploadResponse.statusCode, 415);
+assert.equal(unsupportedWebpUploadResponse.json().error.code, 'UNSUPPORTED_MEDIA_TYPE');
+
 const incompletePhotoTaskResponse = await app.inject({
   method: 'POST',
   url: '/api/ocr/tasks',

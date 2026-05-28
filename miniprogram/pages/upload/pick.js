@@ -1,5 +1,5 @@
 const { api } = require('../../utils/api');
-const { getReportCount } = require('../../utils/upload');
+const { getReportCount, inferMimeType, validateUploadFiles } = require('../../utils/upload');
 
 const initialPhotos = [];
 const realcaseFixtureCaseIds = [
@@ -63,14 +63,6 @@ function getPathName(filePath) {
   return parts[parts.length - 1] || '';
 }
 
-function getMimeType(filePath) {
-  const lower = (filePath || '').toLowerCase();
-  if (lower.endsWith('.png')) return 'image/png';
-  if (lower.endsWith('.webp')) return 'image/webp';
-  if (lower.endsWith('.heic')) return 'image/heic';
-  return 'image/jpeg';
-}
-
 function normalizeChosenFiles(files, existingPhotos) {
   const startId = (existingPhotos || []).reduce((max, photo) => Math.max(max, Number(photo.id) || 0), 0) + 1;
   return (files || []).map((file, index) => {
@@ -80,7 +72,7 @@ function normalizeChosenFiles(files, existingPhotos) {
       group: 0,
       tempFilePath: filePath,
       fileName: file.name || getPathName(filePath) || `report-${startId + index}`,
-      mimeType: file.type || getMimeType(filePath),
+      mimeType: file.mimeType || inferMimeType(filePath, file.type),
       size: Number(file.size) || 0
     };
   });
@@ -201,7 +193,19 @@ Page({
       return;
     }
     const onFiles = (files) => {
-      const chosen = normalizeChosenFiles(files, this.data.photos);
+      const validation = validateUploadFiles(files);
+      if (validation.rejectedCount > 0) {
+        wx.showToast({ title: validation.message || '\u5df2\u8fc7\u6ee4\u4e0d\u652f\u6301\u7684\u56fe\u7247', icon: 'none' });
+      }
+
+      const chosen = normalizeChosenFiles(validation.accepted, this.data.photos);
+      if (chosen.length === 0) {
+        this.setData({
+          uploadError: validation.message || '\u8bf7\u91cd\u65b0\u9009\u62e9\u6709\u6548\u56fe\u7247'
+        });
+        return;
+      }
+
       const nextPhotos = this.data.photos
         .concat(chosen)
         .slice(0, MAX_UPLOAD_PHOTOS)

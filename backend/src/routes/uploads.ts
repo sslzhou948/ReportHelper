@@ -8,8 +8,7 @@ const SUPPORTED_IMAGE_TYPES = new Set([
   'image/jpeg',
   'image/png',
   'image/heic',
-  'image/heif',
-  'image/webp'
+  'image/heif'
 ]);
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 const MAX_FILE_COUNT = 9;
@@ -35,6 +34,12 @@ const completeUploadsSchema = z.object({
 function objectKey(profileId: string, fileName: string) {
   const safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_').slice(-120) || 'report-image';
   return `profiles/${profileId}/reports/${new Date().toISOString().slice(0, 10)}/${randomUUID()}-${safeName}`;
+}
+
+function normalizeMimeType(mimeType: string) {
+  const value = mimeType.trim().toLowerCase();
+  if (value === 'image/jpg') return 'image/jpeg';
+  return value;
 }
 
 function expiresAt() {
@@ -75,7 +80,7 @@ export async function registerUploadRoutes(app: FastifyInstance) {
       });
     }
 
-    const unsupported = parsed.data.files.find((file) => !SUPPORTED_IMAGE_TYPES.has(file.mimeType));
+    const unsupported = parsed.data.files.find((file) => !SUPPORTED_IMAGE_TYPES.has(normalizeMimeType(file.mimeType)));
     if (unsupported) {
       return reply.status(415).send({
         error: {
@@ -117,7 +122,7 @@ export async function registerUploadRoutes(app: FastifyInstance) {
           userId: user.id,
           objectKey: key,
           thumbnailObjectKey: null,
-          mimeType: file.mimeType,
+          mimeType: normalizeMimeType(file.mimeType),
           sizeBytes: BigInt(file.size),
           status: 'signed'
         }

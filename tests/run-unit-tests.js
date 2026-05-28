@@ -5,7 +5,14 @@ const path = require('path');
 const { formatDate, formatCnDate, formatMonthDay, daysBetween, relativeFromToday } = require('../miniprogram/utils/date');
 const { calculateTone, calculateTrend } = require('../miniprogram/utils/trend');
 const { normalizeReportMetrics, groupMetricsByCategory, buildMetricSnapshots } = require('../miniprogram/utils/report');
-const { buildPhotoBatches, buildRecognitionReports, getReportCount } = require('../miniprogram/utils/upload');
+const {
+  MAX_UPLOAD_BYTES,
+  buildPhotoBatches,
+  buildRecognitionReports,
+  getReportCount,
+  inferMimeType,
+  validateUploadFiles
+} = require('../miniprogram/utils/upload');
 const { validateProfile } = require('../miniprogram/utils/profile');
 const { buildDefaultTodos, validateRecheckPlan } = require('../miniprogram/utils/recheck');
 const { ApiError, createApiClient, createMemoryStorage } = require('../miniprogram/utils/api-client');
@@ -76,6 +83,66 @@ assert.deepStrictEqual(
   [[1, 2]],
   'duplicate photo ids should only be counted once in a report group'
 );
+assert.strictEqual(inferMimeType('scan.JPG'), 'image/jpeg');
+assert.strictEqual(inferMimeType('scan.png'), 'image/png');
+assert.strictEqual(inferMimeType('scan.heic'), 'image/heic');
+assert.strictEqual(inferMimeType('scan.tmp', 'image/jpg'), 'image/jpeg');
+const uploadValidation = validateUploadFiles([
+  { tempFilePath: 'ok.jpg', size: 1024 },
+  { tempFilePath: 'bad.webp', size: 1024 },
+  { tempFilePath: 'wxfile://tmp_without_extension', name: 'also_bad.webp', size: 1024 },
+  { tempFilePath: 'large.png', size: MAX_UPLOAD_BYTES + 1 }
+]);
+assert.strictEqual(uploadValidation.accepted.length, 1);
+assert.strictEqual(uploadValidation.rejectedCount, 3);
+assert.strictEqual(uploadValidation.unsupportedCount, 2);
+assert.strictEqual(uploadValidation.tooLargeCount, 1);
+assert.ok(uploadValidation.message.includes('JPG/PNG/HEIC'));
+
+(() => {
+  const pagePath = path.resolve(__dirname, '..', 'miniprogram', 'pages', 'upload', 'pick.js');
+  const pageModulePath = require.resolve(pagePath);
+  const savedWx = global.wx;
+  const savedPage = global.Page;
+  let pageConfig = null;
+  const toasts = [];
+  const storageState = {};
+  try {
+    global.wx = {
+      getStorageSync: (key) => storageState[key],
+      setStorageSync: (key, value) => { storageState[key] = value; },
+      removeStorageSync: (key) => { delete storageState[key]; },
+      chooseMedia: ({ success }) => success({
+        tempFiles: [
+          { tempFilePath: 'bad.webp', size: 1024 },
+          { tempFilePath: 'ok.jpg', size: 1024 }
+        ]
+      }),
+      showToast: ({ title }) => { toasts.push(title); }
+    };
+    global.Page = (config) => { pageConfig = config; };
+    delete require.cache[pageModulePath];
+    require(pagePath);
+    const page = {
+      ...pageConfig,
+      data: JSON.parse(JSON.stringify(pageConfig.data)),
+      setData(update) {
+        this.data = {
+          ...this.data,
+          ...update
+        };
+      }
+    };
+    page.chooseAlbum();
+    assert.strictEqual(page.data.photos.length, 1, 'upload page should filter unsupported selected files');
+    assert.strictEqual(page.data.photos[0].mimeType, 'image/jpeg');
+    assert.ok(toasts.some((title) => title.includes('JPG/PNG/HEIC')), 'upload page should explain rejected file types');
+  } finally {
+    global.wx = savedWx;
+    global.Page = savedPage;
+    delete require.cache[pageModulePath];
+  }
+})();
 
 assert.strictEqual(realcaseOcrDrafts.length, 7, 'realcase OCR baseline should cover all provided images');
 assert.ok(realcaseOcrDrafts.some((draft) => (draft.metrics || []).some((metric) => metric.tone === 'high')), 'realcase baseline should include abnormal metrics');
