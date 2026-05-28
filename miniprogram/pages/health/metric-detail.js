@@ -1,4 +1,5 @@
 const { api } = require('../../utils/api');
+const { showApiErrorToast } = require('../../utils/error');
 
 const PINNED_TOAST = '\u5df2\u52a0\u5165\u5173\u6ce8';
 const UNPINNED_TOAST = '\u5df2\u53d6\u6d88\u5173\u6ce8';
@@ -30,6 +31,7 @@ Page({
     hasTrendChart: false,
     trendNotice: '',
     isPinned: false,
+    pinSaving: false,
     loading: false
   },
   onLoad(query) {
@@ -68,13 +70,15 @@ Page({
     wx.navigateTo({ url: `/pages/health/report-detail?id=${event.currentTarget.dataset.id}` });
   },
   togglePin() {
+    if (this.data.pinSaving || !this.data.latest) return;
     const nextPinned = !this.data.isPinned;
-    this.setData({ isPinned: nextPinned });
+    this.setData({ isPinned: nextPinned, pinSaving: true });
     api.setMetricPinned(this.profileId, this.data.metricKey, nextPinned).then(() => {
+      this.setData({ pinSaving: false });
       wx.showToast({ title: nextPinned ? PINNED_TOAST : UNPINNED_TOAST, icon: 'none' });
-    }).catch(() => {
-      this.setData({ isPinned: !nextPinned });
-      wx.showToast({ title: '\u66f4\u65b0\u5173\u6ce8\u5931\u8d25', icon: 'none' });
+    }).catch((error) => {
+      this.setData({ isPinned: !nextPinned, pinSaving: false });
+      showApiErrorToast(error, '\u66f4\u65b0\u5173\u6ce8\u5931\u8d25');
     });
   }
 });

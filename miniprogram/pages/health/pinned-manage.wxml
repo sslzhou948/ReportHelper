@@ -9,8 +9,8 @@
   </view>
   <view class="pad mt-12">
     <view class="card">
-      <view wx:for="{{metrics}}" wx:key="metricKey" class="row" data-key="{{item.metricKey}}" bindtap="toggle">
-        <view class="check {{item.isPinned ? 'on' : ''}}">{{item.isPinned ? '✓' : ''}}</view>
+      <view wx:for="{{metrics}}" wx:key="metricKey" class="row {{item.pinSaving ? 'saving' : ''}}" data-key="{{item.metricKey}}" bindtap="toggle">
+        <view class="check {{item.isPinned ? 'on' : ''}}">{{item.pinSaving ? '…' : (item.isPinned ? '✓' : '')}}</view>
         <view class="flex">
           <view class="body strong">{{item.metricName}}</view>
           <view class="tiny">{{item.categoryCn}} · {{item.lastDate}}</view>

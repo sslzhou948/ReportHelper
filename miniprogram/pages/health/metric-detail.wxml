@@ -2,9 +2,9 @@
   <view class="nav">
     <view class="nav-side left" bindtap="goBack">‹ 返回</view>
     <view class="nav-title">{{latest.metricName}}</view>
-    <view class="pin-action {{isPinned ? 'active' : ''}}" bindtap="togglePin">
+    <view class="pin-action {{isPinned ? 'active' : ''}} {{pinSaving ? 'saving' : ''}}" bindtap="togglePin">
       <view class="pin-dot">{{isPinned ? '✓' : '+'}}</view>
-      <view>{{isPinned ? '已关注' : '关注'}}</view>
+      <view>{{pinSaving ? '保存中' : (isPinned ? '已关注' : '关注')}}</view>
     </view>
   </view>
   <view class="pad mt-12">

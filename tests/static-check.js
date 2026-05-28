@@ -69,6 +69,7 @@ const profileExportWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'p
 const reportDetailJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'health', 'report-detail.js'), 'utf8');
 const metricDetailJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'health', 'metric-detail.js'), 'utf8');
 const metricDetailWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'health', 'metric-detail.wxml'), 'utf8');
+const pinnedManageJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'health', 'pinned-manage.js'), 'utf8');
 const apiMockJs = fs.readFileSync(path.join(miniprogramRoot, 'utils', 'api-mock.js'), 'utf8');
 assert.ok(uploadPickJs.includes("UPLOAD_DRAFT_KEY = 'uploadDraft'"), 'upload pick must persist unfinished upload drafts');
 assert.ok(uploadPickJs.includes('wx.chooseMedia') || uploadPickJs.includes('wx.chooseImage'), 'upload pick must use native image selection APIs');
@@ -115,6 +116,9 @@ assert.ok(!reportDetailJs.includes('已保存编辑'), 'report detail edit entry
 assert.ok(!apiMockJs.includes('photoCount: 4'), 'OCR mock fallback must not fabricate four photos');
 assert.ok(metricDetailJs.includes('hasTrendChart') && metricDetailWxml.includes('!hasTrendChart'), 'metric detail must not draw trend charts for qualitative or single-record metrics');
 assert.ok(metricDetailJs.includes("return '\\u53c2\\u8003 --'") || metricDetailJs.includes("return '参考 --'"), 'metric detail must show missing reference ranges as --');
+assert.ok(metricDetailJs.includes('pinSaving'), 'metric detail must debounce follow/unfollow saves');
+assert.ok(pinnedManageJs.includes('savingKeys'), 'pinned manage must debounce per-metric follow saves');
+assert.ok(metricDetailJs.includes('showApiErrorToast') && pinnedManageJs.includes('showApiErrorToast'), 'pinned metric pages must surface API errors consistently');
 assert.ok(!apiMockJs.includes('reportCount: 3'), 'OCR mock fallback must not fabricate three reports');
 assert.ok(profileExportJs.includes('api.createExport'), 'profile export page must create a real export task');
 assert.ok(!profileExportWxml.includes('暂不创建导出任务'), 'profile export page must not present export as disabled');

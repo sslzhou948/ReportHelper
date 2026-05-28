@@ -20,6 +20,10 @@
   color: #FFFFFF;
 }
 
+.pin-action.saving {
+  opacity: 0.62;
+}
+
 .pin-dot {
   width: 28rpx;
   height: 28rpx;
