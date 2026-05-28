@@ -18,15 +18,14 @@
         <hh-pill wx:if="{{latest.tone === 'low'}}" tone="low">↓ 偏低</hh-pill>
         <hh-pill wx:elif="{{latest.tone === 'high' || latest.tone === 'positive'}}" tone="high">↑ 偏高</hh-pill>
         <hh-pill wx:else tone="primary">正常</hh-pill>
-        <hh-pill wx:if="{{!isQualitative}}">参考 {{latest.refRangeLow}}-{{latest.refRangeHigh}}</hh-pill>
-        <hh-pill wx:else>参考 阴性</hh-pill>
+        <hh-pill>{{latest.referenceText}}</hh-pill>
       </view>
       <view class="tiny mt-12">最近一次：{{latest.reportDate}} · {{latest.hospital}}</view>
     </view>
   </view>
 
-  <view wx:if="{{isQualitative}}" class="pad mt-12">
-    <view class="notice">此项为定性指标，结果为阴性 / 阳性，不显示趋势曲线</view>
+  <view wx:if="{{!hasTrendChart}}" class="pad mt-12">
+    <view class="notice">{{trendNotice}}</view>
   </view>
   <view wx:else class="pad mt-12">
     <view class="card card-pad">
@@ -55,7 +54,7 @@
             <text wx:if="{{item.valueType === 'qualitative'}}">{{item.valueQualitative}}</text>
             <text wx:else>{{item.valueNumeric}}</text>
           </view>
-          <view class="tiny" wx:if="{{item.valueType !== 'qualitative'}}">参考 {{item.refRangeLow}}-{{item.refRangeHigh}}</view>
+          <view class="tiny">{{item.referenceText}}</view>
         </view>
         <view class="arrow">›</view>
       </view>

@@ -3,12 +3,32 @@ const { api } = require('../../utils/api');
 const PINNED_TOAST = '\u5df2\u52a0\u5165\u5173\u6ce8';
 const UNPINNED_TOAST = '\u5df2\u53d6\u6d88\u5173\u6ce8';
 
+function formatReference(row) {
+  if (!row || row.valueType === 'qualitative') return '\u53c2\u8003 \u9634\u6027';
+  if (row.refText) return `\u53c2\u8003 ${row.refText}`;
+  const low = row.refRangeLow;
+  const high = row.refRangeHigh;
+  if (low !== null && low !== undefined && high !== null && high !== undefined) return `\u53c2\u8003 ${low}-${high}`;
+  if (low !== null && low !== undefined) return `\u53c2\u8003 >=${low}`;
+  if (high !== null && high !== undefined) return `\u53c2\u8003 <=${high}`;
+  return '\u53c2\u8003 --';
+}
+
+function decorateHistory(history) {
+  return (history || []).map((row) => ({
+    ...row,
+    referenceText: formatReference(row)
+  }));
+}
+
 Page({
   data: {
     metricKey: '',
     latest: null,
     history: [],
     isQualitative: false,
+    hasTrendChart: false,
+    trendNotice: '',
     isPinned: false,
     loading: false
   },
@@ -21,11 +41,18 @@ Page({
   load(metricKey) {
     this.setData({ loading: true });
     api.getMetricHistory(this.profileId, metricKey).then(({ history }) => {
-      const latest = history[0];
+      const decoratedHistory = decorateHistory(history);
+      const latest = decoratedHistory[0];
+      const numericHistoryCount = decoratedHistory.filter((item) => item.valueType !== 'qualitative' && typeof item.valueNumeric === 'number').length;
+      const isQualitative = !!(latest && latest.valueType === 'qualitative');
       this.setData({
         latest,
-        history,
-        isQualitative: latest && latest.valueType === 'qualitative',
+        history: decoratedHistory,
+        isQualitative,
+        hasTrendChart: !isQualitative && numericHistoryCount > 1,
+        trendNotice: isQualitative
+          ? '\u6b64\u9879\u4e3a\u5b9a\u6027\u6307\u6807\uff0c\u7ed3\u679c\u4e3a\u9634\u6027 / \u9633\u6027\uff0c\u4e0d\u663e\u793a\u8d8b\u52bf\u66f2\u7ebf'
+          : (numericHistoryCount <= 1 ? '\u76ee\u524d\u53ea\u6709\u9996\u6b21\u8bb0\u5f55\uff0c\u6682\u4e0d\u7ed8\u5236\u8d8b\u52bf\u7ebf' : ''),
         isPinned: !!(latest && latest.isPinned),
         loading: false
       });
