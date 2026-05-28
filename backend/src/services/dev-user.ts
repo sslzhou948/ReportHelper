@@ -4,7 +4,7 @@ import { getRequestId } from '../utils/request-id.js';
 
 export type DevSession = {
   user: User;
-  profile: Profile;
+  profile: Profile | null;
 };
 
 type ProfileSeed = {
@@ -38,6 +38,16 @@ async function ensureFirstProfile(prisma: PrismaClient, user: User, fallback: Pr
   });
 }
 
+async function findFirstProfile(prisma: PrismaClient, user: User): Promise<Profile | null> {
+  return prisma.profile.findFirst({
+    where: {
+      userId: user.id,
+      deletedAt: null
+    },
+    orderBy: { createdAt: 'asc' }
+  });
+}
+
 export async function ensureDevSession(prisma: PrismaClient): Promise<DevSession> {
   const user = await prisma.user.upsert({
     where: { wxOpenid: 'dev_openid_healthhelper' },
@@ -50,7 +60,7 @@ export async function ensureDevSession(prisma: PrismaClient): Promise<DevSession
 
   const profile = await ensureFirstProfile(prisma, user, {
     relation: '妈妈',
-    realName: '王芳',
+    realName: '王芬',
     gender: 'F',
     diseaseType: '乳腺癌',
     stage: 'IIA 期',
@@ -74,14 +84,7 @@ export async function getCurrentSession(app: FastifyInstance, request: FastifyRe
         where: { id: payload.sub }
       });
       if (!user || user.status !== 'active') throw new Error('user unavailable');
-      const profile = await ensureFirstProfile(app.prisma, user, {
-        relation: '自己',
-        realName: '新档案',
-        gender: '',
-        diseaseType: '',
-        treatmentPhase: '',
-        primaryHospital: ''
-      });
+      const profile = await findFirstProfile(app.prisma, user);
       return { user, profile };
     } catch (error) {
       return null;

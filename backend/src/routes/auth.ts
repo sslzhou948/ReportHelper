@@ -51,32 +51,6 @@ export async function resolveWxLoginSession(env: Env, code: string, fetcher: Fet
   };
 }
 
-function defaultProfileData(userId: string) {
-  return {
-    userId,
-    relation: '自己',
-    realName: '新档案',
-    gender: '',
-    diseaseType: '',
-    treatmentPhase: '',
-    primaryHospital: ''
-  };
-}
-
-async function ensureDefaultProfile(app: FastifyInstance, userId: string) {
-  const existing = await app.prisma.profile.findFirst({
-    where: {
-      userId,
-      deletedAt: null
-    },
-    orderBy: { createdAt: 'asc' }
-  });
-  if (existing) return existing;
-  return app.prisma.profile.create({
-    data: defaultProfileData(userId)
-  });
-}
-
 function buildSession(app: FastifyInstance, userId: string, isNewUser: boolean) {
   const token = app.jwt.sign({ sub: userId, typ: 'access' }, { expiresIn: '2h' });
   const refreshToken = app.jwt.sign({ sub: userId, typ: 'refresh' }, { expiresIn: '30d' });
@@ -129,7 +103,6 @@ export async function registerAuthRoutes(app: FastifyInstance) {
         status: 'active'
       }
     });
-    await ensureDefaultProfile(app, user.id);
 
     return {
       data: buildSession(app, user.id, !existing),
@@ -158,7 +131,6 @@ export async function registerAuthRoutes(app: FastifyInstance) {
         where: { id: payload.sub }
       });
       if (!user || user.status !== 'active') throw new Error('user unavailable');
-      await ensureDefaultProfile(app, user.id);
       return {
         data: buildSession(app, user.id, false),
         requestId

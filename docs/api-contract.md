@@ -360,6 +360,8 @@ When a real Prisma database check fails, the endpoint returns HTTP `503` with `d
 }
 ```
 
+登录接口只建立微信身份和后端 session，不自动创建默认档案。客户端登录后应调用 `GET /api/profiles`：若返回已有档案则进入主页；若为空数组，则进入首次建档流程。
+
 ### POST `/api/auth/refresh`
 
 请求：

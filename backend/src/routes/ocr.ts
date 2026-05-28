@@ -201,7 +201,28 @@ export async function registerOcrRoutes(app: FastifyInstance) {
       }
     }
 
-    const profileId = parsed.data.profileId || defaultProfile.id;
+    const isFixtureTask = !!(parsed.data.fixtureCaseIds && parsed.data.fixtureCaseIds.length);
+    if (isFixtureTask && app.env.NODE_ENV === 'production') {
+      return reply.status(403).send({
+        error: {
+          code: 'FORBIDDEN',
+          message: 'Fixture OCR is disabled in production'
+        },
+        requestId
+      });
+    }
+
+    const profileId = parsed.data.profileId || defaultProfile?.id;
+    if (!profileId) {
+      return reply.status(400).send({
+        error: {
+          code: 'PROFILE_REQUIRED',
+          message: 'Please create a profile before creating OCR tasks'
+        },
+        requestId
+      });
+    }
+
     const profile = await app.prisma.profile.findFirst({
       where: {
         id: profileId,
@@ -215,17 +236,6 @@ export async function registerOcrRoutes(app: FastifyInstance) {
         error: {
           code: 'NOT_FOUND',
           message: '档案不存在'
-        },
-        requestId
-      });
-    }
-
-    const isFixtureTask = !!(parsed.data.fixtureCaseIds && parsed.data.fixtureCaseIds.length);
-    if (isFixtureTask && app.env.NODE_ENV === 'production') {
-      return reply.status(403).send({
-        error: {
-          code: 'FORBIDDEN',
-          message: 'Fixture OCR is disabled in production'
         },
         requestId
       });

@@ -291,7 +291,13 @@ export async function registerReportRoutes(app: FastifyInstance) {
           requestId
         });
       }
-      profileId = task.profileId || defaultProfile.id;
+      profileId = task.profileId || defaultProfile?.id || '';
+      if (!profileId) {
+        return reply.status(400).send({
+          error: { code: 'PROFILE_REQUIRED', message: 'Please create a profile before saving reports' },
+          requestId
+        });
+      }
     }
     const profile = await app.prisma.profile.findFirst({
       where: {

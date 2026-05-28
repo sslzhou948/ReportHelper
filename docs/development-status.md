@@ -23,6 +23,7 @@ Updated: 2026-05-29
 - Prisma now has an initial PostgreSQL migration and a drift check that compares the committed migration against the current schema without requiring a running database.
 - Backend health check now reports database readiness when a real Prisma client is available, giving the future admin system-health page a reusable API signal.
 - Backend local database scripts now expose `db:up`, `db:down`, and `db:reset` around the checked-in PostgreSQL compose service.
+- Onboarding now separates WeChat login from first-profile creation; returning users can log in directly, and backend auth no longer creates a silent default profile.
 
 ## Verified Commands
 

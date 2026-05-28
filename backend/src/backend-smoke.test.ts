@@ -135,7 +135,7 @@ const prodProfilesResponse = await prodApp.inject({
   }
 });
 assert.equal(prodProfilesResponse.statusCode, 200);
-assert.ok(prodProfilesResponse.json().data.length >= 1);
+assert.equal(prodProfilesResponse.json().data.length, 0);
 const prodFixtureResponse = await prodApp.inject({
   method: 'POST',
   url: '/api/ocr/tasks',
