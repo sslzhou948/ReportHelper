@@ -453,6 +453,10 @@ function createMockApi() {
       const metric = payload.metric || {};
       const reportDate = payload.reportDate || new Date().toISOString().slice(0, 10);
       const draftId = `manual_${Date.now()}`;
+      const category = metric.category || 'custom';
+      const isImagingCategory = ['imaging', 'ultrasound'].includes(category);
+      const isViewOnly = ['imaging', 'ultrasound', 'pathology'].includes(category) || metric.valueType === 'text';
+      const findings = metric.valueType === 'text' && metric.valueQualitative ? [metric.valueQualitative] : [];
       const report = toPersistedReport({
         draftId,
         sourcePhotoIds: [],
@@ -460,10 +464,10 @@ function createMockApi() {
         basicInfo: {
           type: metric.categoryCn || '\u624b\u52a8\u5f55\u5165',
           originalType: metric.categoryCn || '\u624b\u52a8\u5f55\u5165',
-          typeKey: `manual_${metric.category || 'custom'}`,
+          typeKey: `manual_${category}`,
           canonicalTypeName: metric.categoryCn || '\u624b\u52a8\u5f55\u5165',
-          modality: 'laboratory',
-          analysisPolicy: 'metric_analysis',
+          modality: isImagingCategory ? 'imaging' : 'laboratory',
+          analysisPolicy: isViewOnly ? 'view_only' : 'metric_analysis',
           hospital: payload.hospital || '\u624b\u52a8\u5f55\u5165',
           hospitalSource: payload.hospital ? 'user_edited' : 'unknown',
           reportDate,
@@ -477,7 +481,7 @@ function createMockApi() {
           mappingStatus: metric.mappingStatus || 'confirmed',
           isManuallyEdited: true
         }],
-        findings: [],
+        findings,
         warnings: [],
         status: 'confirmed',
         note: payload.note || ''

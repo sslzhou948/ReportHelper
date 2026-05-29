@@ -24,10 +24,12 @@ function buildForm(template) {
     hospital: '',
     valueNumeric: '',
     valueQualitative: template.valueType === 'qualitative' ? '阴性' : '',
+    valueText: '',
     qualitativeIndex: 0,
     unit: template.unit || '',
     refRangeLow: template.refRangeLow === null || template.refRangeLow === undefined ? '' : String(template.refRangeLow),
     refRangeHigh: template.refRangeHigh === null || template.refRangeHigh === undefined ? '' : String(template.refRangeHigh),
+    refText: template.refText || '',
     note: ''
   };
 }
@@ -87,8 +89,12 @@ Page({
       wx.showToast({ title: '\u8bf7\u9009\u62e9\u7ed3\u679c', icon: 'none' });
       return;
     }
-    if (template.valueType !== 'qualitative' && toNumberOrNull(form.valueNumeric) === null) {
+    if (template.valueType === 'quantitative' && toNumberOrNull(form.valueNumeric) === null) {
       wx.showToast({ title: '\u8bf7\u586b\u5199\u7ed3\u679c\u6570\u503c', icon: 'none' });
+      return;
+    }
+    if (template.valueType === 'text' && !String(form.valueText || '').trim()) {
+      wx.showToast({ title: '\u8bf7\u586b\u5199\u68c0\u67e5\u63cf\u8ff0', icon: 'none' });
       return;
     }
     this.setData({ saving: true });
@@ -104,11 +110,13 @@ Page({
         category: template.category || 'custom',
         categoryCn: template.categoryCn || '\u81ea\u5b9a\u4e49',
         valueType: template.valueType || 'quantitative',
-        valueNumeric: template.valueType === 'qualitative' ? null : toNumberOrNull(form.valueNumeric),
-        valueQualitative: template.valueType === 'qualitative' ? form.valueQualitative : '',
+        valueNumeric: template.valueType === 'quantitative' ? toNumberOrNull(form.valueNumeric) : null,
+        valueQualitative: template.valueType === 'qualitative' ? form.valueQualitative : (template.valueType === 'text' ? form.valueText : ''),
         unit: form.unit,
         refRangeLow: toNumberOrNull(form.refRangeLow),
         refRangeHigh: toNumberOrNull(form.refRangeHigh),
+        refQualitative: template.refQualitative || '',
+        refText: form.refText,
         mappingStatus: 'confirmed',
         isManuallyEdited: true
       }

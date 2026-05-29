@@ -42,9 +42,9 @@ Page({
   },
 
   goManual() {
-    wx.redirectTo({
+    wx.navigateTo({
       url: '/pages/profile/custom-metrics?mode=select',
-      fail: (error) => wx.setStorageSync('lastManualRouteError', error && error.errMsg ? error.errMsg : 'redirectTo failed')
+      fail: (error) => wx.setStorageSync('lastManualRouteError', error && error.errMsg ? error.errMsg : 'navigateTo failed')
     });
   },
 

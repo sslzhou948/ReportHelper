@@ -106,6 +106,8 @@ async function waitForPath(miniProgram, expectedPath, timeout = 5000) {
     console.log('manual record entry smoke passed');
 
     await miniProgram.navigateBack();
+    page = await waitForPath(miniProgram, 'pages/record/new', 6000);
+    assert.strictEqual(page.path, 'pages/record/new', 'manual selector should return to record entry first');
     await miniProgram.navigateBack();
     page = await waitForPath(miniProgram, 'pages/home/index', 6000);
     assert.strictEqual(page.path, 'pages/home/index', 'manual selector should allow returning to home');

@@ -76,14 +76,18 @@ const profileOnboardWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', '
 const profileOnboardWxss = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'onboard.wxss'), 'utf8');
 const profileAgreementWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'agreement.wxml'), 'utf8');
 const profilePrivacyWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'privacy.wxml'), 'utf8');
+const profileIndexWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'index.wxml'), 'utf8');
 const profileIndexJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'index.js'), 'utf8');
 const profileCustomMetricsJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'custom-metrics.js'), 'utf8');
+const profileCustomMetricsWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'custom-metrics.wxml'), 'utf8');
 const profileExportJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'export.js'), 'utf8');
 const profileExportWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'export.wxml'), 'utf8');
 const profileReportsArchiveJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'reports-archive.js'), 'utf8');
 const profileAddJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'add.js'), 'utf8');
 const profileArchiveJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'archive.js'), 'utf8');
 const reportDetailJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'health', 'report-detail.js'), 'utf8');
+const reportDetailWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'health', 'report-detail.wxml'), 'utf8');
+const manualEntryWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'record', 'manual-entry.wxml'), 'utf8');
 const metricDetailJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'health', 'metric-detail.js'), 'utf8');
 const metricDetailWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'health', 'metric-detail.wxml'), 'utf8');
 const pinnedManageJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'health', 'pinned-manage.js'), 'utf8');
@@ -114,10 +118,13 @@ assert.ok(!homeWxml.includes('新增{{profile.relation}}') && !homeWxml.includes
 assert.ok(homeIndexJs.includes('reportDisplayType(report)') && homeWxml.includes('{{item.displayType}}'), 'home recent reports must display manual metric names instead of only custom categories');
 assert.ok(homeIndexJs.includes('label.length > 4') && homeIndexJs.includes('label.slice(0, 3)'), 'home recent report labels must be capped at four visible characters including ellipsis');
 assert.ok(recordNewJs.includes('/pages/upload/pick') && recordNewJs.includes('/pages/profile/custom-metrics?mode=select'), 'record entry must split only into photo recognition and manual entry');
-assert.ok(profileIndexJs.includes('/pages/profile/custom-metrics?mode=manage'), 'profile page must expose custom metric library management');
+assert.ok(profileIndexJs.includes('/pages/profile/custom-metrics?mode=manage') && profileIndexWxml.includes('维护手动录入模板') && !profileIndexWxml.includes('我的检查项目'), 'profile page must name the custom metric area by its manual-entry function');
 assert.ok(profileCustomMetricsJs.includes("const mode = query.mode === 'select' ? 'select' : 'manage'") && profileCustomMetricsJs.includes('isSelectMode'), 'custom metric page must be reusable for select and manage modes');
+assert.ok(profileCustomMetricsJs.includes("'text'") && profileCustomMetricsJs.includes('CATEGORY_OPTIONS') && profileCustomMetricsWxml.includes('检查类型') && profileCustomMetricsWxml.includes('参考范围'), 'manual template management must capture exam type, result type, and reference values');
 assert.ok(manualEntryJs.includes('api.createManualReport'), 'manual entry must persist through the manual report API');
 assert.ok(manualEntryJs.includes("mappingStatus: 'confirmed'"), 'manual custom metrics must be followable in the user profile without waiting for public mapping review');
+assert.ok(manualEntryWxml.includes('自定义模板') && manualEntryWxml.includes('textarea') && manualEntryJs.includes("template.valueType === 'text'"), 'manual entry must label custom templates and support text-only exam results');
+assert.ok(reportDetailJs.includes("dataset.valueType === 'text'") && reportDetailWxml.includes("item.valueType !== 'text'"), 'text-only manual reports must not route users into metric trend analysis');
 const nativeHomeLayoutClasses = [
   'ocr-card',
   'upload-cta',

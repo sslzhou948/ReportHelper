@@ -28,21 +28,29 @@
         <view class="field-label">医院</view>
         <input class="field-input" value="{{form.hospital}}" placeholder="可不填" data-field="hospital" bindinput="onInput" />
       </view>
+      <view wx:if="{{template.source === 'custom'}}" class="row form-row">
+        <view class="field-label">来源</view>
+        <view class="field-value custom-source">自定义模板</view>
+      </view>
       <view wx:if="{{template.valueType === 'qualitative'}}" class="row form-row">
         <view class="field-label">结果</view>
         <picker range="{{qualitativeOptions}}" value="{{form.qualitativeIndex}}" bindchange="onQualitativeChange">
           <view class="field-value">{{form.valueQualitative || '请选择'}}</view>
         </picker>
       </view>
+      <view wx:elif="{{template.valueType === 'text'}}" class="text-form-row">
+        <view class="field-label">描述</view>
+        <textarea class="text-input" value="{{form.valueText}}" placeholder="{{form.refText || '填写检查所见或医生结论'}}" data-field="valueText" bindinput="onInput" auto-height />
+      </view>
       <view wx:else class="row form-row">
         <view class="field-label">结果</view>
         <input class="field-input value" type="digit" value="{{form.valueNumeric}}" placeholder="填写数值" data-field="valueNumeric" bindinput="onInput" />
       </view>
-      <view class="row form-row">
+      <view wx:if="{{template.valueType !== 'text'}}" class="row form-row">
         <view class="field-label">单位</view>
         <input class="field-input" value="{{form.unit}}" placeholder="如 ng/mL" data-field="unit" bindinput="onInput" />
       </view>
-      <view wx:if="{{template.valueType !== 'qualitative'}}" class="row form-row ref-row">
+      <view wx:if="{{template.valueType === 'quantitative'}}" class="row form-row ref-row">
         <view class="field-label">参考范围</view>
         <input class="ref-input" type="digit" value="{{form.refRangeLow}}" placeholder="下限" data-field="refRangeLow" bindinput="onInput" />
         <view class="range-dash">-</view>

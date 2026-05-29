@@ -34,6 +34,31 @@
   color: var(--primary);
 }
 
+.custom-source {
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.text-form-row {
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid var(--border-soft);
+}
+
+.text-form-row .field-label {
+  margin-bottom: 14rpx;
+}
+
+.text-input {
+  width: 100%;
+  min-height: 180rpx;
+  padding: 20rpx;
+  border-radius: 22rpx;
+  background: #F6F3EE;
+  box-sizing: border-box;
+  color: var(--ink);
+  line-height: 1.55;
+}
+
 .ref-row {
   gap: 14rpx;
 }

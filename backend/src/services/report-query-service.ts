@@ -213,6 +213,7 @@ export async function getReportDetail(prisma: PrismaClient, reportId: string, us
 }
 
 function calculateMetricTone(metric: { valueType?: string; valueNumeric?: unknown; valueQualitative?: unknown; refRangeLow?: unknown; refRangeHigh?: unknown; tone?: unknown }) {
+  if (metric.valueType === 'text') return 'unknown';
   if (metric.valueType === 'qualitative') {
     const value = String(metric.valueQualitative || '');
     return value && value !== '阴性' ? 'positive' : 'ok';
@@ -236,7 +237,7 @@ function metricUpdateData(metric: Record<string, unknown>) {
     mappingStatus: String(metric.mappingStatus || 'confirmed'),
     valueType,
     valueNumeric: valueType === 'quantitative' ? toNumber(metric.valueNumeric as Prisma.Decimal | number | string | null | undefined) : null,
-    valueQualitative: valueType === 'qualitative' ? String(metric.valueQualitative || '') : null,
+    valueQualitative: ['qualitative', 'text'].includes(valueType) ? String(metric.valueQualitative || '') : null,
     unit: metric.unit !== undefined ? String(metric.unit || '') : null,
     normalizedUnit: metric.normalizedUnit ? String(metric.normalizedUnit) : null,
     refRangeLow: toNumber(metric.refRangeLow as Prisma.Decimal | number | string | null | undefined),
@@ -353,6 +354,10 @@ export async function updateReportDetail(prisma: PrismaClient, reportId: string,
 export async function createManualReport(prisma: PrismaClient, profileId: string, userId: string, payload: { reportDate?: string; hospital?: string; note?: string; metric?: Record<string, unknown> }) {
   const metric = payload.metric || {};
   const valueType = String(metric.valueType || 'quantitative');
+  const category = String(metric.category || 'custom');
+  const isImagingCategory = ['imaging', 'ultrasound'].includes(category);
+  const isViewOnly = ['imaging', 'ultrasound', 'pathology'].includes(category) || valueType === 'text';
+  const findings = valueType === 'text' && metric.valueQualitative ? [String(metric.valueQualitative)] : [];
   const reportDate = new Date(String(payload.reportDate || new Date().toISOString().slice(0, 10)));
   const createdId = await prisma.$transaction(async (tx) => {
     const profile = await tx.profile.findFirst({
@@ -382,17 +387,17 @@ export async function createManualReport(prisma: PrismaClient, profileId: string
         userId,
         type: String(metric.categoryCn || '手动录入'),
         originalType: String(metric.categoryCn || '手动录入'),
-        typeKey: `manual_${String(metric.category || 'custom')}`,
+        typeKey: `manual_${category}`,
         canonicalTypeName: String(metric.categoryCn || '手动录入'),
-        modality: 'laboratory',
+        modality: isImagingCategory ? 'imaging' : 'laboratory',
         examPart: '',
         examMethod: '',
-        analysisPolicy: 'metric_analysis',
+        analysisPolicy: isViewOnly ? 'view_only' : 'metric_analysis',
         hospital: String(payload.hospital || '手动录入'),
         hospitalSource: payload.hospital ? 'user_edited' : 'unknown',
         reportDate,
         reportDateSource: 'user_edited',
-        findings: [],
+        findings,
         warnings: [],
         abnormalCount: ['ok', 'unknown'].includes(metricData.tone) ? 0 : 1,
         note: payload.note ? String(payload.note) : null

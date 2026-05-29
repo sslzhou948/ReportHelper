@@ -24,16 +24,16 @@
     <view class="section-title">{{item.categoryCn}}</view>
     <view class="pad">
       <view class="card">
-        <view wx:for="{{item.items}}" wx:key="metricKey" class="row metric-row {{item.tone}}" data-key="{{item.metricKey}}" bindtap="goMetric">
+        <view wx:for="{{item.items}}" wx:key="metricKey" class="row metric-row {{item.tone}}" data-key="{{item.metricKey}}" data-value-type="{{item.valueType}}" bindtap="goMetric">
           <view class="flex">
             <view class="body strong">{{item.metricName}}</view>
-            <view class="tiny">参考 {{item.refRangeLow}}-{{item.refRangeHigh}}</view>
+            <view wx:if="{{item.valueType !== 'text'}}" class="tiny">参考 {{item.refRangeLow}}-{{item.refRangeHigh}}</view>
           </view>
           <view class="right">
             <view class="metric-value {{item.tone}}">{{item.valueNumeric || item.valueQualitative}}</view>
             <view class="tiny">{{item.unit}}</view>
           </view>
-          <view class="trend-icon">趋</view>
+          <view wx:if="{{item.valueType !== 'text'}}" class="trend-icon">趋</view>
         </view>
       </view>
     </view>

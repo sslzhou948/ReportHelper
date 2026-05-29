@@ -38,6 +38,18 @@
   color: var(--ink);
 }
 
+.range-inputs {
+  display: grid;
+  grid-template-columns: 1fr 28rpx 1fr;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.range-dash {
+  color: var(--ink-3);
+  text-align: center;
+}
+
 .picker-value {
   display: flex;
   align-items: center;

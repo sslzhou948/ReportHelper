@@ -9,7 +9,55 @@
   <loading-slow-banner visible="{{loadingSlow}}" bind:retry="retrySlowLoading" bind:cancel="cancelSlowLoading" />
 
   <view class="pad mt-12">
-    <input class="search-input" value="{{keyword}}" placeholder="搜索检查项目" bindinput="onSearchInput" />
+    <input class="search-input" value="{{keyword}}" placeholder="搜索录入模板" bindinput="onSearchInput" />
+  </view>
+
+  <view wx:if="{{editing}}" class="pad mt-12">
+    <view class="card card-pad edit-card">
+      <view class="title">{{formTitle}}</view>
+      <view class="form-row">
+        <view class="label">模板名称</view>
+        <input class="form-input" value="{{form.metricName}}" placeholder="如 XX血药浓度、胸部CT" data-field="metricName" bindinput="onFormInput" />
+      </view>
+      <view class="form-row two">
+        <view>
+          <view class="label">检查类型</view>
+          <picker range="{{categoryLabels}}" value="{{form.categoryIndex}}" bindchange="onCategoryChange">
+            <view class="form-input picker-value">{{form.categoryCn}}</view>
+          </picker>
+        </view>
+        <view>
+          <view class="label">结果类型</view>
+          <picker range="{{valueTypeLabels}}" value="{{form.valueTypeIndex}}" bindchange="onValueTypeChange">
+            <view class="form-input picker-value">{{form.valueTypeLabel}}</view>
+          </picker>
+        </view>
+      </view>
+      <view wx:if="{{form.valueType !== 'text'}}" class="form-row">
+        <view class="label">默认单位</view>
+        <input class="form-input" value="{{form.unit}}" placeholder="如 ng/mL、mmol/L，可不填" data-field="unit" bindinput="onFormInput" />
+      </view>
+      <view wx:if="{{form.valueType === 'quantitative'}}" class="form-row">
+        <view class="label">参考范围</view>
+        <view class="range-inputs">
+          <input class="form-input" type="digit" value="{{form.refRangeLow}}" placeholder="下限" data-field="refRangeLow" bindinput="onFormInput" />
+          <view class="range-dash">-</view>
+          <input class="form-input" type="digit" value="{{form.refRangeHigh}}" placeholder="上限" data-field="refRangeHigh" bindinput="onFormInput" />
+        </view>
+      </view>
+      <view wx:elif="{{form.valueType === 'qualitative'}}" class="form-row">
+        <view class="label">默认参考</view>
+        <input class="form-input" value="{{form.refQualitative}}" placeholder="如 阴性" data-field="refQualitative" bindinput="onFormInput" />
+      </view>
+      <view wx:else class="form-row">
+        <view class="label">描述提示</view>
+        <input class="form-input" value="{{form.refText}}" placeholder="如 填写影像所见或医生结论" data-field="refText" bindinput="onFormInput" />
+      </view>
+      <view class="form-actions">
+        <view class="btn secondary compact" bindtap="cancelEdit">取消</view>
+        <view class="btn compact" bindtap="saveTemplate">{{saveText}}</view>
+      </view>
+    </view>
   </view>
 
   <view class="section-title">
@@ -24,15 +72,15 @@
           <view class="body strong">{{item.metricName}}</view>
           <view class="tiny">{{item.categoryCn}}<text wx:if="{{item.unit}}"> · {{item.unit}}</text><text wx:if="{{item.measureCount}}"> · 已记录 {{item.measureCount}} 次</text></view>
         </view>
-        <view wx:if="{{item.source === 'custom'}}" class="pill primary">个人</view>
+        <view wx:if="{{item.source === 'custom'}}" class="pill primary">自定义</view>
         <view wx:if="{{isManageMode && item.source === 'custom'}}" class="mini-link" catchtap="editMetric" data-key="{{item.metricKey}}">编辑</view>
         <view wx:if="{{isManageMode && item.source === 'custom'}}" class="delete-link" catchtap="deleteMetric" data-key="{{item.metricKey}}">删除</view>
         <view wx:if="{{isSelectMode}}" class="arrow">›</view>
       </view>
       <view wx:if="{{filteredItems.length === 0}}" class="empty-block">
-        <view class="body strong">没有找到检查项目</view>
-        <view class="tiny mt-8">可以新建一个个人检查项目，之后每次手动录入都能复用。</view>
-        <view class="btn mt-12" bindtap="startCreate">新建检查项目</view>
+        <view class="body strong">没有找到录入模板</view>
+        <view class="tiny mt-8">可以新建一个手动录入模板，之后每次录入都能复用默认单位和参考值。</view>
+        <view class="btn mt-12" bindtap="startCreate">新建录入模板</view>
       </view>
     </view>
   </view>

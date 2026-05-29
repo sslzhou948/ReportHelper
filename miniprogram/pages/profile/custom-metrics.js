@@ -14,36 +14,52 @@ const {
 const { bindNetworkStatus, refreshNetworkStatus } = require('../../utils/network');
 const { isProfileRequiredError } = require('../../utils/profile');
 
-const VALUE_TYPES = ['quantitative', 'qualitative'];
-const VALUE_TYPE_LABELS = ['数值', '阴性/阳性'];
+const VALUE_TYPES = ['quantitative', 'qualitative', 'text'];
+const VALUE_TYPE_LABELS = ['数值', '阴性/阳性', '文字描述'];
+const CATEGORY_OPTIONS = [
+  { key: 'custom', label: '自定义检查' },
+  { key: 'laboratory', label: '血液/化验' },
+  { key: 'drug_level', label: '血药浓度' },
+  { key: 'imaging', label: 'CT/核磁/影像' },
+  { key: 'ultrasound', label: '彩超/超声' },
+  { key: 'pathology', label: '病理/其他' }
+];
+const CATEGORY_LABELS = CATEGORY_OPTIONS.map((item) => item.label);
+const TEXT_CATEGORY_KEYS = ['imaging', 'ultrasound', 'pathology'];
 
 function emptyForm() {
   return {
     metricKey: '',
     metricName: '',
     category: 'custom',
-    categoryCn: '自定义',
+    categoryCn: '自定义检查',
+    categoryIndex: 0,
     valueType: 'quantitative',
     valueTypeIndex: 0,
     valueTypeLabel: VALUE_TYPE_LABELS[0],
     unit: '',
     refRangeLow: '',
     refRangeHigh: '',
-    refQualitative: '阴性'
+    refQualitative: '阴性',
+    refText: ''
   };
 }
 
 function normalizeForm(metric = {}) {
   const valueType = metric.valueType || 'quantitative';
   const valueTypeIndex = VALUE_TYPES.indexOf(valueType) >= 0 ? VALUE_TYPES.indexOf(valueType) : 0;
+  const categoryIndex = CATEGORY_OPTIONS.findIndex((item) => item.key === metric.category);
   return {
     ...emptyForm(),
     ...metric,
+    categoryIndex: categoryIndex >= 0 ? categoryIndex : 0,
+    categoryCn: metric.categoryCn || (categoryIndex >= 0 ? CATEGORY_OPTIONS[categoryIndex].label : '自定义检查'),
     valueType,
     valueTypeIndex,
     valueTypeLabel: VALUE_TYPE_LABELS[valueTypeIndex],
     refRangeLow: metric.refRangeLow === null || metric.refRangeLow === undefined ? '' : String(metric.refRangeLow),
-    refRangeHigh: metric.refRangeHigh === null || metric.refRangeHigh === undefined ? '' : String(metric.refRangeHigh)
+    refRangeHigh: metric.refRangeHigh === null || metric.refRangeHigh === undefined ? '' : String(metric.refRangeHigh),
+    refText: metric.refText || ''
   };
 }
 
@@ -52,15 +68,16 @@ Page({
     mode: 'manage',
     isSelectMode: false,
     isManageMode: true,
-    pageTitle: '我的检查项目',
-    sectionTitle: '个人自定义',
+    pageTitle: '维护手动录入模板',
+    sectionTitle: '自定义录入模板',
     saveText: '保存',
-    formTitle: '新建检查项目',
+    formTitle: '新建录入模板',
     keyword: '',
     items: [],
     filteredItems: [],
     editing: false,
     form: emptyForm(),
+    categoryLabels: CATEGORY_LABELS,
     valueTypeLabels: VALUE_TYPE_LABELS,
     networkOffline: false,
     loading: false,
@@ -73,8 +90,8 @@ Page({
       mode,
       isSelectMode: mode === 'select',
       isManageMode: mode === 'manage',
-      pageTitle: mode === 'select' ? '选择检查项目' : '我的检查项目',
-      sectionTitle: mode === 'select' ? '可录入项目' : '个人自定义',
+      pageTitle: mode === 'select' ? '选择录入模板' : '维护手动录入模板',
+      sectionTitle: mode === 'select' ? '可录入模板' : '自定义录入模板',
       saveText: mode === 'select' ? '保存并录入' : '保存'
     });
   },
@@ -123,51 +140,20 @@ Page({
   },
 
   startCreate() {
-    wx.showModal({
-      title: '\u65b0\u5efa\u68c0\u67e5\u9879\u76ee',
-      editable: true,
-      placeholderText: '\u5982 XX\u8840\u836f\u6d53\u5ea6',
-      success: (res) => {
-        if (!res.confirm) return;
-        const metricName = String(res.content || '').trim();
-        if (!metricName) {
-          wx.showToast({ title: '\u8bf7\u586b\u5199\u9879\u76ee\u540d\u79f0', icon: 'none' });
-          return;
-        }
-        const saved = saveCustomMetric(this.profileId, {
-          metricName,
-          category: 'custom',
-          categoryCn: '\u81ea\u5b9a\u4e49',
-          valueType: 'quantitative',
-          unit: ''
-        });
-        if (this.data.mode === 'select') {
-          wx.setStorageSync('manualEntryTemplate', saved);
-          wx.navigateTo({ url: `/pages/record/manual-entry?metricKey=${saved.metricKey}` });
-          return;
-        }
-        this.load();
-      }
+    this.setData({
+      editing: true,
+      formTitle: '新建录入模板',
+      form: emptyForm()
     });
   },
 
   editMetric(event) {
     const metric = this.data.items.find((item) => item.metricKey === event.currentTarget.dataset.key);
     if (!metric) return;
-    wx.showModal({
-      title: '\u7f16\u8f91\u9879\u76ee\u540d\u79f0',
-      editable: true,
-      placeholderText: metric.metricName,
-      success: (res) => {
-        if (!res.confirm) return;
-        const metricName = String(res.content || '').trim();
-        if (!metricName) return;
-        saveCustomMetric(this.profileId, {
-          ...metric,
-          metricName
-        });
-        this.load();
-      }
+    this.setData({
+      editing: true,
+      formTitle: '编辑录入模板',
+      form: normalizeForm(metric)
     });
   },
 
@@ -203,18 +189,35 @@ Page({
     });
   },
 
+  onCategoryChange(event) {
+    const index = Number(event.detail.value) || 0;
+    const option = CATEGORY_OPTIONS[index] || CATEGORY_OPTIONS[0];
+    const nextForm = {
+      ...this.data.form,
+      categoryIndex: index,
+      category: option.key,
+      categoryCn: option.label
+    };
+    if (TEXT_CATEGORY_KEYS.includes(option.key) && nextForm.valueType === 'quantitative') {
+      nextForm.valueTypeIndex = 2;
+      nextForm.valueType = 'text';
+      nextForm.valueTypeLabel = VALUE_TYPE_LABELS[2];
+    }
+    this.setData({ form: nextForm });
+  },
+
   cancelEdit() {
-    this.setData({ editing: false, formTitle: '新建检查项目', form: emptyForm() });
+    this.setData({ editing: false, formTitle: '新建录入模板', form: emptyForm() });
   },
 
   saveTemplate() {
     const form = this.data.form;
     if (!String(form.metricName || '').trim()) {
-      wx.showToast({ title: '\u8bf7\u586b\u5199\u9879\u76ee\u540d\u79f0', icon: 'none' });
+      wx.showToast({ title: '\u8bf7\u586b\u5199\u6a21\u677f\u540d\u79f0', icon: 'none' });
       return;
     }
     const saved = saveCustomMetric(this.profileId, form);
-    this.setData({ editing: false, formTitle: '新建检查项目', form: emptyForm() });
+    this.setData({ editing: false, formTitle: '新建录入模板', form: emptyForm() });
     if (this.data.mode === 'select') {
       wx.setStorageSync('manualEntryTemplate', saved);
       wx.navigateTo({ url: `/pages/record/manual-entry?metricKey=${saved.metricKey}` });

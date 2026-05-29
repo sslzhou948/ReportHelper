@@ -47,6 +47,7 @@ Page({
     wx.navigateBack();
   },
   goMetric(event) {
+    if (event.currentTarget.dataset.valueType === 'text') return;
     wx.navigateTo({ url: `/pages/health/metric-detail?metricKey=${event.currentTarget.dataset.key}` });
   },
   showEdit() {
