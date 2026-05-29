@@ -237,6 +237,7 @@ function metricUpdateData(metric: Record<string, unknown>) {
     valueType,
     valueNumeric: valueType === 'quantitative' ? toNumber(metric.valueNumeric as Prisma.Decimal | number | string | null | undefined) : null,
     valueQualitative: valueType === 'qualitative' ? String(metric.valueQualitative || '') : null,
+    unit: metric.unit !== undefined ? String(metric.unit || '') : null,
     normalizedUnit: metric.normalizedUnit ? String(metric.normalizedUnit) : null,
     refRangeLow: toNumber(metric.refRangeLow as Prisma.Decimal | number | string | null | undefined),
     refRangeHigh: toNumber(metric.refRangeHigh as Prisma.Decimal | number | string | null | undefined),
@@ -245,6 +246,16 @@ function metricUpdateData(metric: Record<string, unknown>) {
     tone: calculateMetricTone(metric),
     ocrConfidence: toNumber(metric.ocrConfidence as Prisma.Decimal | number | string | null | undefined),
     isManuallyEdited: !!metric.isManuallyEdited
+  };
+}
+
+function metricCreateData(report: ReportWithMetrics, metric: Record<string, unknown>, index: number) {
+  return {
+    reportId: report.id,
+    profileId: report.profileId,
+    metricKey: String(metric.metricKey || `manual_metric_${Date.now()}_${index}`),
+    reportDate: report.reportDate,
+    ...metricUpdateData(metric)
   };
 }
 
@@ -287,20 +298,41 @@ export async function updateReportDetail(prisma: PrismaClient, reportId: string,
     let abnormalCount = report.abnormalCount;
     if (payload.metrics) {
       const existingMetricIds = new Set(report.metrics.map((metric) => metric.id));
-      const updatedMetrics = payload.metrics
-        .filter((metric) => metric.id && existingMetricIds.has(String(metric.id)))
-        .map((metric) => ({
-          id: String(metric.id),
-          data: metricUpdateData(metric)
-        }));
+      const updatedMetrics: Array<{ id: string; data: ReturnType<typeof metricUpdateData> }> = [];
+      const createdMetrics: Array<ReturnType<typeof metricCreateData>> = [];
+      payload.metrics.forEach((metric, index) => {
+        if (metric.id && existingMetricIds.has(String(metric.id))) {
+          updatedMetrics.push({
+            id: String(metric.id),
+            data: metricUpdateData(metric)
+          });
+          return;
+        }
+        createdMetrics.push(metricCreateData(report as unknown as ReportWithMetrics, metric, index));
+      });
 
-      abnormalCount = updatedMetrics.filter((metric) => !['ok', 'unknown'].includes(metric.data.tone)).length;
+      await tx.reportMetricValue.deleteMany({
+        where: {
+          reportId: report.id,
+          id: {
+            notIn: updatedMetrics.map((metric) => metric.id)
+          }
+        }
+      });
+
       for (const metric of updatedMetrics) {
         await tx.reportMetricValue.update({
           where: { id: metric.id },
           data: metric.data
         });
       }
+      if (createdMetrics.length) {
+        await tx.reportMetricValue.createMany({
+          data: createdMetrics
+        });
+      }
+      abnormalCount = [...updatedMetrics.map((metric) => metric.data), ...createdMetrics]
+        .filter((metric) => !['ok', 'unknown'].includes(metric.tone)).length;
     }
 
     await tx.report.update({

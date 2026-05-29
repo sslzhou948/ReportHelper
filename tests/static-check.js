@@ -144,6 +144,7 @@ assert.ok(uploadEditDetailJs.includes('deleteMetric(event)') && uploadEditDetail
 assert.ok(uploadEditDetailWxml.includes('wx:if="{{isImagingReport}}" class="btn secondary" bindtap="addFinding"'), 'upload edit detail must only expose add finding for imaging reports');
 assert.ok(uploadEditDetailWxml.includes('catchtap="deleteMetric"') && uploadEditDetailWxml.includes('catchtap="deleteFinding"'), 'upload edit detail delete controls must not trigger parent field editing');
 assert.ok(uploadEditDetailWxss.includes('.delete-x'), 'upload edit detail must style row-level delete controls');
+assert.ok(uploadEditDetailWxml.includes('data-field="unit"') && uploadEditDetailWxml.includes('class="mini-input unit-input"'), 'upload edit detail must allow unit editing for OCR and manual metrics');
 assert.ok(!uploadEditDetailJs.includes("value: '32'"), 'upload edit detail must not ship hardcoded metric fixtures');
 assert.ok(uploadConflictJs.includes('showApiErrorToast(error'), 'upload conflict page must surface normalized API errors');
 assert.ok(!reportDetailJs.includes('api.updateReport(this.reportId'), 'report detail edit entry must not auto-save report data');

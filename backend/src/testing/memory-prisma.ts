@@ -277,6 +277,15 @@ export class MemoryPrisma {
       if (!metric) throw new Error('metric not found');
       Object.assign(metric, data, { updatedAt: now() });
       return metric;
+    },
+    deleteMany: async ({ where }: any) => {
+      const before = this.reportMetricValues.length;
+      this.reportMetricValues = this.reportMetricValues.filter((metric) => {
+        if (where.reportId && metric.reportId !== where.reportId) return true;
+        if (where.id?.notIn && where.id.notIn.includes(metric.id)) return true;
+        return false;
+      });
+      return { count: before - this.reportMetricValues.length };
     }
   };
 

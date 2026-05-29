@@ -62,11 +62,12 @@
             <picker range="{{['阴性', '阳性', '弱阳性', '可疑']}}" value="0" data-index="{{item.index}}" bindchange="onQualitativeChange">
               <view class="mini-input">{{item.value || '请选择'}}</view>
             </picker>
-            <view class="unit-readonly">参考 {{item.ref}}</view>
+            <input class="mini-input unit-input" value="{{item.unit}}" placeholder="单位" data-index="{{item.index}}" data-field="unit" bindinput="onMetricInput" />
+            <view class="tiny ref-read">参考 {{item.ref}}</view>
           </view>
           <view wx:else class="metric-inputs">
             <input class="mini-input value-input {{item.tone === 'high' ? 'value-high' : ''}} {{item.tone === 'low' ? 'value-low' : ''}}" value="{{item.value}}" data-index="{{item.index}}" data-field="valueNumeric" bindinput="onMetricInput" />
-            <view class="unit-readonly">{{item.unit}}</view>
+            <input class="mini-input unit-input" value="{{item.unit}}" placeholder="单位" data-index="{{item.index}}" data-field="unit" bindinput="onMetricInput" />
           </view>
           <view wx:if="{{editing && item.valueType !== 'qualitative' && item.refText}}" class="ref-text-note">
             <view class="tiny">参考</view>

@@ -262,6 +262,11 @@
   text-align: center;
 }
 
+.unit-input {
+  width: 136rpx;
+  text-align: center;
+}
+
 .editable-finding {
   position: relative;
   grid-template-columns: 16rpx 1fr;

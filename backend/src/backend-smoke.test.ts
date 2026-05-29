@@ -740,15 +740,31 @@ assert.ok(Array.isArray(reportDetailPayload.data.groups));
 
 const editableMetric = reportDetailPayload.data.report.metrics.find((metric: Row) => metric.valueType === 'quantitative');
 if (editableMetric) {
+  const manualMetricKey = `manual_backend_${Date.now()}`;
   const editedMetrics = reportDetailPayload.data.report.metrics.map((metric: Row) => (
     metric.id === editableMetric.id
       ? {
         ...metric,
         valueNumeric: Number(metric.refRangeHigh || 1) + 10,
+        unit: 'edited-unit',
         isManuallyEdited: true
       }
       : metric
-  ));
+  )).concat([{
+    metricKey: manualMetricKey,
+    metricName: 'Manual smoke metric',
+    originalMetricName: 'Manual smoke metric',
+    category: 'other',
+    categoryCn: 'Other',
+    mappingStatus: 'pending',
+    valueType: 'quantitative',
+    valueNumeric: 12,
+    unit: 'ng/mL',
+    refRangeLow: null,
+    refRangeHigh: null,
+    tone: 'unknown',
+    isManuallyEdited: true
+  }]);
   const editReportResponse = await app.inject({
     method: 'PATCH',
     url: `/api/reports/${firstReportId}`,
@@ -769,7 +785,26 @@ if (editableMetric) {
   assert.equal(editReportPayload.data.report.note, '用户已核对');
   assert.ok(editReportPayload.data.report.abnormalCount >= 1);
   assert.ok(editReportPayload.data.report.metrics.some((metric: Row) => metric.id === editableMetric.id && metric.isManuallyEdited));
-  if (editReportPayload.data.report.metrics.length > 1) {
+  assert.ok(editReportPayload.data.report.metrics.some((metric: Row) => metric.id === editableMetric.id && metric.unit === 'edited-unit'));
+  assert.ok(editReportPayload.data.report.metrics.some((metric: Row) => metric.metricKey === manualMetricKey && metric.unit === 'ng/mL'));
+  const deleteManualMetricResponse = await app.inject({
+    method: 'PATCH',
+    url: `/api/reports/${firstReportId}`,
+    payload: {
+      basicInfo: {
+        hospital: editReportPayload.data.report.hospital,
+        reportDate: editReportPayload.data.report.reportDate,
+        note: editReportPayload.data.report.note
+      },
+      metrics: editReportPayload.data.report.metrics.filter((metric: Row) => metric.metricKey !== manualMetricKey),
+      findings: editReportPayload.data.report.findings,
+      warnings: editReportPayload.data.report.warnings
+    }
+  });
+  assert.equal(deleteManualMetricResponse.statusCode, 200);
+  const deleteManualMetricPayload = deleteManualMetricResponse.json();
+  assert.ok(!deleteManualMetricPayload.data.report.metrics.some((metric: Row) => metric.metricKey === manualMetricKey));
+  if (reportDetailPayload.data.report.metrics.length > 1) {
     assert.ok(editReportPayload.data.report.metrics.some((metric: Row) => metric.id !== editableMetric.id && !metric.isManuallyEdited));
   }
 }
