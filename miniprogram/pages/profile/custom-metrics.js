@@ -25,15 +25,17 @@ const CATEGORY_OPTIONS = [
   { key: 'pathology', label: '病理/其他' }
 ];
 const CATEGORY_LABELS = CATEGORY_OPTIONS.map((item) => item.label);
+const DEFAULT_CATEGORY_INDEX = 1;
+const DEFAULT_CATEGORY = CATEGORY_OPTIONS[DEFAULT_CATEGORY_INDEX];
 const TEXT_CATEGORY_KEYS = ['imaging', 'ultrasound', 'pathology'];
 
 function emptyForm() {
   return {
     metricKey: '',
     metricName: '',
-    category: 'custom',
-    categoryCn: '自定义检查',
-    categoryIndex: 0,
+    category: DEFAULT_CATEGORY.key,
+    categoryCn: DEFAULT_CATEGORY.label,
+    categoryIndex: DEFAULT_CATEGORY_INDEX,
     valueType: 'quantitative',
     valueTypeIndex: 0,
     valueTypeLabel: VALUE_TYPE_LABELS[0],

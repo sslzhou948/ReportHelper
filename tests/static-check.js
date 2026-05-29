@@ -121,6 +121,7 @@ assert.ok(recordNewJs.includes('/pages/upload/pick') && recordNewJs.includes('/p
 assert.ok(profileIndexJs.includes('/pages/profile/custom-metrics?mode=manage') && profileIndexWxml.includes('维护手动录入模板') && !profileIndexWxml.includes('我的检查项目'), 'profile page must name the custom metric area by its manual-entry function');
 assert.ok(profileCustomMetricsJs.includes("const mode = query.mode === 'select' ? 'select' : 'manage'") && profileCustomMetricsJs.includes('isSelectMode'), 'custom metric page must be reusable for select and manage modes');
 assert.ok(profileCustomMetricsJs.includes("'text'") && profileCustomMetricsJs.includes('CATEGORY_OPTIONS') && profileCustomMetricsWxml.includes('检查类型') && profileCustomMetricsWxml.includes('参考范围'), 'manual template management must capture exam type, result type, and reference values');
+assert.ok(profileCustomMetricsJs.includes('DEFAULT_CATEGORY_INDEX = 1') && profileCustomMetricsJs.includes('DEFAULT_CATEGORY.label'), 'new manual templates must default the exam type picker to blood/lab');
 assert.ok(manualEntryJs.includes('api.createManualReport'), 'manual entry must persist through the manual report API');
 assert.ok(manualEntryJs.includes("mappingStatus: 'confirmed'"), 'manual custom metrics must be followable in the user profile without waiting for public mapping review');
 assert.ok(manualEntryWxml.includes('自定义模板') && manualEntryWxml.includes('textarea') && manualEntryJs.includes("template.valueType === 'text'"), 'manual entry must label custom templates and support text-only exam results');
