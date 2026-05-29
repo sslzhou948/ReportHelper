@@ -218,6 +218,10 @@ Page({
     wx.navigateTo({ url: '/pages/upload/pick' });
   },
 
+  goRecord() {
+    wx.navigateTo({ url: '/pages/record/new' });
+  },
+
   goRecheck() {
     wx.switchTab({ url: '/pages/recheck/index' });
   },

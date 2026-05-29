@@ -1,0 +1,6 @@
+{
+  "usingComponents": {
+    "network-banner": "/components/network-banner/network-banner",
+    "loading-slow-banner": "/components/loading-slow-banner/loading-slow-banner"
+  }
+}

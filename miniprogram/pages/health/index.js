@@ -134,6 +134,10 @@ Page({
     wx.navigateTo({ url: '/pages/upload/pick' });
   },
 
+  goRecord() {
+    wx.navigateTo({ url: '/pages/record/new' });
+  },
+
   goSearch() {
     wx.navigateTo({ url: '/pages/health/search' });
   },

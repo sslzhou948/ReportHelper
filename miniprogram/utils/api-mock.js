@@ -449,6 +449,46 @@ function createMockApi() {
       return this.getReportDetail(reportId);
     },
 
+    createManualReport(profileId, payload = {}) {
+      const metric = payload.metric || {};
+      const reportDate = payload.reportDate || new Date().toISOString().slice(0, 10);
+      const draftId = `manual_${Date.now()}`;
+      const report = toPersistedReport({
+        draftId,
+        sourcePhotoIds: [],
+        pageCount: 0,
+        basicInfo: {
+          type: metric.categoryCn || '\u624b\u52a8\u5f55\u5165',
+          originalType: metric.categoryCn || '\u624b\u52a8\u5f55\u5165',
+          typeKey: `manual_${metric.category || 'custom'}`,
+          canonicalTypeName: metric.categoryCn || '\u624b\u52a8\u5f55\u5165',
+          modality: 'laboratory',
+          analysisPolicy: 'metric_analysis',
+          hospital: payload.hospital || '\u624b\u52a8\u5f55\u5165',
+          hospitalSource: payload.hospital ? 'user_edited' : 'unknown',
+          reportDate,
+          reportDateSource: 'user_edited'
+        },
+        metrics: [{
+          ...metric,
+          metricKey: metric.metricKey || `manual_metric_${Date.now()}`,
+          metricName: metric.metricName || '\u624b\u52a8\u6307\u6807',
+          originalMetricName: metric.originalMetricName || metric.metricName || '\u624b\u52a8\u6307\u6807',
+          mappingStatus: metric.mappingStatus || 'pending',
+          isManuallyEdited: true
+        }],
+        findings: [],
+        warnings: [],
+        status: 'confirmed',
+        note: payload.note || ''
+      }, profileId, null, reports.length);
+      report.id = `report_${draftId}`;
+      report.note = payload.note || '';
+      reports.push(report);
+      persistStoredReports(reports);
+      return this.getReportDetail(report.id);
+    },
+
     deleteReport(reportId) {
       const report = reports.find((item) => item.id === reportId);
       if (report) report.deletedAt = new Date().toISOString();

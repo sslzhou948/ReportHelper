@@ -33,11 +33,11 @@
   </view>
 
   <view class="pad home-main-card mt-12">
-    <view class="upload-cta" bindtap="goUpload">
+    <view class="upload-cta" bindtap="goRecord">
       <view class="upload-icon">＋</view>
       <view class="flex">
-        <view class="upload-title">上传{{profile.relation}}的检查报告</view>
-        <view class="upload-sub">拍照 / 相册 · AI 自动识别</view>
+        <view class="upload-title">新增{{profile.relation}}的健康记录</view>
+        <view class="upload-sub">拍照识别 / 手动录入</view>
       </view>
       <view class="upload-arrow">›</view>
     </view>
@@ -92,9 +92,9 @@
         <view wx:if="{{item.abnormalCount > 0}}" class="abnormal">{{item.abnormalCount}} 项异常</view>
         <view class="arrow">›</view>
       </view>
-      <view wx:if="{{reports.length === 0}}" class="empty-report" bindtap="goUpload">
+      <view wx:if="{{reports.length === 0}}" class="empty-report" bindtap="goRecord">
         <view class="body strong">还没有检查报告</view>
-        <view class="tiny mt-8">上传第一份报告后，这里会展示最近记录</view>
+        <view class="tiny mt-8">新增第一条记录后，这里会展示最近数据</view>
       </view>
     </view>
   </view>

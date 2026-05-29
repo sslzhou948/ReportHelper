@@ -1,0 +1,62 @@
+<view class="page action-page">
+  <view class="nav">
+    <view class="nav-side left" bindtap="goBack">‹ 返回</view>
+    <view class="nav-title">录入检查结果</view>
+    <view class="nav-side right"></view>
+  </view>
+
+  <network-banner offline="{{networkOffline}}" bind:retry="retryAfterNetwork" />
+  <loading-slow-banner visible="{{loadingSlow}}" bind:retry="retrySlowLoading" bind:cancel="cancelSlowLoading" />
+
+  <view class="pad mt-12">
+    <view class="card card-pad">
+      <view class="body strong">{{template.metricName}}</view>
+      <view class="tiny mt-8">{{template.categoryCn}}<text wx:if="{{template.unit}}"> · 默认单位 {{template.unit}}</text></view>
+    </view>
+  </view>
+
+  <view class="section-title">本次结果</view>
+  <view class="pad">
+    <view class="card form-card">
+      <view class="row form-row">
+        <view class="field-label">检查日期</view>
+        <picker mode="date" value="{{form.reportDate}}" bindchange="onDateChange">
+          <view class="field-value">{{form.reportDate}}</view>
+        </picker>
+      </view>
+      <view class="row form-row">
+        <view class="field-label">医院</view>
+        <input class="field-input" value="{{form.hospital}}" placeholder="可不填" data-field="hospital" bindinput="onInput" />
+      </view>
+      <view wx:if="{{template.valueType === 'qualitative'}}" class="row form-row">
+        <view class="field-label">结果</view>
+        <picker range="{{qualitativeOptions}}" value="{{form.qualitativeIndex}}" bindchange="onQualitativeChange">
+          <view class="field-value">{{form.valueQualitative || '请选择'}}</view>
+        </picker>
+      </view>
+      <view wx:else class="row form-row">
+        <view class="field-label">结果</view>
+        <input class="field-input value" type="digit" value="{{form.valueNumeric}}" placeholder="填写数值" data-field="valueNumeric" bindinput="onInput" />
+      </view>
+      <view class="row form-row">
+        <view class="field-label">单位</view>
+        <input class="field-input" value="{{form.unit}}" placeholder="如 ng/mL" data-field="unit" bindinput="onInput" />
+      </view>
+      <view wx:if="{{template.valueType !== 'qualitative'}}" class="row form-row ref-row">
+        <view class="field-label">参考范围</view>
+        <input class="ref-input" type="digit" value="{{form.refRangeLow}}" placeholder="下限" data-field="refRangeLow" bindinput="onInput" />
+        <view class="range-dash">-</view>
+        <input class="ref-input" type="digit" value="{{form.refRangeHigh}}" placeholder="上限" data-field="refRangeHigh" bindinput="onInput" />
+      </view>
+      <view class="row form-row">
+        <view class="field-label">备注</view>
+        <input class="field-input" value="{{form.note}}" placeholder="可不填" data-field="note" bindinput="onInput" />
+      </view>
+    </view>
+  </view>
+
+  <view class="bottom-action safe-bottom">
+    <view class="btn secondary" bindtap="goBack">取消</view>
+    <view class="btn" bindtap="saveManualReport">保存记录</view>
+  </view>
+</view>

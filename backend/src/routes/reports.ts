@@ -10,6 +10,7 @@ import {
 } from '../services/report-service.js';
 import {
   deleteReportForUser,
+  createManualReport,
   getMetricHistory,
   getReportDetail,
   listMetricSnapshots,
@@ -53,6 +54,13 @@ const updateReportSchema = z.object({
   metrics: z.array(z.record(z.string(), z.unknown())).optional(),
   findings: z.array(z.unknown()).optional(),
   warnings: z.array(z.unknown()).optional()
+});
+
+const manualReportSchema = z.object({
+  reportDate: z.string().min(4).optional(),
+  hospital: z.string().optional(),
+  note: z.string().optional(),
+  metric: z.record(z.string(), z.unknown())
 });
 
 export async function registerReportRoutes(app: FastifyInstance) {
@@ -142,6 +150,34 @@ export async function registerReportRoutes(app: FastifyInstance) {
     }
 
     return { data: result, requestId };
+  });
+
+  app.post<{ Params: { profileId: string } }>('/api/profiles/:profileId/manual-reports', async (request, reply) => {
+    const requestId = getRequestId(request);
+    const parsed = manualReportSchema.safeParse(request.body || {});
+    if (!parsed.success) {
+      return reply.status(400).send({
+        error: {
+          code: 'VALIDATION_FAILED',
+          message: '手动记录参数无效',
+          details: parsed.error.flatten()
+        },
+        requestId
+      });
+    }
+
+    const session = await requireSession(app, request, reply);
+    if (!session) return;
+    const { user } = session;
+    const detail = await createManualReport(app.prisma, request.params.profileId, user.id, parsed.data);
+    if (!detail) {
+      return reply.status(404).send({
+        error: { code: 'NOT_FOUND', message: '档案不存在' },
+        requestId
+      });
+    }
+
+    return { data: detail, requestId };
   });
 
   app.get<{ Params: { profileId: string }; Querystring: { filter?: string; category?: string } }>('/api/profiles/:profileId/metrics/snapshots', async (request, reply) => {

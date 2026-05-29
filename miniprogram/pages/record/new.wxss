@@ -1,0 +1,34 @@
+.intro-card {
+  padding: 32rpx;
+  border-radius: 36rpx;
+  background: #FFFFFF;
+  border: 1rpx solid var(--border-soft);
+}
+
+.entry-card {
+  min-height: 132rpx;
+  padding: 28rpx;
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  border-radius: 36rpx;
+  background: #FFFFFF;
+  border: 1rpx solid var(--border-soft);
+}
+
+.entry-icon {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 24rpx;
+  background: var(--primary-soft);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+.entry-icon.manual {
+  background: var(--warn-soft);
+  color: var(--warn);
+}

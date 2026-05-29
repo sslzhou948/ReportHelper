@@ -1,0 +1,39 @@
+<view class="page">
+  <view class="nav">
+    <view class="nav-side left" bindtap="goBack">‹ 返回</view>
+    <view class="nav-title">{{pageTitle}}</view>
+    <view class="nav-side right" bindtap="startCreate">新增</view>
+  </view>
+
+  <network-banner offline="{{networkOffline}}" bind:retry="retryAfterNetwork" />
+  <loading-slow-banner visible="{{loadingSlow}}" bind:retry="retrySlowLoading" bind:cancel="cancelSlowLoading" />
+
+  <view class="pad mt-12">
+    <input class="search-input" value="{{keyword}}" placeholder="搜索检查项目" bindinput="onSearchInput" />
+  </view>
+
+  <view class="section-title">
+    <view>{{sectionTitle}}</view>
+    <view class="tiny">{{filteredItems.length}} 项</view>
+  </view>
+  <view class="pad">
+    <view class="card">
+      <view wx:for="{{filteredItems}}" wx:key="metricKey" class="row metric-row" data-key="{{item.metricKey}}" bindtap="selectMetric">
+        <view class="metric-dot {{item.source}}">{{item.sourceText}}</view>
+        <view class="flex">
+          <view class="body strong">{{item.metricName}}</view>
+          <view class="tiny">{{item.categoryCn}}<text wx:if="{{item.unit}}"> · {{item.unit}}</text><text wx:if="{{item.measureCount}}"> · 已记录 {{item.measureCount}} 次</text></view>
+        </view>
+        <view wx:if="{{item.source === 'custom'}}" class="pill primary">个人</view>
+        <view wx:if="{{isManageMode && item.source === 'custom'}}" class="mini-link" catchtap="editMetric" data-key="{{item.metricKey}}">编辑</view>
+        <view wx:if="{{isManageMode && item.source === 'custom'}}" class="delete-link" catchtap="deleteMetric" data-key="{{item.metricKey}}">删除</view>
+        <view wx:if="{{isSelectMode}}" class="arrow">›</view>
+      </view>
+      <view wx:if="{{filteredItems.length === 0}}" class="empty-block">
+        <view class="body strong">没有找到检查项目</view>
+        <view class="tiny mt-8">可以新建一个个人检查项目，之后每次手动录入都能复用。</view>
+        <view class="btn mt-12" bindtap="startCreate">新建检查项目</view>
+      </view>
+    </view>
+  </view>
+</view>

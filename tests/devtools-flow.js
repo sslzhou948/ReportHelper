@@ -88,6 +88,28 @@ async function waitForPath(miniProgram, expectedPath, timeout = 5000) {
     assert.ok(Array.isArray(data.alertMetrics), 'home should expose alert metrics array');
     console.log(`home smoke: profile=${data.profile.realName || data.profile.id}, reports=${data.reports.length}`);
 
+    await page.callMethod('goRecord');
+    page = await waitForPath(miniProgram, 'pages/record/new', 6000);
+    assert.strictEqual(page.path, 'pages/record/new', 'home record action should open unified record entry');
+    await page.waitFor(600);
+    const manualEntryCard = await page.$('.manual-entry-card');
+    assert.ok(manualEntryCard, 'record entry should expose a manual entry card');
+    await manualEntryCard.trigger('tap');
+    page = await waitForPath(miniProgram, 'pages/profile/custom-metrics', 6000);
+    if (page.path !== 'pages/profile/custom-metrics') {
+      const routeError = await miniProgram.evaluate(() => wx.getStorageSync('lastManualRouteError') || '');
+      assert.fail(`manual record action should open reusable metric selector; route error: ${routeError || 'none'}`);
+    }
+    assert.strictEqual(page.path, 'pages/profile/custom-metrics', 'manual record action should open reusable metric selector');
+    data = await page.data();
+    assert.strictEqual(data.mode, 'select', 'metric selector should open in select mode from record entry');
+    console.log('manual record entry smoke passed');
+
+    await miniProgram.navigateBack();
+    await miniProgram.navigateBack();
+    page = await waitForPath(miniProgram, 'pages/home/index', 6000);
+    assert.strictEqual(page.path, 'pages/home/index', 'manual selector should allow returning to home');
+    await page.waitFor(800);
     await page.callMethod('goUpload');
     page = await waitForPath(miniProgram, 'pages/upload/pick', 6000);
     assert.strictEqual(page.path, 'pages/upload/pick', 'home upload action should open upload page');

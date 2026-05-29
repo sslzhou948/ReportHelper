@@ -61,6 +61,8 @@ for (const file of wxmlFiles) {
 const homeWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'home', 'index.wxml'), 'utf8');
 const homeIndexJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'home', 'index.js'), 'utf8');
 const homeWxss = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'home', 'index.wxss'), 'utf8');
+const recordNewJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'record', 'new.js'), 'utf8');
+const manualEntryJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'record', 'manual-entry.js'), 'utf8');
 const healthIndexJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'health', 'index.js'), 'utf8');
 const healthSearchJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'health', 'search.js'), 'utf8');
 const uploadPickJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'upload', 'pick.js'), 'utf8');
@@ -75,6 +77,7 @@ const profileOnboardWxss = fs.readFileSync(path.join(miniprogramRoot, 'pages', '
 const profileAgreementWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'agreement.wxml'), 'utf8');
 const profilePrivacyWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'privacy.wxml'), 'utf8');
 const profileIndexJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'index.js'), 'utf8');
+const profileCustomMetricsJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'custom-metrics.js'), 'utf8');
 const profileExportJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'export.js'), 'utf8');
 const profileExportWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'export.wxml'), 'utf8');
 const profileReportsArchiveJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'reports-archive.js'), 'utf8');
@@ -104,6 +107,13 @@ assert.ok(homeIndexJs.includes('statusLabel'), 'home OCR task summary must provi
 assert.ok(homeWxml.includes('wx:if="{{pendingOcrTask}}" class="ocr-status-entry'), 'home OCR status entry should only appear when there is an active OCR task');
 assert.ok(homeWxml.includes('{{pendingOcrTask.statusLabel}}'), 'home OCR status entry must show the task count or state');
 assert.ok(!homeWxml.includes('···') && !homeWxss.includes('.bell'), 'home OCR status entry must not ship as an ambiguous dot or bell affordance');
+assert.ok(app.pages.includes('pages/record/new') && app.pages.includes('pages/record/manual-entry'), 'unified record entry and manual entry pages must be registered');
+assert.ok(app.pages.includes('pages/profile/custom-metrics'), 'custom metric library page must be registered');
+assert.ok(homeWxml.includes('拍照识别 / 手动录入') && homeIndexJs.includes('/pages/record/new'), 'home primary CTA must open unified record entry');
+assert.ok(recordNewJs.includes('/pages/upload/pick') && recordNewJs.includes('/pages/profile/custom-metrics?mode=select'), 'record entry must split only into photo recognition and manual entry');
+assert.ok(profileIndexJs.includes('/pages/profile/custom-metrics?mode=manage'), 'profile page must expose custom metric library management');
+assert.ok(profileCustomMetricsJs.includes("const mode = query.mode === 'select' ? 'select' : 'manage'") && profileCustomMetricsJs.includes('isSelectMode'), 'custom metric page must be reusable for select and manage modes');
+assert.ok(manualEntryJs.includes('api.createManualReport'), 'manual entry must persist through the manual report API');
 const nativeHomeLayoutClasses = [
   'ocr-card',
   'upload-cta',

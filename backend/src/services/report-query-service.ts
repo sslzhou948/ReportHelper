@@ -350,6 +350,71 @@ export async function updateReportDetail(prisma: PrismaClient, reportId: string,
   return getReportDetail(prisma, updatedId, userId);
 }
 
+export async function createManualReport(prisma: PrismaClient, profileId: string, userId: string, payload: { reportDate?: string; hospital?: string; note?: string; metric?: Record<string, unknown> }) {
+  const metric = payload.metric || {};
+  const valueType = String(metric.valueType || 'quantitative');
+  const reportDate = new Date(String(payload.reportDate || new Date().toISOString().slice(0, 10)));
+  const createdId = await prisma.$transaction(async (tx) => {
+    const profile = await tx.profile.findFirst({
+      where: {
+        id: profileId,
+        userId,
+        deletedAt: null
+      }
+    });
+    if (!profile) return null;
+
+    const metricKey = String(metric.metricKey || `manual_metric_${Date.now()}`);
+    const metricData = metricUpdateData({
+      ...metric,
+      metricKey,
+      metricName: metric.metricName || '手动指标',
+      originalMetricName: metric.originalMetricName || metric.metricName || '手动指标',
+      category: metric.category || 'custom',
+      categoryCn: metric.categoryCn || '自定义',
+      mappingStatus: metric.mappingStatus || 'pending',
+      valueType,
+      isManuallyEdited: true
+    });
+    const report = await tx.report.create({
+      data: {
+        profileId,
+        userId,
+        type: String(metric.categoryCn || '手动录入'),
+        originalType: String(metric.categoryCn || '手动录入'),
+        typeKey: `manual_${String(metric.category || 'custom')}`,
+        canonicalTypeName: String(metric.categoryCn || '手动录入'),
+        modality: 'laboratory',
+        examPart: '',
+        examMethod: '',
+        analysisPolicy: 'metric_analysis',
+        hospital: String(payload.hospital || '手动录入'),
+        hospitalSource: payload.hospital ? 'user_edited' : 'unknown',
+        reportDate,
+        reportDateSource: 'user_edited',
+        findings: [],
+        warnings: [],
+        abnormalCount: ['ok', 'unknown'].includes(metricData.tone) ? 0 : 1,
+        note: payload.note ? String(payload.note) : null
+      }
+    });
+    await tx.reportMetricValue.createMany({
+      data: [{
+        reportId: report.id,
+        profileId,
+        metricKey,
+        reportDate,
+        sourcePhotoIds: [],
+        ...metricData
+      }]
+    });
+    return report.id;
+  });
+
+  if (!createdId) return null;
+  return getReportDetail(prisma, createdId, userId);
+}
+
 export async function deleteReportForUser(prisma: PrismaClient, reportId: string, userId: string) {
   const report = await prisma.report.findFirst({
     where: {

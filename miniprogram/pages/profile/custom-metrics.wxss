@@ -1,0 +1,93 @@
+.search-input {
+  height: 88rpx;
+  padding: 0 28rpx;
+  border-radius: 28rpx;
+  background: #FFFFFF;
+  border: 1rpx solid var(--border-soft);
+  font-size: 28rpx;
+}
+
+.edit-card {
+  display: flex;
+  flex-direction: column;
+  gap: 22rpx;
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+}
+
+.form-row.two {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18rpx;
+}
+
+.label {
+  color: var(--ink-2);
+}
+
+.form-input {
+  width: 100%;
+  min-height: 80rpx;
+  padding: 0 20rpx;
+  border-radius: 22rpx;
+  background: #F6F3EE;
+  color: var(--ink);
+}
+
+.picker-value {
+  display: flex;
+  align-items: center;
+}
+
+.form-actions {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 18rpx;
+}
+
+.btn.compact {
+  height: 82rpx;
+  border-radius: 26rpx;
+}
+
+.metric-row {
+  min-height: 116rpx;
+}
+
+.metric-dot {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 20rpx;
+  background: #F2EEE7;
+  color: var(--ink-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22rpx;
+  font-weight: 700;
+}
+
+.metric-dot.custom {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+.mini-link,
+.delete-link {
+  min-width: 56rpx;
+  color: var(--primary);
+  font-size: 24rpx;
+  text-align: center;
+}
+
+.delete-link {
+  color: var(--high);
+}
+
+.empty-block {
+  padding: 36rpx 28rpx;
+}

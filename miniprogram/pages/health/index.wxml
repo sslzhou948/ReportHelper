@@ -2,7 +2,7 @@
   <view class="nav">
     <view class="nav-side left"></view>
     <view class="nav-title">健康数据</view>
-    <view class="nav-side right" bindtap="goUpload">上传</view>
+    <view class="nav-side right" bindtap="goRecord">新增</view>
   </view>
 
   <network-banner offline="{{networkOffline}}" bind:retry="retryAfterNetwork" />

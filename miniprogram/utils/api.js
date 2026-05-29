@@ -92,6 +92,9 @@ function createBackendApi(client) {
     updateReport(reportId, payload, config) {
       return client.patch(`/api/reports/${reportId}`, payload, config);
     },
+    createManualReport(profileId, payload, config) {
+      return client.post(`/api/profiles/${profileId}/manual-reports`, payload, config);
+    },
     deleteReport(reportId, config) {
       return client.delete(`/api/reports/${reportId}`, config);
     },
@@ -227,6 +230,9 @@ function createHybridUploadApi(options = {}) {
     },
     updateReport(reportId, payload, config) {
       return backendApi.updateReport(reportId, payload, config);
+    },
+    createManualReport(profileId, payload, config) {
+      return backendApi.createManualReport(backendProfileId(profileId), payload, config);
     },
     deleteReport(reportId, config) {
       return backendApi.deleteReport(reportId, config);

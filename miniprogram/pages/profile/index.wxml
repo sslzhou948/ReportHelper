@@ -38,6 +38,7 @@
     <view class="card">
       <view class="row" data-title="数据导出" bindtap="showStatic"><view class="flex">数据导出</view><view class="tiny">报告与指标记录</view><view class="arrow">›</view></view>
       <view class="row" data-title="报告归档管理" bindtap="showStatic"><view class="flex">报告归档管理</view><view class="tiny">{{reportsCount}} 份报告</view><view class="arrow">›</view></view>
+      <view class="row" data-title="我的检查项目" bindtap="showStatic"><view class="flex">我的检查项目</view><view class="tiny">维护手动录入项目</view><view class="arrow">›</view></view>
       <view class="row danger" data-title="清空当前档案数据" bindtap="showStatic"><view class="flex">清空当前档案数据</view><view class="arrow">›</view></view>
     </view>
   </view>

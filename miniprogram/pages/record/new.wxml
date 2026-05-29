@@ -1,0 +1,39 @@
+<view class="page">
+  <view class="nav">
+    <view class="nav-side left" bindtap="goBack">‹ 返回</view>
+    <view class="nav-title">新增记录</view>
+    <view class="nav-side right"></view>
+  </view>
+
+  <network-banner offline="{{networkOffline}}" bind:retry="retryAfterNetwork" />
+  <loading-slow-banner visible="{{loadingSlow}}" bind:retry="retrySlowLoading" bind:cancel="cancelSlowLoading" />
+
+  <view class="pad mt-12">
+    <view class="intro-card">
+      <view class="title">为{{profile.relation || '当前档案'}}新增健康记录</view>
+      <view class="sub mt-8">有报告单就拍照识别；没有报告单，就手动录入一次检查结果。</view>
+    </view>
+  </view>
+
+  <view class="pad mt-12">
+    <view class="entry-card" bindtap="goUpload">
+      <view class="entry-icon">拍</view>
+      <view class="flex">
+        <view class="body strong">拍照识别报告</view>
+        <view class="tiny">拍照 / 相册上传，识别后再确认归档</view>
+      </view>
+      <view class="arrow">›</view>
+    </view>
+  </view>
+
+  <view class="pad mt-12">
+    <view class="entry-card manual-entry-card" bindtap="goManual">
+      <view class="entry-icon manual">录</view>
+      <view class="flex">
+        <view class="body strong">手动录入结果</view>
+        <view class="tiny">选择已有项目，或新建一个个人检查项目</view>
+      </view>
+      <view class="arrow">›</view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,66 @@
+.action-page {
+  padding-bottom: calc(156rpx + env(safe-area-inset-bottom));
+}
+
+.form-card {
+  overflow: hidden;
+}
+
+.form-row {
+  min-height: 108rpx;
+}
+
+.field-label {
+  width: 156rpx;
+  color: var(--ink-2);
+  font-size: 26rpx;
+}
+
+.field-value {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.field-input {
+  flex: 1;
+  min-width: 0;
+  text-align: right;
+  color: var(--ink);
+}
+
+.field-input.value {
+  font-size: 34rpx;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.ref-row {
+  gap: 14rpx;
+}
+
+.ref-input {
+  width: 150rpx;
+  height: 64rpx;
+  padding: 0 16rpx;
+  border-radius: 18rpx;
+  background: #F6F3EE;
+  text-align: center;
+}
+
+.range-dash {
+  color: var(--ink-3);
+}
+
+.bottom-action {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 20rpx 32rpx calc(20rpx + env(safe-area-inset-bottom));
+  display: grid;
+  grid-template-columns: 1fr 1.7fr;
+  gap: 18rpx;
+  background: #FFFFFF;
+  border-top: 1rpx solid var(--border-soft);
+  z-index: 20;
+}

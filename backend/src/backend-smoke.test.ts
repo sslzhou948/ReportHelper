@@ -985,6 +985,34 @@ assert.equal(scopedSaveResponse.json().data.reports.length, 1);
 assert.equal(prisma.reports.filter((report) => report.profileId === scopedProfileId && !report.deletedAt).length, 1);
 assert.equal(prisma.reports.filter((report) => report.profileId === profileId && !report.deletedAt).length, 7);
 
+const manualReportResponse = await app.inject({
+  method: 'POST',
+  url: `/api/profiles/${profileId}/manual-reports`,
+  payload: {
+    reportDate: '2026-05-20',
+    hospital: 'Manual Hospital',
+    note: 'manual smoke',
+    metric: {
+      metricKey: 'manual_drug_level',
+      metricName: 'Manual drug level',
+      originalMetricName: 'Manual drug level',
+      category: 'custom',
+      categoryCn: 'Custom',
+      valueType: 'quantitative',
+      valueNumeric: 12.5,
+      unit: 'ng/mL',
+      refRangeLow: 5,
+      refRangeHigh: 20,
+      mappingStatus: 'pending',
+      isManuallyEdited: true
+    }
+  }
+});
+assert.equal(manualReportResponse.statusCode, 200);
+const manualReportPayload = manualReportResponse.json();
+assert.equal(manualReportPayload.data.report.type, 'Custom');
+assert.ok(manualReportPayload.data.report.metrics.some((metric: Row) => metric.metricKey === 'manual_drug_level' && metric.unit === 'ng/mL'));
+
 const deleteReportResponse = await app.inject({
   method: 'DELETE',
   url: `/api/reports/${firstReportId}`
