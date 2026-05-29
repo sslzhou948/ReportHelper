@@ -17,9 +17,9 @@ const { isProfileRequiredError } = require('../../utils/profile');
 const VALUE_TYPES = ['quantitative', 'qualitative', 'text'];
 const VALUE_TYPE_LABELS = ['数值', '阴性/阳性', '文字描述'];
 const CATEGORY_OPTIONS = [
-  { key: 'lab', label: '检验' },
-  { key: 'exam', label: '检查' },
-  { key: 'electrophysiology', label: '电生理' },
+  { key: 'lab', label: '检验（血液、尿液等）' },
+  { key: 'exam', label: '检查（CT、核磁、B超等）' },
+  { key: 'electrophysiology', label: '电生理（心电图等）' },
   { key: 'pathology', label: '病理' },
   { key: 'other', label: '其他' }
 ];
