@@ -26,18 +26,22 @@
             <view class="form-input picker-value">{{form.categoryCn}}</view>
           </picker>
         </view>
-        <view>
-          <view class="label">结果类型</view>
-          <picker range="{{valueTypeLabels}}" value="{{form.valueTypeIndex}}" bindchange="onValueTypeChange">
+        <view wx:if="{{form.category === 'lab'}}">
+          <view class="label">检验结果类型</view>
+          <picker range="{{labValueTypeLabels}}" value="{{form.valueTypeIndex}}" bindchange="onValueTypeChange">
             <view class="form-input picker-value">{{form.valueTypeLabel}}</view>
           </picker>
         </view>
+        <view wx:else>
+          <view class="label">记录字段</view>
+          <view class="form-input picker-value">{{form.valueTypeLabel}}</view>
+        </view>
       </view>
-      <view wx:if="{{form.valueType !== 'text'}}" class="form-row">
+      <view wx:if="{{form.category === 'lab'}}" class="form-row">
         <view class="label">默认单位</view>
         <input class="form-input" value="{{form.unit}}" placeholder="如 ng/mL、mmol/L，可不填" data-field="unit" bindinput="onFormInput" />
       </view>
-      <view wx:if="{{form.valueType === 'quantitative'}}" class="form-row">
+      <view wx:if="{{form.category === 'lab' && form.valueType === 'quantitative'}}" class="form-row">
         <view class="label">参考范围</view>
         <view class="range-inputs">
           <input class="form-input" type="digit" value="{{form.refRangeLow}}" placeholder="下限" data-field="refRangeLow" bindinput="onFormInput" />
@@ -45,11 +49,11 @@
           <input class="form-input" type="digit" value="{{form.refRangeHigh}}" placeholder="上限" data-field="refRangeHigh" bindinput="onFormInput" />
         </view>
       </view>
-      <view wx:elif="{{form.valueType === 'qualitative'}}" class="form-row">
+      <view wx:elif="{{form.category === 'lab' && form.valueType === 'qualitative'}}" class="form-row">
         <view class="label">默认参考</view>
         <input class="form-input" value="{{form.refQualitative}}" placeholder="如 阴性" data-field="refQualitative" bindinput="onFormInput" />
       </view>
-      <view wx:else class="form-row">
+      <view wx:if="{{form.category !== 'lab'}}" class="form-row">
         <view class="label">描述提示</view>
         <input class="form-input" value="{{form.refText}}" placeholder="如 填写影像所见或医生结论" data-field="refText" bindinput="onFormInput" />
       </view>

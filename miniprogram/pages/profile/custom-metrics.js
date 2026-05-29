@@ -15,7 +15,9 @@ const { bindNetworkStatus, refreshNetworkStatus } = require('../../utils/network
 const { isProfileRequiredError } = require('../../utils/profile');
 
 const VALUE_TYPES = ['quantitative', 'qualitative', 'text'];
-const VALUE_TYPE_LABELS = ['数值', '阴性/阳性', '文字描述'];
+const VALUE_TYPE_LABELS = ['指标数据', '阴性/阳性', '文字描述'];
+const LAB_VALUE_TYPES = ['quantitative', 'qualitative'];
+const LAB_VALUE_TYPE_LABELS = ['指标数据', '阴性/阳性'];
 const CATEGORY_OPTIONS = [
   { key: 'lab', label: '检验（血液、尿液等）' },
   { key: 'exam', label: '检查（CT、核磁、B超等）' },
@@ -26,7 +28,7 @@ const CATEGORY_OPTIONS = [
 const CATEGORY_LABELS = CATEGORY_OPTIONS.map((item) => item.label);
 const DEFAULT_CATEGORY_INDEX = 0;
 const DEFAULT_CATEGORY = CATEGORY_OPTIONS[DEFAULT_CATEGORY_INDEX];
-const TEXT_CATEGORY_KEYS = ['exam', 'electrophysiology', 'pathology'];
+const TEXT_CATEGORY_KEYS = ['exam', 'electrophysiology', 'pathology', 'other'];
 const LEGACY_CATEGORY_MAP = {
   custom: 'other',
   laboratory: 'lab',
@@ -35,16 +37,53 @@ const LEGACY_CATEGORY_MAP = {
   ultrasound: 'exam'
 };
 
+function valueTypeStateForCategory(category, valueType) {
+  if (TEXT_CATEGORY_KEYS.includes(category)) {
+    return {
+      valueType: 'text',
+      valueTypeIndex: 2,
+      valueTypeLabel: VALUE_TYPE_LABELS[2]
+    };
+  }
+  const nextValueType = LAB_VALUE_TYPES.includes(valueType) ? valueType : 'quantitative';
+  const valueTypeIndex = VALUE_TYPES.indexOf(nextValueType);
+  return {
+    valueType: nextValueType,
+    valueTypeIndex,
+    valueTypeLabel: VALUE_TYPE_LABELS[valueTypeIndex]
+  };
+}
+
+function sanitizeFormByCategory(form) {
+  const valueTypeState = valueTypeStateForCategory(form.category, form.valueType);
+  const next = {
+    ...form,
+    ...valueTypeState
+  };
+  if (TEXT_CATEGORY_KEYS.includes(next.category)) {
+    return {
+      ...next,
+      unit: '',
+      refRangeLow: '',
+      refRangeHigh: '',
+      refQualitative: ''
+    };
+  }
+  return {
+    ...next,
+    refText: ''
+  };
+}
+
 function emptyForm() {
+  const valueTypeState = valueTypeStateForCategory(DEFAULT_CATEGORY.key, 'quantitative');
   return {
     metricKey: '',
     metricName: '',
     category: DEFAULT_CATEGORY.key,
     categoryCn: DEFAULT_CATEGORY.label,
     categoryIndex: DEFAULT_CATEGORY_INDEX,
-    valueType: 'quantitative',
-    valueTypeIndex: 0,
-    valueTypeLabel: VALUE_TYPE_LABELS[0],
+    ...valueTypeState,
     unit: '',
     refRangeLow: '',
     refRangeHigh: '',
@@ -55,23 +94,20 @@ function emptyForm() {
 
 function normalizeForm(metric = {}) {
   const valueType = metric.valueType || 'quantitative';
-  const valueTypeIndex = VALUE_TYPES.indexOf(valueType) >= 0 ? VALUE_TYPES.indexOf(valueType) : 0;
   const normalizedCategory = LEGACY_CATEGORY_MAP[metric.category] || metric.category;
   const categoryIndex = CATEGORY_OPTIONS.findIndex((item) => item.key === normalizedCategory);
   const categoryOption = categoryIndex >= 0 ? CATEGORY_OPTIONS[categoryIndex] : DEFAULT_CATEGORY;
-  return {
+  return sanitizeFormByCategory({
     ...emptyForm(),
     ...metric,
     category: categoryOption.key,
     categoryIndex: categoryIndex >= 0 ? categoryIndex : DEFAULT_CATEGORY_INDEX,
     categoryCn: categoryOption.label,
     valueType,
-    valueTypeIndex,
-    valueTypeLabel: VALUE_TYPE_LABELS[valueTypeIndex],
     refRangeLow: metric.refRangeLow === null || metric.refRangeLow === undefined ? '' : String(metric.refRangeLow),
     refRangeHigh: metric.refRangeHigh === null || metric.refRangeHigh === undefined ? '' : String(metric.refRangeHigh),
     refText: metric.refText || ''
-  };
+  });
 }
 
 Page({
@@ -90,6 +126,7 @@ Page({
     form: emptyForm(),
     categoryLabels: CATEGORY_LABELS,
     valueTypeLabels: VALUE_TYPE_LABELS,
+    labValueTypeLabels: LAB_VALUE_TYPE_LABELS,
     networkOffline: false,
     loading: false,
     loadingSlow: false
@@ -190,12 +227,14 @@ Page({
 
   onValueTypeChange(event) {
     const index = Number(event.detail.value) || 0;
+    const valueType = LAB_VALUE_TYPES[index] || 'quantitative';
+    const valueTypeIndex = VALUE_TYPES.indexOf(valueType);
     this.setData({
       form: {
         ...this.data.form,
-        valueTypeIndex: index,
-        valueType: VALUE_TYPES[index] || 'quantitative',
-        valueTypeLabel: VALUE_TYPE_LABELS[index] || VALUE_TYPE_LABELS[0]
+        valueTypeIndex,
+        valueType,
+        valueTypeLabel: VALUE_TYPE_LABELS[valueTypeIndex] || VALUE_TYPE_LABELS[0]
       }
     });
   },
@@ -203,17 +242,12 @@ Page({
   onCategoryChange(event) {
     const index = Number(event.detail.value) || 0;
     const option = CATEGORY_OPTIONS[index] || CATEGORY_OPTIONS[0];
-    const nextForm = {
+    const nextForm = sanitizeFormByCategory({
       ...this.data.form,
       categoryIndex: index,
       category: option.key,
       categoryCn: option.label
-    };
-    if (TEXT_CATEGORY_KEYS.includes(option.key) && nextForm.valueType === 'quantitative') {
-      nextForm.valueTypeIndex = 2;
-      nextForm.valueType = 'text';
-      nextForm.valueTypeLabel = VALUE_TYPE_LABELS[2];
-    }
+    });
     this.setData({ form: nextForm });
   },
 
@@ -227,7 +261,8 @@ Page({
       wx.showToast({ title: '\u8bf7\u586b\u5199\u6a21\u677f\u540d\u79f0', icon: 'none' });
       return;
     }
-    const saved = saveCustomMetric(this.profileId, form);
+    const normalizedForm = sanitizeFormByCategory(form);
+    const saved = saveCustomMetric(this.profileId, normalizedForm);
     this.setData({ editing: false, formTitle: '新建录入模板', form: emptyForm() });
     if (this.data.mode === 'select') {
       wx.setStorageSync('manualEntryTemplate', saved);
