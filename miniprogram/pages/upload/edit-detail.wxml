@@ -21,7 +21,7 @@
     <view wx:if="{{basicInfo.hospitalSource === 'inferred_from_batch' || basicInfo.reportDateSource === 'inferred_from_batch'}}" class="source-note">部分基础信息根据同批报告推测，请核对。</view>
     <view wx:if="{{editing}}" class="manual-actions">
       <view class="btn secondary" bindtap="addManualMetric">添加指标</view>
-      <view class="btn secondary" bindtap="addFinding">添加影像所见</view>
+      <view wx:if="{{isImagingReport}}" class="btn secondary" bindtap="addFinding">添加影像所见</view>
     </view>
   </view>
   <view wx:if="{{warnings.length}}">
@@ -48,7 +48,10 @@
               <view wx:if="{{item.uncertain}}" class="warn-dot">!</view>
               <view class="body strong">{{item.name}}</view>
             </view>
-            <view wx:if="{{item.mappingStatus !== 'confirmed'}}" class="status-pill">{{item.mappingStatus}}</view>
+            <view class="metric-actions">
+              <view wx:if="{{item.mappingStatus !== 'confirmed'}}" class="status-pill">{{item.mappingStatus}}</view>
+              <view wx:if="{{editing}}" class="delete-x" data-index="{{item.index}}" catchtap="deleteMetric">×</view>
+            </view>
           </view>
           <view wx:if="{{!editing}}" class="metric-read">
             <view class="metric-value {{item.tone === 'high' ? 'value-high' : ''}} {{item.tone === 'low' ? 'value-low' : ''}} {{item.tone === 'positive' ? 'value-positive' : ''}}">{{item.value}}</view>
@@ -79,7 +82,7 @@
       </view>
     </view>
   </view>
-  <view wx:if="{{findings.length}}">
+  <view wx:if="{{isImagingReport && findings.length}}">
     <view class="section-title">
       <view>影像所见</view>
       <view class="tiny">{{findings.length}} 条</view>
@@ -90,17 +93,18 @@
           <view class="finding-dot"></view>
           <textarea wx:if="{{editing}}" class="finding-input" value="{{item}}" data-index="{{index}}" auto-height bindinput="onFindingInput" />
           <view wx:else class="body">{{item}}</view>
+          <view wx:if="{{editing}}" class="delete-x finding-delete" data-index="{{index}}" catchtap="deleteFinding">×</view>
         </view>
       </view>
     </view>
   </view>
-  <view wx:if="{{!loading && !groups.length && !findings.length}}" class="pad">
+  <view wx:if="{{!loading && !groups.length && (!isImagingReport || !findings.length)}}" class="pad">
     <view class="empty-detail">
       <view class="body strong">暂无可展示的识别明细</view>
       <view class="tiny mt-8">请返回确认页检查报告来源，或稍后重新识别。</view>
       <view wx:if="{{editing}}" class="manual-actions in-empty">
         <view class="btn secondary" bindtap="addManualMetric">添加指标</view>
-        <view class="btn secondary" bindtap="addFinding">添加影像所见</view>
+        <view wx:if="{{isImagingReport}}" class="btn secondary" bindtap="addFinding">添加影像所见</view>
       </view>
     </view>
   </view>

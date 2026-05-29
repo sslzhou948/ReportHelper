@@ -58,6 +58,10 @@ function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
+function isImagingInfo(info) {
+  return (info && info.modality) === 'imaging';
+}
+
 Page({
   taskId: '',
   reportId: '',
@@ -84,6 +88,7 @@ Page({
     },
     groups: [],
     findings: [],
+    isImagingReport: false,
     warnings: []
   },
 
@@ -101,6 +106,7 @@ Page({
   refreshData() {
     const draft = this.draft || {};
     const info = draft.basicInfo || {};
+    const isImagingReport = isImagingInfo(info);
     this.setData({
       basicInfo: {
         type: info.type || '待确认报告',
@@ -114,7 +120,8 @@ Page({
         reportDateSource: info.reportDateSource || 'unknown'
       },
       groups: groupMetrics(draft.metrics || []),
-      findings: draft.findings || [],
+      findings: isImagingReport ? (draft.findings || []) : [],
+      isImagingReport,
       warnings: draft.warnings || []
     });
   },
@@ -243,13 +250,24 @@ Page({
 
   addFinding() {
     if (!this.draft) return;
+    if (!isImagingInfo(this.draft.basicInfo || {})) {
+      wx.showToast({ title: '\u4ec5\u5f71\u50cf\u7c7b\u62a5\u544a\u53ef\u6dfb\u52a0\u5f71\u50cf\u6240\u89c1', icon: 'none' });
+      return;
+    }
     this.draft.findings = (this.draft.findings || []).concat(['']);
     this.draft.basicInfo = {
       ...(this.draft.basicInfo || {}),
-      modality: (this.draft.basicInfo && this.draft.basicInfo.modality) || 'imaging',
       analysisPolicy: 'view_only'
     };
     this.draft.analysisPolicy = 'view_only';
+    this.markManualReviewed();
+    this.refreshData();
+  },
+
+  deleteMetric(event) {
+    const index = Number(event.currentTarget.dataset.index);
+    if (!this.draft || !this.draft.metrics || !this.draft.metrics[index]) return;
+    this.draft.metrics = this.draft.metrics.filter((_, metricIndex) => metricIndex !== index);
     this.markManualReviewed();
     this.refreshData();
   },
@@ -301,8 +319,17 @@ Page({
     this.refreshData();
   },
 
+  deleteFinding(event) {
+    const index = Number(event.currentTarget.dataset.index);
+    if (!this.draft || !this.draft.findings || this.draft.findings[index] === undefined) return;
+    this.draft.findings = this.draft.findings.filter((_, findingIndex) => findingIndex !== index);
+    this.markManualReviewed();
+    this.refreshData();
+  },
+
   saveAndBack() {
     if (!this.draftId || this.data.saving) return Promise.resolve(false);
+    if (!this.data.isImagingReport && this.draft) this.draft.findings = [];
     if (this.manualMode) {
       const hasMetric = (this.draft.metrics || []).some((metric) => (
         metric.valueType === 'qualitative'
@@ -321,7 +348,7 @@ Page({
       return api.updateReport(this.reportId, {
         basicInfo: this.draft.basicInfo || {},
         metrics: this.draft.metrics || [],
-        findings: this.draft.findings || [],
+        findings: this.data.isImagingReport ? (this.draft.findings || []) : [],
         warnings: this.draft.warnings || []
       }, {
         idempotencyKey: `edit_report_${this.reportId}`
@@ -337,7 +364,10 @@ Page({
     return api.updateOcrDraft({
       taskId: this.taskId,
       draftId: this.draftId,
-      draft: this.draft
+      draft: {
+        ...this.draft,
+        findings: this.data.isImagingReport ? (this.draft.findings || []) : []
+      }
     }, {
       idempotencyKey: `edit_draft_${this.taskId}_${this.draftId}`
     }).then(() => {

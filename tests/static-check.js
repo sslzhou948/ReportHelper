@@ -66,6 +66,8 @@ const healthSearchJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'heal
 const uploadPickJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'upload', 'pick.js'), 'utf8');
 const uploadConfirmJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'upload', 'confirm.js'), 'utf8');
 const uploadEditDetailJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'upload', 'edit-detail.js'), 'utf8');
+const uploadEditDetailWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'upload', 'edit-detail.wxml'), 'utf8');
+const uploadEditDetailWxss = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'upload', 'edit-detail.wxss'), 'utf8');
 const uploadConflictJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'upload', 'conflict.js'), 'utf8');
 const profileOnboardJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'onboard.js'), 'utf8');
 const profileOnboardWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'onboard.wxml'), 'utf8');
@@ -137,6 +139,11 @@ assert.ok(uploadEditDetailJs.includes('api.getOcrTask(this.taskId)'), 'upload ed
 assert.ok(uploadEditDetailJs.includes("showApiErrorToast(error, '加载报告详情失败')"), 'upload edit detail must surface API errors when detail loading fails');
 assert.ok(uploadEditDetailJs.includes('addManualMetric()'), 'upload edit detail must allow manual metric entry');
 assert.ok(uploadEditDetailJs.includes('addFinding()'), 'upload edit detail must allow manual imaging finding entry');
+assert.ok(uploadEditDetailJs.includes('isImagingInfo(info)') && uploadEditDetailJs.includes('isImagingReport'), 'upload edit detail must gate imaging findings by normalized report modality');
+assert.ok(uploadEditDetailJs.includes('deleteMetric(event)') && uploadEditDetailJs.includes('deleteFinding(event)'), 'upload edit detail must allow removing individual metrics and findings before saving');
+assert.ok(uploadEditDetailWxml.includes('wx:if="{{isImagingReport}}" class="btn secondary" bindtap="addFinding"'), 'upload edit detail must only expose add finding for imaging reports');
+assert.ok(uploadEditDetailWxml.includes('catchtap="deleteMetric"') && uploadEditDetailWxml.includes('catchtap="deleteFinding"'), 'upload edit detail delete controls must not trigger parent field editing');
+assert.ok(uploadEditDetailWxss.includes('.delete-x'), 'upload edit detail must style row-level delete controls');
 assert.ok(!uploadEditDetailJs.includes("value: '32'"), 'upload edit detail must not ship hardcoded metric fixtures');
 assert.ok(uploadConflictJs.includes('showApiErrorToast(error'), 'upload conflict page must surface normalized API errors');
 assert.ok(!reportDetailJs.includes('api.updateReport(this.reportId'), 'report detail edit entry must not auto-save report data');
