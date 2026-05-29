@@ -84,7 +84,7 @@
   <view class="pad">
     <view class="card">
       <view wx:for="{{reports}}" wx:key="id" class="row" data-id="{{item.id}}" bindtap="goReport">
-        <view class="report-type">{{item.displayType}}</view>
+        <view class="report-type" title="{{item.fullType}}">{{item.displayType}}</view>
         <view class="report-main">
           <view class="body strong">{{item.hospital}}</view>
           <view class="tiny">{{item.displayDate}}</view>

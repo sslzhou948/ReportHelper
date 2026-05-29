@@ -262,15 +262,16 @@
 }
 
 .report-type {
-  flex: 0 0 auto;
-  max-width: 150rpx;
+  flex: 0 0 112rpx;
+  width: 112rpx;
   min-height: 44rpx;
-  padding: 6rpx 16rpx;
+  padding: 6rpx 10rpx;
   border-radius: 20rpx;
   background: #F2EEE7;
   color: var(--ink-2);
   font-size: 22rpx;
   font-weight: 600;
+  text-align: center;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

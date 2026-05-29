@@ -112,6 +112,7 @@ assert.ok(app.pages.includes('pages/profile/custom-metrics'), 'custom metric lib
 assert.ok(homeWxml.includes('拍照识别 / 手动录入') && homeIndexJs.includes('/pages/record/new'), 'home primary CTA must open unified record entry');
 assert.ok(!homeWxml.includes('新增{{profile.relation}}') && !homeWxml.includes('{{profile.relation}}距下次复查'), 'home primary cards must not repeat the archive relation in action copy');
 assert.ok(homeIndexJs.includes('reportDisplayType(report)') && homeWxml.includes('{{item.displayType}}'), 'home recent reports must display manual metric names instead of only custom categories');
+assert.ok(homeIndexJs.includes('label.length > 4') && homeIndexJs.includes('label.slice(0, 3)'), 'home recent report labels must be capped at four visible characters including ellipsis');
 assert.ok(recordNewJs.includes('/pages/upload/pick') && recordNewJs.includes('/pages/profile/custom-metrics?mode=select'), 'record entry must split only into photo recognition and manual entry');
 assert.ok(profileIndexJs.includes('/pages/profile/custom-metrics?mode=manage'), 'profile page must expose custom metric library management');
 assert.ok(profileCustomMetricsJs.includes("const mode = query.mode === 'select' ? 'select' : 'manage'") && profileCustomMetricsJs.includes('isSelectMode'), 'custom metric page must be reusable for select and manage modes');

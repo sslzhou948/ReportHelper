@@ -84,7 +84,7 @@ assertDecl(metricCard, 'width: 296rpx', 'home metric card width must match 148px
 assertDecl(metricCard, 'white-space: normal', 'home metric card text must wrap inside the fixed card');
 
 const reportType = getRule(homeWxss, '.report-type');
-assertDecl(reportType, 'max-width: 150rpx', 'home report type pill must not squeeze the row');
+assertDecl(reportType, 'width: 112rpx', 'home report type pill must align as a fixed four-character label');
 assertDecl(reportType, 'text-overflow: ellipsis', 'home report type must truncate instead of wrapping vertically');
 
 const reportMain = getRule(homeWxss, '.report-main');
