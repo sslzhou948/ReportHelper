@@ -354,9 +354,9 @@ export async function updateReportDetail(prisma: PrismaClient, reportId: string,
 export async function createManualReport(prisma: PrismaClient, profileId: string, userId: string, payload: { reportDate?: string; hospital?: string; note?: string; metric?: Record<string, unknown> }) {
   const metric = payload.metric || {};
   const valueType = String(metric.valueType || 'quantitative');
-  const category = String(metric.category || 'custom');
-  const isImagingCategory = ['imaging', 'ultrasound'].includes(category);
-  const isViewOnly = ['imaging', 'ultrasound', 'pathology'].includes(category) || valueType === 'text';
+  const category = String(metric.category || 'lab');
+  const isImagingCategory = ['exam', 'imaging', 'ultrasound'].includes(category);
+  const isViewOnly = ['exam', 'electrophysiology', 'pathology', 'imaging', 'ultrasound'].includes(category) || valueType === 'text';
   const findings = valueType === 'text' && metric.valueQualitative ? [String(metric.valueQualitative)] : [];
   const reportDate = new Date(String(payload.reportDate || new Date().toISOString().slice(0, 10)));
   const createdId = await prisma.$transaction(async (tx) => {
@@ -375,8 +375,8 @@ export async function createManualReport(prisma: PrismaClient, profileId: string
       metricKey,
       metricName: metric.metricName || '手动指标',
       originalMetricName: metric.originalMetricName || metric.metricName || '手动指标',
-      category: metric.category || 'custom',
-      categoryCn: metric.categoryCn || '自定义',
+      category: metric.category || 'lab',
+      categoryCn: metric.categoryCn || '检验',
       mappingStatus: metric.mappingStatus || 'confirmed',
       valueType,
       isManuallyEdited: true

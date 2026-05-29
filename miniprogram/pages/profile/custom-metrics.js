@@ -17,17 +17,23 @@ const { isProfileRequiredError } = require('../../utils/profile');
 const VALUE_TYPES = ['quantitative', 'qualitative', 'text'];
 const VALUE_TYPE_LABELS = ['数值', '阴性/阳性', '文字描述'];
 const CATEGORY_OPTIONS = [
-  { key: 'custom', label: '自定义检查' },
-  { key: 'laboratory', label: '血液/化验' },
-  { key: 'drug_level', label: '血药浓度' },
-  { key: 'imaging', label: 'CT/核磁/影像' },
-  { key: 'ultrasound', label: '彩超/超声' },
-  { key: 'pathology', label: '病理/其他' }
+  { key: 'lab', label: '检验' },
+  { key: 'exam', label: '检查' },
+  { key: 'electrophysiology', label: '电生理' },
+  { key: 'pathology', label: '病理' },
+  { key: 'other', label: '其他' }
 ];
 const CATEGORY_LABELS = CATEGORY_OPTIONS.map((item) => item.label);
-const DEFAULT_CATEGORY_INDEX = 1;
+const DEFAULT_CATEGORY_INDEX = 0;
 const DEFAULT_CATEGORY = CATEGORY_OPTIONS[DEFAULT_CATEGORY_INDEX];
-const TEXT_CATEGORY_KEYS = ['imaging', 'ultrasound', 'pathology'];
+const TEXT_CATEGORY_KEYS = ['exam', 'electrophysiology', 'pathology'];
+const LEGACY_CATEGORY_MAP = {
+  custom: 'other',
+  laboratory: 'lab',
+  drug_level: 'lab',
+  imaging: 'exam',
+  ultrasound: 'exam'
+};
 
 function emptyForm() {
   return {
@@ -50,12 +56,15 @@ function emptyForm() {
 function normalizeForm(metric = {}) {
   const valueType = metric.valueType || 'quantitative';
   const valueTypeIndex = VALUE_TYPES.indexOf(valueType) >= 0 ? VALUE_TYPES.indexOf(valueType) : 0;
-  const categoryIndex = CATEGORY_OPTIONS.findIndex((item) => item.key === metric.category);
+  const normalizedCategory = LEGACY_CATEGORY_MAP[metric.category] || metric.category;
+  const categoryIndex = CATEGORY_OPTIONS.findIndex((item) => item.key === normalizedCategory);
+  const categoryOption = categoryIndex >= 0 ? CATEGORY_OPTIONS[categoryIndex] : DEFAULT_CATEGORY;
   return {
     ...emptyForm(),
     ...metric,
-    categoryIndex: categoryIndex >= 0 ? categoryIndex : 0,
-    categoryCn: metric.categoryCn || (categoryIndex >= 0 ? CATEGORY_OPTIONS[categoryIndex].label : '自定义检查'),
+    category: categoryOption.key,
+    categoryIndex: categoryIndex >= 0 ? categoryIndex : DEFAULT_CATEGORY_INDEX,
+    categoryCn: categoryOption.label,
     valueType,
     valueTypeIndex,
     valueTypeLabel: VALUE_TYPE_LABELS[valueTypeIndex],

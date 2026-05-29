@@ -29,8 +29,8 @@ function saveCustomMetric(profileId, metric) {
   const next = {
     metricKey,
     metricName: String(metric.metricName || '').trim(),
-    category: metric.category || 'custom',
-    categoryCn: metric.categoryCn || '\u81ea\u5b9a\u4e49\u68c0\u67e5',
+    category: metric.category || 'lab',
+    categoryCn: metric.categoryCn || '\u68c0\u9a8c',
     valueType: metric.valueType || 'quantitative',
     unit: String(metric.unit || '').trim(),
     refRangeLow: metric.refRangeLow === '' ? null : metric.refRangeLow,
