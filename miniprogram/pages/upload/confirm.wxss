@@ -1,5 +1,5 @@
 .confirm-page {
-  padding-bottom: 136rpx;
+  padding-bottom: calc(192rpx + env(safe-area-inset-bottom));
 }
 
 .report-card-head {

@@ -1,5 +1,5 @@
 .upload-page {
-  padding-bottom: 136rpx;
+  padding-bottom: calc(192rpx + env(safe-area-inset-bottom));
 }
 
 .upload-actions {

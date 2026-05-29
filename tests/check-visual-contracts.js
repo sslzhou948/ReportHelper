@@ -135,7 +135,7 @@ for (const [name, source] of [
   ['upload edit', uploadEditWxss],
   ['upload conflict', uploadConflictWxss]
 ]) {
-  assert.ok(source.includes('padding-bottom: 136rpx'), `${name} page must reserve space for fixed bottom action`);
+  assert.ok(source.includes('padding-bottom: calc(192rpx + env(safe-area-inset-bottom))'), `${name} page must reserve more than the fixed bottom action height`);
   assert.ok(source.includes('env(safe-area-inset-bottom)'), `${name} bottom action must respect safe area`);
 }
 
