@@ -36,7 +36,7 @@
     <view class="upload-cta" bindtap="goRecord">
       <view class="upload-icon">＋</view>
       <view class="flex">
-        <view class="upload-title">新增{{profile.relation}}的健康记录</view>
+        <view class="upload-title">新增健康记录</view>
         <view class="upload-sub">拍照识别 / 手动录入</view>
       </view>
       <view class="upload-arrow">›</view>
@@ -47,7 +47,7 @@
     <view class="card card-pad recheck-card" bindtap="goRecheck">
       <view class="recheck-icon">复</view>
       <view class="flex">
-        <view class="body strong">{{profile.relation}}距下次复查还有 {{daysToNext}} 天</view>
+        <view class="body strong">距下次复查还有 {{daysToNext}} 天</view>
         <view class="sub">{{nextPlan.date}} · {{nextPlan.hospital}} · {{nextPlan.type}}</view>
       </view>
       <view class="arrow">›</view>
@@ -84,7 +84,7 @@
   <view class="pad">
     <view class="card">
       <view wx:for="{{reports}}" wx:key="id" class="row" data-id="{{item.id}}" bindtap="goReport">
-        <view class="report-type">{{item.type}}</view>
+        <view class="report-type">{{item.displayType}}</view>
         <view class="report-main">
           <view class="body strong">{{item.hospital}}</view>
           <view class="tiny">{{item.displayDate}}</view>

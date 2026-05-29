@@ -115,6 +115,14 @@ function formatPendingOcrSummary(tasks) {
   };
 }
 
+function reportDisplayType(report) {
+  const metrics = report.metrics || [];
+  if (String(report.typeKey || '').startsWith('manual_') && metrics[0] && metrics[0].metricName) {
+    return metrics[0].metricName;
+  }
+  return report.canonicalTypeName || report.type || '\u68c0\u67e5';
+}
+
 Page({
   data: {
     profile: null,
@@ -158,6 +166,7 @@ Page({
         profiles,
         reports: reports.slice(0, 3).map((report) => ({
           ...report,
+          displayType: reportDisplayType(report),
           displayDate: formatMonthDay(report.reportDate)
         })),
         pinnedMetrics: snapshots.filter((item) => item.isPinned).slice(0, 8),

@@ -109,7 +109,7 @@ Page({
         unit: form.unit,
         refRangeLow: toNumberOrNull(form.refRangeLow),
         refRangeHigh: toNumberOrNull(form.refRangeHigh),
-        mappingStatus: template.source === 'custom' ? 'pending' : 'confirmed',
+        mappingStatus: 'confirmed',
         isManuallyEdited: true
       }
     }, {

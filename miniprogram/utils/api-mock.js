@@ -474,7 +474,7 @@ function createMockApi() {
           metricKey: metric.metricKey || `manual_metric_${Date.now()}`,
           metricName: metric.metricName || '\u624b\u52a8\u6307\u6807',
           originalMetricName: metric.originalMetricName || metric.metricName || '\u624b\u52a8\u6307\u6807',
-          mappingStatus: metric.mappingStatus || 'pending',
+          mappingStatus: metric.mappingStatus || 'confirmed',
           isManuallyEdited: true
         }],
         findings: [],

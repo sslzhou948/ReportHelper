@@ -1003,7 +1003,7 @@ const manualReportResponse = await app.inject({
       unit: 'ng/mL',
       refRangeLow: 5,
       refRangeHigh: 20,
-      mappingStatus: 'pending',
+      mappingStatus: 'confirmed',
       isManuallyEdited: true
     }
   }
@@ -1012,6 +1012,15 @@ assert.equal(manualReportResponse.statusCode, 200);
 const manualReportPayload = manualReportResponse.json();
 assert.equal(manualReportPayload.data.report.type, 'Custom');
 assert.ok(manualReportPayload.data.report.metrics.some((metric: Row) => metric.metricKey === 'manual_drug_level' && metric.unit === 'ng/mL'));
+const manualPinResponse = await app.inject({
+  method: 'PATCH',
+  url: `/api/profiles/${profileId}/metrics/manual_drug_level/pin`,
+  payload: {
+    isPinned: true
+  }
+});
+assert.equal(manualPinResponse.statusCode, 200);
+assert.equal(manualPinResponse.json().data.isPinned, true);
 
 const deleteReportResponse = await app.inject({
   method: 'DELETE',

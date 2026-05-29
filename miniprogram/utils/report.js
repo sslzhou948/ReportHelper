@@ -44,7 +44,7 @@ function buildMetricSnapshots(reports, metricDefinitions) {
   const allRows = reports
     .filter((report) => (report.analysisPolicy || 'metric_analysis') !== 'view_only')
     .flatMap((report) => normalizeReportMetrics(report, metricDefinitions))
-    .filter((row) => !['pending', 'conflicted'].includes(row.mappingStatus));
+    .filter((row) => row.category === 'custom' || !['pending', 'conflicted'].includes(row.mappingStatus));
   const byMetric = allRows.reduce((acc, row) => {
     if (!acc[row.metricKey]) acc[row.metricKey] = [];
     acc[row.metricKey].push(row);

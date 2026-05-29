@@ -372,7 +372,7 @@ export async function createManualReport(prisma: PrismaClient, profileId: string
       originalMetricName: metric.originalMetricName || metric.metricName || '手动指标',
       category: metric.category || 'custom',
       categoryCn: metric.categoryCn || '自定义',
-      mappingStatus: metric.mappingStatus || 'pending',
+      mappingStatus: metric.mappingStatus || 'confirmed',
       valueType,
       isManuallyEdited: true
     });
@@ -456,7 +456,7 @@ export async function listMetricRowsForProfile(prisma: PrismaClient, profileId: 
 
   return (reports as unknown as ReportWithMetrics[]).flatMap((report) => (
     (report.metrics || [])
-      .filter((metric) => !['pending', 'conflicted'].includes(metric.mappingStatus))
+      .filter((metric) => metric.category === 'custom' || !['pending', 'conflicted'].includes(metric.mappingStatus))
       .map((metric) => ({
         ...serializeMetric(metric),
         reportId: report.id,
