@@ -1,5 +1,5 @@
 import fs from 'node:fs/promises';
-import { getRealcaseOcrDrafts, type RealcaseDraft } from '../fixtures/realcase.js';
+import type { RealcaseDraft } from '../fixtures/realcase.js';
 import type { Env } from '../config/env.js';
 import { draftFromRawOcr as parseRawOcrDraft } from './raw-ocr-parser.js';
 import { extractMetricReportMarkers, mergeReportMarkers, normalizeReportMarkers, stripMetricReportMarkers } from '../domain/report-markers.js';
@@ -95,6 +95,11 @@ export type OcrProvider = {
   recognizeFixture(input: FixtureRecognitionInput): Promise<OcrDraft[]>;
   recognizePhotos(input: OcrProviderInput): Promise<OcrProviderResult>;
 };
+
+async function getRealcaseFixtureDrafts(caseIds?: string[]): Promise<RealcaseDraft[]> {
+  const fixtureModule = await import('../fixtures/realcase.js');
+  return fixtureModule.getRealcaseOcrDrafts(caseIds);
+}
 
 function warning(code: string, message: string) {
   return {
@@ -1712,7 +1717,7 @@ function ocrResponseSchema() {
 
 class FixtureOcrProvider implements OcrProvider {
   async recognizeFixture(input: FixtureRecognitionInput): Promise<OcrDraft[]> {
-    return getRealcaseOcrDrafts(input.caseIds);
+    return getRealcaseFixtureDrafts(input.caseIds);
   }
 
   async recognizePhotos(_input: OcrProviderInput): Promise<OcrProviderResult> {
@@ -1735,7 +1740,7 @@ class GptVisionOcrProvider implements OcrProvider {
   constructor(private readonly env: Env) {}
 
   async recognizeFixture(input: FixtureRecognitionInput): Promise<OcrDraft[]> {
-    return getRealcaseOcrDrafts(input.caseIds);
+    return getRealcaseFixtureDrafts(input.caseIds);
   }
 
   async recognizePhotos(input: OcrProviderInput): Promise<OcrProviderResult> {
@@ -1989,7 +1994,7 @@ class CommercialOcrProvider implements OcrProvider {
   constructor(private readonly env: Env) {}
 
   async recognizeFixture(input: FixtureRecognitionInput): Promise<OcrDraft[]> {
-    return getRealcaseOcrDrafts(input.caseIds);
+    return getRealcaseFixtureDrafts(input.caseIds);
   }
 
   async recognizePhotos(input: OcrProviderInput): Promise<OcrProviderResult> {

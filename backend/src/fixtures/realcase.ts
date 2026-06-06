@@ -39,8 +39,29 @@ type FixtureModule = {
   getRealcaseOcrDrafts(caseIds?: string[]): RealcaseDraft[];
 };
 
-const fixtureModule = require('../../../miniprogram/data/ocr-fixtures.js') as FixtureModule;
+let fixtureModule: FixtureModule | null | undefined;
+
+function loadFixtureModule(): FixtureModule | null {
+  if (fixtureModule !== undefined) return fixtureModule;
+
+  try {
+    fixtureModule = require('../../../miniprogram/data/ocr-fixtures.js') as FixtureModule;
+  } catch (error) {
+    if (
+      error &&
+      typeof error === 'object' &&
+      'code' in error &&
+      (error as { code?: string }).code === 'MODULE_NOT_FOUND'
+    ) {
+      fixtureModule = null;
+      return fixtureModule;
+    }
+    throw error;
+  }
+
+  return fixtureModule;
+}
 
 export function getRealcaseOcrDrafts(caseIds?: string[]): RealcaseDraft[] {
-  return fixtureModule.getRealcaseOcrDrafts(caseIds);
+  return loadFixtureModule()?.getRealcaseOcrDrafts(caseIds) ?? [];
 }
