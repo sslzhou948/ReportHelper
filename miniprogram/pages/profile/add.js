@@ -86,14 +86,20 @@ Page({
     stageText: '\u672a\u586b\u5199',
     phaseText: '\u672a\u586b\u5199',
     today: todayString(),
-    saving: false
+    saving: false,
+    onboarding: false
   },
 
   onLoad(query = {}) {
+    this.setData({ onboarding: query.onboarding === '1' });
     refreshForm(this, defaultProfile(query.relation));
   },
 
   goBack() {
+    if (this.data.onboarding) {
+      wx.reLaunch({ url: '/pages/profile/onboard?state=noProfile' });
+      return;
+    }
     wx.navigateBack();
   },
 

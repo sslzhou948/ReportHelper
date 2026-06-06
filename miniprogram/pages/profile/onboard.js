@@ -1,36 +1,62 @@
 const { api } = require('../../utils/api');
 const { requestWxLoginCode } = require('../../utils/auth');
 const { showApiErrorToast } = require('../../utils/error');
+const { clearAuthSession, hasAuthSession } = require('../../utils/session');
 
-function selectionState(relation, agreed) {
-  return {
-    selectedRelation: relation,
-    selfSelectedClass: relation === '\u6211\u81ea\u5df1' ? 'selected' : '',
-    familySelectedClass: relation === '\u5988\u5988' ? 'selected' : '',
-    continueDisabledClass: agreed ? '' : 'disabled'
-  };
+function agreementClass(agreed) {
+  return agreed ? 'checked' : '';
 }
 
 Page({
   data: {
+    state: 'guest',
     agreed: false,
     loggingIn: false,
-    selectedRelation: '',
-    selfSelectedClass: '',
-    familySelectedClass: '',
-    continueDisabledClass: 'disabled'
+    checkingSession: false,
+    agreementClass: ''
+  },
+
+  onLoad(query = {}) {
+    if (query.state === 'noProfile' && hasAuthSession()) {
+      this.setData({ state: 'noProfile' });
+      return;
+    }
+    this.checkExistingSession();
+  },
+
+  checkExistingSession() {
+    if (!hasAuthSession()) {
+      this.setData({ state: 'guest', checkingSession: false });
+      return;
+    }
+
+    this.setData({ checkingSession: true });
+    api.getProfiles().then((profiles) => {
+      this.setData({ checkingSession: false });
+      if (profiles && profiles.length) {
+        const app = getApp();
+        if (app.setCurrentProfileId) app.setCurrentProfileId(profiles[0].id);
+        wx.switchTab({ url: '/pages/home/index' });
+        return;
+      }
+      this.setData({ state: 'noProfile' });
+    }).catch((error) => {
+      if (error && error.code === 'UNAUTHORIZED') {
+        clearAuthSession();
+        this.setData({ state: 'guest', checkingSession: false });
+        return;
+      }
+      this.setData({ state: 'guest', checkingSession: false });
+      showApiErrorToast(error, '获取档案失败，请重试');
+    });
   },
 
   toggleAgree() {
     const agreed = !this.data.agreed;
     this.setData({
       agreed,
-      ...selectionState(this.data.selectedRelation, agreed)
+      agreementClass: agreementClass(agreed)
     });
-  },
-
-  selectRelation(event) {
-    this.setData(selectionState(event.currentTarget.dataset.relation || '', this.data.agreed));
   },
 
   openAgreement() {
@@ -44,7 +70,7 @@ Page({
   login() {
     if (this.data.loggingIn) return Promise.resolve(false);
     if (!this.data.agreed) {
-      wx.showToast({ title: '\u8bf7\u5148\u9605\u8bfb\u5e76\u540c\u610f\u534f\u8bae', icon: 'none' });
+      wx.showToast({ title: '请先阅读并同意协议', icon: 'none' });
       return Promise.resolve(false);
     }
 
@@ -54,35 +80,31 @@ Page({
       wx.setStorageSync('refreshToken', session.refreshToken);
       wx.setStorageSync('userId', session.userId);
       wx.setStorageSync('agreementAccepted', true);
+      return api.getProfiles();
+    }).then((profiles) => {
       this.setData({ loggingIn: false });
+      if (profiles && profiles.length) {
+        const app = getApp();
+        if (app.setCurrentProfileId) app.setCurrentProfileId(profiles[0].id);
+        wx.switchTab({ url: '/pages/home/index' });
+        return true;
+      }
+      this.setData({ state: 'noProfile' });
       return true;
     }).catch((error) => {
       this.setData({ loggingIn: false });
-      showApiErrorToast(error, '\u767b\u5f55\u5931\u8d25\uff0c\u8bf7\u91cd\u8bd5');
+      showApiErrorToast(error, '登录失败，请重试');
       return false;
     });
   },
 
-  continueCreate() {
-    this.login().then((ok) => {
-      if (!ok) return;
-      return api.getProfiles().then((profiles) => {
-        if (profiles && profiles.length) {
-          const app = getApp();
-          const current = app.getCurrentProfileId && app.getCurrentProfileId();
-          const matched = profiles.find((profile) => profile.id === current) || profiles[0];
-          if (matched && app.setCurrentProfileId) app.setCurrentProfileId(matched.id);
-          wx.switchTab({ url: '/pages/home/index' });
-          return;
-        }
-        if (!this.data.selectedRelation) {
-          wx.showToast({ title: '\u8bf7\u5148\u9009\u62e9\u4e3a\u8c01\u521b\u5efa\u6863\u6848', icon: 'none' });
-          return;
-        }
-        wx.navigateTo({ url: `/pages/profile/add?relation=${this.data.selectedRelation}` });
-      }).catch((error) => {
-        showApiErrorToast(error, '\u83b7\u53d6\u6863\u6848\u5931\u8d25\uff0c\u8bf7\u91cd\u8bd5');
-      });
-    });
+  createSelfProfile() {
+    const relation = encodeURIComponent('\u6211\u81ea\u5df1');
+    wx.navigateTo({ url: `/pages/profile/add?relation=${relation}&onboarding=1` });
+  },
+
+  createFamilyProfile() {
+    const relation = encodeURIComponent('\u5988\u5988');
+    wx.navigateTo({ url: `/pages/profile/add?relation=${relation}&onboarding=1` });
   }
 });

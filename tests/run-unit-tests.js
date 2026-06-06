@@ -26,6 +26,7 @@ const { buildSourcePreviewUrls, getStoredUploadPhotos } = require('../miniprogra
 const { ApiError, DEFAULT_REQUEST_TIMEOUT_MS, createApiClient, createMemoryStorage, isTimeoutError } = require('../miniprogram/utils/api-client');
 const { getApiErrorMessage, getApiErrorToastTitle, getValidationErrorLines, isNotFoundError } = require('../miniprogram/utils/error');
 const { createApi } = require('../miniprogram/utils/api');
+const { clearAuthSession, hasAuthSession, shouldRequireLogin } = require('../miniprogram/utils/session');
 const { realcaseOcrDrafts } = require('../miniprogram/data/ocr-fixtures');
 const mock = require('../miniprogram/data/mock');
 
@@ -748,6 +749,7 @@ sequentialChecks.push(async () => {
   const savedApiCache = require.cache[apiModulePath];
   const calls = [];
   let navigatedTo = '';
+  let relaunchedTo = '';
   let pageConfig = null;
   const stubApi = {
     signUploads(payload) {
@@ -4038,7 +4040,25 @@ assert.strictEqual(validateRecheckPlan({
 assert.strictEqual(validateProfile({ relation: '妈妈', realName: '王芬' }).ok, true);
 assert.strictEqual(validateProfile({ relation: '', realName: '' }).ok, false);
 assert.strictEqual(isProfileRequiredError({ code: 'PROFILE_REQUIRED' }), true);
+assert.strictEqual(isProfileRequiredError({ code: 'AUTH_REQUIRED' }), true);
+assert.strictEqual(isProfileRequiredError({ code: 'UNAUTHORIZED' }), true);
 assert.strictEqual(isProfileRequiredError({ code: 'NETWORK_ERROR' }), false);
+
+const sessionStorage = createMemoryStorage({
+  token: 'access_token',
+  refreshToken: 'refresh_token',
+  userId: 'user_1',
+  lastProfileId: 'mock_profile',
+  healthhelperBackendProfileId: 'backend_profile'
+});
+assert.strictEqual(hasAuthSession(sessionStorage), true);
+assert.strictEqual(shouldRequireLogin({ mode: 'backend' }, sessionStorage), false);
+clearAuthSession(sessionStorage);
+assert.strictEqual(hasAuthSession(sessionStorage), false);
+assert.strictEqual(shouldRequireLogin({ mode: 'backend' }, sessionStorage), true);
+assert.strictEqual(shouldRequireLogin({ mode: 'mock' }, sessionStorage), false);
+assert.strictEqual(sessionStorage.get('lastProfileId'), undefined);
+assert.strictEqual(sessionStorage.get('healthhelperBackendProfileId'), undefined);
 
 const storage = createMemoryStorage({ token: 'token_1' });
 let capturedRequest = null;
@@ -4438,7 +4458,8 @@ asyncChecks.push((async () => {
       removeStorageSync: (key) => { delete storageState[key]; },
       getSystemInfoSync: () => ({ windowWidth: 375, statusBarHeight: 44 }),
       getMenuButtonBoundingClientRect: () => ({ bottom: 88 }),
-      navigateTo: ({ url }) => { navigatedTo = url; }
+      navigateTo: ({ url }) => { navigatedTo = url; },
+      reLaunch: ({ url }) => { relaunchedTo = url; }
     };
     global.App = (config) => { appConfig = config; };
     delete require.cache[appModulePath];
@@ -4473,7 +4494,8 @@ asyncChecks.push((async () => {
       profileRequired = error.code === 'PROFILE_REQUIRED';
     }
     assert.strictEqual(profileRequired, true, 'empty profile list should require profile creation');
-    assert.strictEqual(navigatedTo, '/pages/profile/add');
+    assert.strictEqual(navigatedTo, '');
+    assert.strictEqual(relaunchedTo, '/pages/profile/onboard?state=noProfile');
   } finally {
     global.wx = savedWx;
     global.App = savedApp;

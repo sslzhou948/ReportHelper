@@ -1,5 +1,10 @@
 const store = require('./utils/store');
 const { getRuntimeApiOptions } = require('./utils/api-config');
+const {
+  createAuthRequiredError,
+  redirectToOnboard,
+  shouldRequireLogin
+} = require('./utils/session');
 
 App({
   globalData: {
@@ -13,6 +18,13 @@ App({
   },
 
   onLaunch() {
+    if (shouldRequireLogin()) {
+      this.globalData.currentProfileId = null;
+      redirectToOnboard();
+      this.globalData.layout = this.createLayout();
+      return;
+    }
+
     const profileId = wx.getStorageSync('lastProfileId') || store.mock.profiles[0].id;
     this.globalData.currentProfileId = profileId;
     wx.setStorageSync('lastProfileId', profileId);
@@ -57,12 +69,17 @@ App({
   },
 
   ensureCurrentProfileId(api) {
+    if (shouldRequireLogin()) {
+      redirectToOnboard();
+      return Promise.reject(createAuthRequiredError());
+    }
+
     const current = this.getCurrentProfileId();
     return api.getProfiles().then((profiles) => {
       if (!profiles || profiles.length === 0) {
         wx.removeStorageSync('lastProfileId');
         wx.removeStorageSync('healthhelperBackendProfileId');
-        wx.navigateTo({ url: '/pages/profile/add' });
+        redirectToOnboard('state=noProfile');
         const error = new Error('PROFILE_REQUIRED');
         error.code = 'PROFILE_REQUIRED';
         throw error;

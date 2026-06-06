@@ -1,26 +1,54 @@
-<view class="page">
-  <view class="banner onboard-banner">
-    <view class="title">欢迎使用病例夹</view>
-    <view class="sub white">微信登录后创建第一份健康档案</view>
-  </view>
-  <view class="pad mt-16">
-    <view class="intro-card">
-      <view class="body strong">创建第一份档案</view>
-      <view class="sub mt-8">已有档案可直接微信登录继续使用。首次使用时，请先选择这份档案是为自己还是为亲属创建。</view>
+<view class="page onboard-page">
+  <view wx:if="{{state === 'guest'}}" class="guest-state">
+    <view class="guest-hero">
+      <view class="guest-title">
+        <view>把检查报告</view>
+        <view>整理成清楚的病例夹</view>
+      </view>
+      <view class="guest-copy">让纸质报告随身可查，自动沉淀指标趋势和复查待办。</view>
+      <view class="record-stack">
+        <view class="record-card back"></view>
+        <view class="record-card front">
+          <view class="record-line short"></view>
+          <view class="record-line mid"></view>
+          <view class="record-metric">
+            <view>▲ 白细胞数目</view>
+            <view class="record-pill">偏高</view>
+          </view>
+          <view class="record-line"></view>
+        </view>
+      </view>
     </view>
-    <view class="choice card card-pad mt-12 {{selfSelectedClass}}" data-relation="我自己" bindtap="selectRelation">
-      <view class="choice-icon">我</view>
-      <view class="flex"><view class="body strong">为我自己</view><view class="tiny">管理自己的健康数据</view></view>
-      <view class="arrow">›</view>
+
+    <view class="guest-features">
+      <view class="feature-card">
+        <view class="feature-icon">扫</view>
+        <view>
+          <view class="feature-title">纸质报告电子化</view>
+          <view class="feature-copy">拍照上传，随身查看</view>
+        </view>
+      </view>
+      <view class="feature-card">
+        <view class="feature-icon">趋</view>
+        <view>
+          <view class="feature-title">自动统计指标</view>
+          <view class="feature-copy">观察趋势，辅助康复</view>
+        </view>
+      </view>
+      <view class="feature-card wide">
+        <view class="feature-icon">复</view>
+        <view>
+          <view class="feature-title">复查计划与待办提醒</view>
+          <view class="feature-copy">下一次检查、准备事项和注意事项放进清单</view>
+        </view>
+      </view>
     </view>
-    <view class="choice card card-pad mt-12 {{familySelectedClass}}" data-relation="妈妈" bindtap="selectRelation">
-      <view class="choice-icon warm">亲</view>
-      <view class="flex"><view class="body strong">为我的亲属</view><view class="tiny">帮父母 / 长辈管理报告与复查</view></view>
-      <view class="arrow">›</view>
-    </view>
-    <view class="onboard-footer">
+
+    <view class="guest-login-card card card-pad">
+      <view class="body strong">登录后开始使用病例夹</view>
+      <view class="sub mt-8">安全保存检查报告、健康指标和复查计划。</view>
       <view class="agreement-row" bindtap="toggleAgree">
-        <view class="checkbox {{agreed ? 'checked' : ''}}">{{agreed ? '✓' : ''}}</view>
+        <view class="checkbox {{agreementClass}}">{{agreed ? '✓' : ''}}</view>
         <view class="agreement-copy">
           <text>我已阅读并同意</text>
           <text class="agreement-link" catchtap="openAgreement">用户协议</text>
@@ -28,9 +56,51 @@
           <text class="agreement-link" catchtap="openPrivacy">隐私政策</text>
         </view>
       </view>
-      <view class="tiny mt-8">微信登录仅用于创建和同步档案；本应用用于健康数据管理，不提供诊断或治疗建议。</view>
-      <view class="btn mt-12 {{continueDisabledClass}}" bindtap="continueCreate">{{loggingIn ? '登录中...' : '微信登录并继续'}}</view>
-      <view class="tiny center mt-12">所有档案的数据归患者本人所有，本应用严格保护隐私</view>
+      <view class="btn mt-12 {{loggingIn ? 'disabled' : ''}}" bindtap="login">{{loggingIn ? '登录中...' : '微信登录并继续'}}</view>
     </view>
+    <view class="guest-muted tiny">登录后展示你的报告、指标趋势和复查提醒</view>
+  </view>
+
+  <view wx:elif="{{state === 'noProfile'}}" class="profile-state">
+    <view class="banner onboard-banner">
+      <view class="title">创建第一份病例夹</view>
+      <view class="sub white mt-8">先创建一个档案，用来保存检查报告和健康指标。</view>
+    </view>
+    <view class="pad mt-16">
+      <view class="card card-pad">
+        <view class="body strong">还没有病例夹</view>
+        <view class="sub mt-8">请选择这份档案是为自己还是为亲属创建，下一步补充姓名和基础信息。</view>
+      </view>
+      <view class="choice card card-pad mt-12" bindtap="createSelfProfile">
+        <view class="choice-icon">我</view>
+        <view class="flex">
+          <view class="body strong">为我自己</view>
+          <view class="tiny">管理自己的健康数据</view>
+        </view>
+        <view class="arrow">›</view>
+      </view>
+      <view class="choice card card-pad mt-12" bindtap="createFamilyProfile">
+        <view class="choice-icon warm">亲</view>
+        <view class="flex">
+          <view class="body strong">为我的亲属</view>
+          <view class="tiny">帮助家人管理报告与复查</view>
+        </view>
+        <view class="arrow">›</view>
+      </view>
+    </view>
+    <view class="section-title">基础信息</view>
+    <view class="pad">
+      <view class="card">
+        <view class="preview-row"><view class="sub">关系</view><view class="tiny">下一步选择</view></view>
+        <view class="preview-row"><view class="sub">姓名</view><view class="tiny">必填</view></view>
+        <view class="preview-row"><view class="sub">性别</view><view class="tiny">可选</view></view>
+        <view class="preview-row"><view class="sub">出生日期</view><view class="tiny">可选</view></view>
+      </view>
+    </view>
+  </view>
+
+  <view wx:else class="checking-state">
+    <view class="body strong">正在检查登录状态</view>
+    <view class="tiny mt-8">请稍候</view>
   </view>
 </view>

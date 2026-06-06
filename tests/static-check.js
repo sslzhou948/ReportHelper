@@ -376,12 +376,12 @@ assert.ok(app.pages.includes('pages/profile/agreement'), 'onboard agreement page
 assert.ok(app.pages.includes('pages/profile/privacy'), 'onboard privacy page must be registered');
 assert.ok(profileOnboardJs.includes('openAgreement()') && profileOnboardJs.includes('/pages/profile/agreement'), 'onboard must expose a user agreement entry');
 assert.ok(profileOnboardJs.includes('openPrivacy()') && profileOnboardJs.includes('/pages/profile/privacy'), 'onboard must expose a privacy policy entry');
-assert.ok(profileOnboardJs.includes('selectRelation(event)') && profileOnboardJs.includes('continueCreate()'), 'onboard must separate relation selection from login continuation');
-assert.ok(profileOnboardJs.includes('selectionState(relation, agreed)'), 'onboard selected and disabled states must be precomputed in page JS');
+assert.ok(profileOnboardJs.includes("state: 'guest'") && profileOnboardJs.includes("state: 'noProfile'"), 'onboard must separate guest login and no-profile states');
+assert.ok(profileOnboardJs.includes('createSelfProfile()') && profileOnboardJs.includes('createFamilyProfile()'), 'onboard must provide first-profile creation choices after login');
 assert.ok(profileOnboardJs.includes('api.getProfiles()'), 'onboard login must check existing profiles before forcing first-profile creation');
 assert.ok(profileOnboardJs.includes("wx.switchTab({ url: '/pages/home/index' })"), 'onboard must let returning users log in without choosing a new archive type');
 assert.ok(profileOnboardWxml.includes('微信登录并继续'), 'onboard must show an explicit WeChat login continuation CTA');
-assert.ok(profileOnboardWxml.includes('创建第一份档案') && profileOnboardWxml.includes('为我自己') && profileOnboardWxml.includes('为我的亲属'), 'onboard must clearly frame first archive creation and relation choice');
+assert.ok(profileOnboardWxml.includes('创建第一份病例夹') && profileOnboardWxml.includes('为我自己') && profileOnboardWxml.includes('为我的亲属'), 'onboard must clearly frame first archive creation and relation choice');
 assert.ok(profileOnboardWxml.includes('catchtap="openAgreement"') && profileOnboardWxml.includes('catchtap="openPrivacy"'), 'onboard agreement and privacy text must be tappable without toggling the checkbox');
 assert.ok(profileOnboardWxml.includes('agreement-row') && profileOnboardWxml.includes('checkbox'), 'onboard agreement must use a compact checkbox row');
 assert.ok(!profileOnboardWxml.includes('bindtap="toggleAgree">\n      <view class="choice-icon'), 'onboard agreement must not be presented as a large choice card');

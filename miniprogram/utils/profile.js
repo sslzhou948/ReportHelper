@@ -48,7 +48,7 @@ function validateProfile(profile) {
 }
 
 function isProfileRequiredError(error) {
-  return !!error && error.code === 'PROFILE_REQUIRED';
+  return !!error && ['PROFILE_REQUIRED', 'AUTH_REQUIRED', 'UNAUTHORIZED'].includes(error.code);
 }
 
 module.exports = {
