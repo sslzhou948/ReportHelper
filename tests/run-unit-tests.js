@@ -200,7 +200,7 @@ const markerRows = normalizeReportMetrics({
   wbc: { key: 'wbc', nameCn: 'WBC', category: 'blood_routine', categoryCn: 'Blood Routine', valueType: 'quantitative' }
 });
 assert.strictEqual(markerRows[0].metricName, 'WBC');
-assert.strictEqual(markerText(metricReportMarkers(markerRows[0])), '\u25b3');
+assert.strictEqual(markerText(metricReportMarkers(markerRows[0])), '\u25b2');
 const mixedCategoryRows = normalizeReportMetrics({
   id: 'report_mixed_category',
   reportDate: '2026-06-04',

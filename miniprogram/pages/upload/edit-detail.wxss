@@ -152,18 +152,19 @@
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 10rpx;
+  gap: 8rpx;
 }
 
 .report-marker-badge {
   flex: 0 0 auto;
-  width: 40rpx;
-  height: 42rpx;
-  color: var(--ink-2);
-  font-size: 34rpx;
-  font-weight: 700;
-  line-height: 42rpx;
+  width: 24rpx;
+  height: 32rpx;
+  color: #17130F;
+  font-size: 24rpx;
+  font-weight: 800;
+  line-height: 32rpx;
   text-align: center;
+  transform: translateY(1rpx);
 }
 
 .metric-name-input {

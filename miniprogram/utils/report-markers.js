@@ -73,7 +73,7 @@ function metricReportMarkers(metric) {
 }
 
 function markerText(markers) {
-  return normalizeReportMarkers(markers).length ? '\u25b3' : '';
+  return normalizeReportMarkers(markers).length ? '\u25b2' : '';
 }
 
 module.exports = {
