@@ -1,5 +1,12 @@
 * text=auto eol=lf
 
+*.js text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.sh text eol=lf
+*.sql text eol=lf
+*.ts text eol=lf
+
 *.jpg binary
 *.jpeg binary
 *.png binary

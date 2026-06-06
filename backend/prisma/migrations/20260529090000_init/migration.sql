@@ -1,4 +1,4 @@
-﻿-- CreateTable
+-- CreateTable
 CREATE TABLE "users" (
     "id" UUID NOT NULL,
     "wx_openid" VARCHAR(128) NOT NULL,
