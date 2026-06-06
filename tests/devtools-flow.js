@@ -1,10 +1,12 @@
 const assert = require('assert');
+const fs = require('fs');
 const { spawnSync } = require('child_process');
 const path = require('path');
 const automator = require('miniprogram-automator');
 
 const root = path.resolve(__dirname, '..');
 const cliPath = path.join(process.env.WECHAT_DEVTOOLS_DIR || 'D:\\WeChat-DevTools', 'cli.bat');
+const localAppData = process.env.WECHAT_DEVTOOLS_LOCALAPPDATA || path.join(root, '.wechat-localappdata');
 const devtoolsPort = Number(process.env.WECHAT_DEVTOOLS_PORT || 9420);
 const watchdog = setTimeout(() => {
   console.error('DevTools smoke timed out after 60s');
@@ -24,9 +26,14 @@ function withTimeout(promise, ms, label) {
 }
 
 function runDevToolsCli(args) {
+  fs.mkdirSync(localAppData, { recursive: true });
   const result = spawnSync('cmd.exe', ['/d', '/c', 'call', cliPath].concat(args), {
     cwd: root,
     stdio: 'ignore',
+    env: {
+      ...process.env,
+      LOCALAPPDATA: localAppData
+    },
     windowsHide: true,
     timeout: 15000
   });
@@ -37,6 +44,8 @@ function runDevToolsCli(args) {
 }
 
 async function connectDevTools() {
+  fs.mkdirSync(localAppData, { recursive: true });
+  process.env.LOCALAPPDATA = localAppData;
   try {
     return await withTimeout(
       automator.connect({ wsEndpoint: `ws://127.0.0.1:${devtoolsPort}` }),
@@ -44,7 +53,7 @@ async function connectDevTools() {
       'WeChat DevTools connect'
     );
   } catch (error) {
-    runDevToolsCli(['auto', '--project', root, '--trust-project', '--auto-port', String(devtoolsPort)]);
+    runDevToolsCli(['auto', '--project', root, '--trust-project', `--auto-port=${devtoolsPort}`]);
     await sleep(1500);
     return withTimeout(
       automator.connect({ wsEndpoint: `ws://127.0.0.1:${devtoolsPort}` }),

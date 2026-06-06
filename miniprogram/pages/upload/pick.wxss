@@ -21,6 +21,22 @@
   font-weight: 700;
 }
 
+.ocr-quality-tip {
+  margin-top: 18rpx;
+  padding: 18rpx 22rpx;
+  border-radius: 22rpx;
+  background: #FFF8EA;
+  color: var(--ink-2);
+  line-height: 1.45;
+}
+
+.tip-title {
+  margin-bottom: 6rpx;
+  color: var(--warn);
+  font-size: 24rpx;
+  font-weight: 800;
+}
+
 .upload-icon {
   width: 72rpx;
   height: 72rpx;
@@ -120,6 +136,24 @@
   z-index: 2;
 }
 
+.photo-delete {
+  position: absolute;
+  right: 8rpx;
+  top: 8rpx;
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: 22rpx;
+  background: rgba(255, 255, 255, 0.94);
+  color: var(--ink-3);
+  box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26rpx;
+  font-weight: 800;
+  z-index: 3;
+}
+
 .split {
   position: absolute;
   right: 8rpx;
@@ -139,6 +173,10 @@
   z-index: 2;
 }
 
+.photo.grouped .split {
+  top: 60rpx;
+}
+
 .notice {
   padding: 20rpx 24rpx;
   border-radius: 24rpx;
@@ -148,6 +186,7 @@
 }
 
 .draft-hint,
+.photo-quality-warning,
 .upload-error {
   margin-top: 16rpx;
   padding: 18rpx 22rpx;
@@ -164,6 +203,28 @@
 .upload-error {
   background: #FFF4E3;
   color: #A45B1E;
+}
+
+.photo-quality-warning {
+  background: #FFF8EA;
+  color: #9A5A00;
+}
+
+.quality-badge {
+  position: absolute;
+  left: 10rpx;
+  bottom: 10rpx;
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: 22rpx;
+  background: #D9822B;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24rpx;
+  font-weight: 800;
+  z-index: 3;
 }
 
 .center {

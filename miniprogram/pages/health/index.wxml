@@ -15,18 +15,31 @@
   <view class="pad mt-12">
     <view class="segmented">
       <view class="segment-item {{view === 'metric' ? 'active' : ''}}" data-view="metric" bindtap="switchView">
-        按指标<view class="tiny">{{metricCount}} 项</view>
+        按指标<view class="tiny">{{metricCount}} 个指标</view>
       </view>
       <view class="segment-item {{view === 'time' ? 'active' : ''}}" data-view="time" bindtap="switchView">
         按时间<view class="tiny">{{reportCount}} 份报告</view>
       </view>
+    </view>
+    <view class="range-row">
+      <view
+        wx:for="{{rangeOptions}}"
+        wx:key="key"
+        data-range="{{item.key}}"
+        bindtap="switchRange"
+        class="range-chip {{range === item.key ? 'active' : ''}}"
+      >{{item.label}}</view>
+    </view>
+    <view class="data-scope-hint">
+      <text wx:if="{{view === 'metric'}}">按指标合并同名异常：{{abnormalCount}} 个异常指标。</text>
+      <text wx:else>按报告异常条目计数：{{reportAbnormalTotal}} 项，和按指标可能不同。</text>
     </view>
   </view>
 
   <block wx:if="{{view === 'metric'}}">
     <scroll-view scroll-x class="chips">
       <view wx:for="{{chips}}" wx:key="*this" data-filter="{{item}}" bindtap="switchFilter" class="chip {{filter === item ? 'active' : ''}}">
-        {{item}}<text wx:if="{{item === '异常'}}" class="badge">{{abnormalCount}}</text>
+        {{item}}<text wx:if="{{item === '异常指标'}}" class="badge">{{abnormalCount}}</text>
       </view>
     </scroll-view>
 
@@ -35,7 +48,7 @@
         <view class="topic-head row">
           <view class="topic-title">{{item.categoryCn}}</view>
           <view class="tiny">{{item.items.length}} 项</view>
-          <hh-pill wx:if="{{item.abnormalCount > 0}}" tone="high">{{item.abnormalCount}} 异常</hh-pill>
+          <hh-pill wx:if="{{item.abnormalCount > 0}}" tone="high">{{item.abnormalCount}} 个异常指标</hh-pill>
           <hh-pill wx:else tone="primary">全部正常</hh-pill>
           <view class="flex"></view>
           <view class="tiny">最近 {{item.latestDate}}</view>
@@ -67,7 +80,7 @@
               <view class="body strong">{{item.type}}</view>
               <view class="tiny">{{item.hospital}}</view>
             </view>
-            <hh-pill wx:if="{{item.abnormalCount > 0}}" tone="high">{{item.abnormalCount}} 异常</hh-pill>
+            <hh-pill wx:if="{{item.abnormalCount > 0}}" tone="high">{{item.abnormalCount}} 项异常</hh-pill>
             <view class="arrow">›</view>
           </view>
         </view>

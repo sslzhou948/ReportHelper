@@ -51,6 +51,34 @@
     </view>
   </view>
 
+  <view wx:if="{{devRuntimeVisible}}" class="section-title">开发调试</view>
+  <view wx:if="{{devRuntimeVisible}}" class="pad">
+    <view class="card card-pad dev-card">
+      <view class="dev-head">
+        <view>
+          <view class="dev-title">数据模式</view>
+          <view class="tiny">当前：{{devApiMode}} · {{devBackendStatus}}</view>
+        </view>
+        <view class="dev-status {{devBackendStatus === '已连接' ? 'ok' : ''}}">{{devBackendStatus}}</view>
+      </view>
+      <view class="dev-segment">
+        <view class="dev-option {{devApiMode === 'mock' ? 'active' : ''}}" data-mode="mock" bindtap="setDevApiMode">Mock</view>
+        <view class="dev-option {{devApiMode === 'hybrid-upload' ? 'active' : ''}}" data-mode="hybrid-upload" bindtap="setDevApiMode">真实上传</view>
+        <view class="dev-option {{devApiMode === 'backend' ? 'active' : ''}}" data-mode="backend" bindtap="setDevApiMode">全后端</view>
+      </view>
+      <view class="row compact" bindtap="chooseDevBackendBaseUrl">
+        <view class="flex">后端地址</view>
+        <view class="tiny dev-url">{{devBackendBaseUrl}}</view>
+        <view class="arrow">›</view>
+      </view>
+      <view class="row compact" bindtap="connectDevBackend">
+        <view class="flex">重新连接后端</view>
+        <view class="tiny">{{devBackendProfileId ? '已绑定测试档案' : '未绑定测试档案'}}</view>
+        <view class="arrow">›</view>
+      </view>
+    </view>
+  </view>
+
   <view class="section-title">关于</view>
   <view class="pad">
     <view class="card">

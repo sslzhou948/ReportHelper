@@ -6,6 +6,25 @@
   font-weight: 800;
 }
 
+.conflict-card {
+  margin-bottom: 20rpx;
+}
+
+.conflict-card:last-child {
+  margin-bottom: 0;
+}
+
+.conflict-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.conflict-message {
+  margin-top: 10rpx;
+}
+
 .option {
   margin-top: 16rpx;
   padding: 24rpx;
@@ -22,6 +41,7 @@
 }
 
 .radio {
+  flex: 0 0 auto;
   width: 36rpx;
   height: 36rpx;
   border-radius: 18rpx;
@@ -33,9 +53,14 @@
   font-size: 20rpx;
 }
 
+.option-main {
+  min-width: 0;
+}
+
 .option-value {
   font-size: 36rpx;
   font-weight: 900;
+  word-break: break-all;
 }
 
 .delete-option {
@@ -48,6 +73,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 18rpx;
+}
+
+.delete-option.active {
+  background: #FFF7ED;
+  border-color: var(--warn);
+  color: var(--warn);
 }
 
 .bottom-action {
@@ -55,6 +87,7 @@
   left: 0;
   right: 0;
   bottom: 0;
+  z-index: 20;
   padding: 24rpx 32rpx calc(24rpx + env(safe-area-inset-bottom));
   background: #FFFFFF;
   border-top: 1rpx solid var(--border-soft);

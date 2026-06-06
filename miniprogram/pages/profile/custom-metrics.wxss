@@ -55,6 +55,18 @@
   align-items: center;
 }
 
+.form-textarea {
+  width: 100%;
+  min-height: 148rpx;
+  padding: 18rpx 20rpx;
+  border-radius: 22rpx;
+  background: #F6F3EE;
+  color: var(--ink);
+  font-size: 28rpx;
+  line-height: 1.45;
+  box-sizing: border-box;
+}
+
 .form-actions {
   display: grid;
   grid-template-columns: 1fr 1.5fr;

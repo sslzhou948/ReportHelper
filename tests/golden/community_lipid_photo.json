@@ -1,0 +1,55 @@
+{
+  "caseId": "community_lipid_photo",
+  "status": "structured",
+  "modality": "laboratory",
+  "expectedFields": [
+    "hospital",
+    "type",
+    "metricName",
+    "value",
+    "unit",
+    "referenceRange",
+    "tone"
+  ],
+  "basicInfo": {
+    "hospital": "天津市东丽区新立街社区卫生服务中心",
+    "reportDate": "",
+    "type": "血脂四项",
+    "typeKey": "blood_lipid"
+  },
+  "metrics": [
+    {
+      "metricKey": "total_cholesterol",
+      "metricName": "总胆固醇（氧化酶法）",
+      "valueNumeric": 9.49,
+      "unit": "mmol/L",
+      "refRangeHigh": 5.60,
+      "tone": "high"
+    },
+    {
+      "metricKey": "triglyceride",
+      "metricName": "甘油三酯（氧化酶法）",
+      "valueNumeric": 2.11,
+      "unit": "mmol/L",
+      "refRangeHigh": 2.30,
+      "tone": "ok"
+    },
+    {
+      "metricKey": "hdl_cholesterol",
+      "metricName": "高密度脂蛋白胆固醇",
+      "valueNumeric": 2.90,
+      "unit": "mmol/L",
+      "refRangeLow": 1.15,
+      "tone": "ok"
+    },
+    {
+      "metricKey": "ldl_cholesterol",
+      "metricName": "低密度脂蛋白胆固醇",
+      "valueNumeric": 5.55,
+      "unit": "mmol/L",
+      "refRangeLow": 0.00,
+      "refRangeHigh": 4.11,
+      "tone": "high"
+    }
+  ]
+}

@@ -4,32 +4,61 @@
     <view class="nav-title">新增复查</view>
     <view class="nav-side right" bindtap="save">保存</view>
   </view>
-  <view class="pad mt-12">
+  <view class="pad mt-12" bindtap="closeTodoSwipe">
     <view class="card">
-      <view wx:for="{{fields}}" wx:key="key" class="row {{item.error ? 'field-error' : ''}}" data-key="{{item.key}}" bindtap="pick">
-        <view class="sub label">{{item.label}}</view>
-        <view class="flex right">
-          <view>{{item.value}}</view>
-          <view wx:if="{{item.error}}" class="tiny error-text">{{item.error}}</view>
+      <view class="row form-row {{errors.type ? 'field-error' : ''}}">
+        <view class="sub label">检查类型</view>
+        <view class="field-stack">
+          <input class="field-input" value="{{form.type}}" placeholder="请填写检查类型" data-key="type" bindinput="onInput" />
+          <view wx:if="{{errors.type}}" class="tiny error-text">{{errors.type}}</view>
         </view>
-        <view class="arrow">›</view>
+      </view>
+      <view class="row form-row {{errors.date ? 'field-error' : ''}}">
+        <view class="sub label">日期</view>
+        <view class="field-stack">
+          <picker class="field-control" mode="date" value="{{form.date}}" start="{{today}}" bindchange="onDateChange">
+            <view class="field-value">{{form.date}}</view>
+          </picker>
+          <view wx:if="{{errors.date}}" class="tiny error-text">{{errors.date}}</view>
+        </view>
+      </view>
+      <view class="row form-row {{errors.hospital ? 'field-error' : ''}}">
+        <view class="sub label">医院</view>
+        <view class="field-stack">
+          <input class="field-input" value="{{form.hospital}}" placeholder="请填写医院" data-key="hospital" bindinput="onInput" />
+          <view wx:if="{{errors.hospital}}" class="tiny error-text">{{errors.hospital}}</view>
+        </view>
+      </view>
+      <view class="row form-row">
+        <view class="sub label">科室</view>
+        <input class="field-input" value="{{form.department}}" placeholder="未指定" data-key="department" bindinput="onInput" />
       </view>
     </view>
   </view>
-  <view class="section-title">
+  <view class="section-title" bindtap="closeTodoSwipe">
     <view>待办事项</view>
     <view class="section-action">全选</view>
   </view>
   <view class="pad">
     <view class="card">
-      <view wx:for="{{todos}}" wx:key="id" data-index="{{index}}" class="row" bindtap="toggleTodo">
-        <view class="todo-box {{item.isDone ? 'done' : ''}}">{{item.isDone ? '✓' : ''}}</view>
-        <view class="flex {{item.isDone ? '' : 'todo-muted'}}">{{item.text}}</view>
+      <view wx:for="{{todos}}" wx:key="id" data-index="{{index}}" class="todo-swipe {{item.swipeOpen ? 'open' : ''}}" bindtouchstart="onTodoTouchStart" bindtouchend="onTodoTouchEnd" bindtouchcancel="onTodoTouchEnd">
+        <view class="swipe-delete" data-index="{{index}}" catchtap="deleteTodo">删除</view>
+        <view class="row todo-swipe-content" data-index="{{index}}" bindtap="toggleTodo">
+          <view class="todo-box {{item.isDone ? 'done' : ''}}">{{item.isDone ? '✓' : ''}}</view>
+          <view class="flex {{item.isDone ? '' : 'todo-muted'}}">{{item.text}}</view>
+        </view>
       </view>
-      <view class="row add-row" bindtap="addTodo">+ 自定义待办</view>
+      <view wx:if="{{addingTodo}}" class="row todo-draft-row">
+        <input class="todo-draft-input" value="{{todoDraft}}" placeholder="例如：带上旧报告" bindinput="onTodoDraftInput" focus />
+        <view class="todo-draft-actions">
+          <view class="mini-action muted" bindtap="cancelTodoDraft">取消</view>
+          <view class="mini-action" bindtap="saveTodoDraft">添加</view>
+        </view>
+      </view>
+      <view wx:else class="row add-row" bindtap="addTodo">+ 自定义待办</view>
     </view>
   </view>
-  <view class="pad mt-16">
+  <view class="pad mt-16" bindtap="closeTodoSwipe">
     <view class="btn {{saving ? 'disabled' : ''}}" bindtap="save">保存</view>
   </view>
 </view>

@@ -1,0 +1,64 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: healthhelper-backend:${BACKEND_IMAGE_TAG:-latest}
+    container_name: ${BACKEND_CONTAINER_NAME:-healthhelper-backend}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${BACKEND_BIND_HOST:-0.0.0.0}:${BACKEND_HOST_PORT:-8787}:8787"
+    environment:
+      NODE_ENV: production
+      PORT: 8787
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-healthhelper}:${POSTGRES_PASSWORD:-change-me}@postgres:5432/${POSTGRES_DB:-healthhelper}?schema=public"
+      JWT_SECRET: "${JWT_SECRET:?JWT_SECRET is required}"
+      WECHAT_APP_ID: "${WECHAT_APP_ID:?WECHAT_APP_ID is required}"
+      WECHAT_APP_SECRET: "${WECHAT_APP_SECRET:?WECHAT_APP_SECRET is required}"
+      BACKEND_PUBLIC_BASE_URL: "${BACKEND_PUBLIC_BASE_URL:?BACKEND_PUBLIC_BASE_URL is required}"
+      UPLOAD_STORAGE_PROVIDER: local
+      ALLOW_LOCAL_UPLOAD_STORAGE_IN_PRODUCTION: "true"
+      LOCAL_OBJECT_STORAGE_DIR: /data/uploads
+      OCR_PROVIDER: "${OCR_PROVIDER:-gpt_vision}"
+      OCR_FALLBACK_PROVIDER: "${OCR_FALLBACK_PROVIDER:-none}"
+      OPENAI_API_KEY: "${OPENAI_API_KEY:?OPENAI_API_KEY is required}"
+      OPENAI_OCR_MODEL: "${OPENAI_OCR_MODEL:-gpt-5.4-mini}"
+      OPENAI_API_BASE_URL: "${OPENAI_API_BASE_URL:-https://api.openai.com/v1}"
+      OCR_FALLBACK_API_KEY: "${OCR_FALLBACK_API_KEY:-}"
+      OCR_FALLBACK_OCR_MODEL: "${OCR_FALLBACK_OCR_MODEL:-gpt-4.1-mini}"
+      OCR_FALLBACK_API_BASE_URL: "${OCR_FALLBACK_API_BASE_URL:-https://api.openai.com/v1}"
+      OCR_MAX_RETRIES: "${OCR_MAX_RETRIES:-1}"
+      OCR_RETRY_BASE_MS: "${OCR_RETRY_BASE_MS:-250}"
+      OCR_GROUP_CONCURRENCY: "${OCR_GROUP_CONCURRENCY:-2}"
+      OCR_REQUEST_TIMEOUT_MS: "${OCR_REQUEST_TIMEOUT_MS:-240000}"
+      OCR_MAX_OUTPUT_TOKENS: "${OCR_MAX_OUTPUT_TOKENS:-6000}"
+      RUN_PRISMA_MIGRATIONS: "${RUN_PRISMA_MIGRATIONS:-true}"
+    volumes:
+      - "${UPLOAD_DATA_DIR:-./data/uploads}:/data/uploads"
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:8787/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: ${POSTGRES_CONTAINER_NAME:-healthhelper-postgres}
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: "${POSTGRES_USER:-healthhelper}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-change-me}"
+      POSTGRES_DB: "${POSTGRES_DB:-healthhelper}"
+    ports:
+      - "${POSTGRES_BIND_HOST:-127.0.0.1}:${POSTGRES_HOST_PORT:-5432}:5432"
+    volumes:
+      - "${POSTGRES_DATA_DIR:-./data/postgres}:/var/lib/postgresql/data"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-healthhelper} -d ${POSTGRES_DB:-healthhelper}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10

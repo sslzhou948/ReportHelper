@@ -38,7 +38,10 @@ Page({
   },
 
   goUpload() {
-    wx.navigateTo({ url: '/pages/upload/pick' });
+    wx.navigateTo({
+      url: '/pages/upload/pick',
+      fail: (error) => wx.setStorageSync('lastUploadRouteError', error && error.errMsg ? error.errMsg : 'navigateTo failed')
+    });
   },
 
   goManual() {

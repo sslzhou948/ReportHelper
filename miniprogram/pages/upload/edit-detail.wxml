@@ -8,6 +8,13 @@
   <view class="pad mt-12">
     <view class="notice">黄色标记的项 OCR 不确定，请重点检查</view>
   </view>
+  <view wx:if="{{sourcePreviewUrls.length}}" class="pad source-preview-pad">
+    <scroll-view scroll-x class="source-preview-strip">
+      <view wx:for="{{sourcePreviewUrls}}" wx:key="*this" class="source-preview-thumb" data-index="{{index}}" catchtap="previewSourcePhoto">
+        <image class="source-preview-image" src="{{item}}" mode="aspectFill"></image>
+      </view>
+    </scroll-view>
+  </view>
   <view class="section-title">基本信息</view>
   <view class="pad">
     <view class="card">
@@ -15,8 +22,8 @@
       <view wx:if="{{basicInfo.canonicalTypeName && basicInfo.canonicalTypeName !== basicInfo.type}}" class="edit-row"><view class="sub label">标准分类</view><view class="flex right readonly">{{basicInfo.canonicalTypeName}}</view></view>
       <view wx:if="{{basicInfo.modality === 'imaging'}}" class="edit-row"><view class="sub label">检查部位</view><input wx:if="{{editing}}" class="edit-input" value="{{basicInfo.examPart}}" placeholder="待确认" data-field="examPart" bindinput="onBasicInput" /><view wx:else class="flex right readonly">{{basicInfo.examPart || '待确认'}}</view></view>
       <view wx:if="{{basicInfo.modality === 'imaging'}}" class="edit-row"><view class="sub label">检查方式</view><input wx:if="{{editing}}" class="edit-input" value="{{basicInfo.examMethod}}" placeholder="待确认" data-field="examMethod" bindinput="onBasicInput" /><view wx:else class="flex right readonly">{{basicInfo.examMethod || '待确认'}}</view></view>
-      <view class="edit-row"><view class="sub label">医院</view><input wx:if="{{editing}}" class="edit-input" value="{{basicInfo.hospital}}" data-field="hospital" bindinput="onBasicInput" /><view wx:else class="flex right readonly">{{basicInfo.hospital}}</view></view>
-      <view class="edit-row"><view class="sub label">检查日期</view><picker wx:if="{{editing}}" class="date-picker" mode="date" value="{{basicInfo.reportDate}}" bindchange="onDateChange"><view class="edit-picker">{{basicInfo.reportDate}}</view></picker><view wx:else class="flex right readonly">{{basicInfo.reportDate}}</view></view>
+      <view class="edit-row"><view class="sub label">医院</view><input wx:if="{{editing}}" class="edit-input" value="{{basicInfo.hospital}}" placeholder="请输入医院" data-field="hospital" bindinput="onBasicInput" /><view wx:else class="flex right readonly">{{basicInfo.hospital}}</view></view>
+      <view class="edit-row"><view class="sub label">检查日期</view><picker wx:if="{{editing}}" class="date-picker" mode="date" value="{{basicInfo.reportDate}}" bindchange="onDateChange"><view class="edit-picker {{basicInfo.reportDate ? '' : 'placeholder'}}">{{basicInfo.reportDate || '请选择日期'}}</view></picker><view wx:else class="flex right readonly">{{basicInfo.reportDate}}</view></view>
     </view>
     <view wx:if="{{basicInfo.hospitalSource === 'inferred_from_batch' || basicInfo.reportDateSource === 'inferred_from_batch'}}" class="source-note">部分基础信息根据同批报告推测，请核对。</view>
     <view wx:if="{{editing}}" class="manual-actions">
@@ -42,11 +49,13 @@
     </view>
     <view class="pad">
       <view class="card">
-        <view wx:for="{{item.items}}" wx:key="name" class="metric-edit">
+        <view wx:for="{{item.items}}" wx:key="index" class="metric-edit">
           <view class="metric-name">
             <view class="metric-title-left">
               <view wx:if="{{item.uncertain}}" class="warn-dot">!</view>
-              <view class="body strong">{{item.name}}</view>
+              <view wx:if="{{item.hasReportMarkers}}" class="report-marker-badge">{{item.markerText}}</view>
+              <input wx:if="{{editing && item.isManual}}" class="metric-name-input" value="{{item.name}}" placeholder="填写指标名称" data-index="{{item.index}}" data-field="metricName" bindinput="onMetricInput" />
+              <view wx:else class="body strong">{{item.name || '未命名指标'}}</view>
             </view>
             <view class="metric-actions">
               <view wx:if="{{item.mappingStatus !== 'confirmed'}}" class="status-pill">{{item.mappingStatus}}</view>
@@ -58,8 +67,11 @@
             <view class="unit-chip">{{item.unit}}</view>
             <view class="tiny ref-read">参考 {{item.ref}}</view>
           </view>
+          <view wx:elif="{{item.valueType === 'text'}}" class="text-metric-edit">
+            <textarea class="text-metric-input" value="{{item.valueQualitative}}" placeholder="填写文字描述" data-index="{{item.index}}" data-field="valueQualitative" bindinput="onMetricInput" />
+          </view>
           <view wx:elif="{{item.valueType === 'qualitative'}}" class="qualitative-edit">
-            <picker range="{{['阴性', '阳性', '弱阳性', '可疑']}}" value="0" data-index="{{item.index}}" bindchange="onQualitativeChange">
+            <picker range="{{['阴性', '阳性', '弱阳性', '可疑']}}" value="{{item.qualitativeIndex}}" data-index="{{item.index}}" bindchange="onQualitativeChange">
               <view class="mini-input">{{item.value || '请选择'}}</view>
             </picker>
             <input class="mini-input unit-input" value="{{item.unit}}" placeholder="单位" data-index="{{item.index}}" data-field="unit" bindinput="onMetricInput" />
@@ -69,15 +81,37 @@
             <input class="mini-input value-input {{item.tone === 'high' ? 'value-high' : ''}} {{item.tone === 'low' ? 'value-low' : ''}}" value="{{item.value}}" data-index="{{item.index}}" data-field="valueNumeric" bindinput="onMetricInput" />
             <input class="mini-input unit-input" value="{{item.unit}}" placeholder="单位" data-index="{{item.index}}" data-field="unit" bindinput="onMetricInput" />
           </view>
-          <view wx:if="{{editing && item.valueType !== 'qualitative' && item.refText}}" class="ref-text-note">
-            <view class="tiny">参考</view>
+          <view wx:if="{{editing && item.valueType === 'text' && item.refText}}" class="ref-text-note">
+            <view class="tiny">提示</view>
             <view class="tiny ref-text">{{item.refText}}</view>
           </view>
-          <view wx:elif="{{editing && item.valueType !== 'qualitative'}}" class="ref-inputs">
-            <view class="tiny">参考</view>
-            <input class="mini-input" value="{{item.refLow}}" placeholder="下限" data-index="{{item.index}}" data-field="refRangeLow" bindinput="onMetricInput" />
-            <view class="range-separator">-</view>
-            <input class="mini-input" value="{{item.refHigh}}" placeholder="上限" data-index="{{item.index}}" data-field="refRangeHigh" bindinput="onMetricInput" />
+          <view wx:elif="{{editing && item.valueType !== 'qualitative' && item.valueType !== 'text'}}" class="ref-editor">
+            <view class="ref-mode-row">
+              <view class="tiny">参考</view>
+              <picker range="{{refModeLabels}}" value="{{item.refModeIndex}}" data-index="{{item.index}}" bindchange="onRefModeChange">
+                <view class="mini-input picker-mini">{{item.refModeLabel}}</view>
+              </picker>
+            </view>
+            <view wx:if="{{item.refMode === 'simple_range'}}" class="ref-inputs">
+              <input class="mini-input" value="{{item.refLow}}" placeholder="下限" data-index="{{item.index}}" data-field="refRangeLow" bindinput="onMetricInput" />
+              <view class="range-separator">-</view>
+              <input class="mini-input" value="{{item.refHigh}}" placeholder="上限" data-index="{{item.index}}" data-field="refRangeHigh" bindinput="onMetricInput" />
+            </view>
+            <view wx:elif="{{item.refMode === 'upper_bound'}}" class="ref-single-input">
+              <input class="mini-input" value="{{item.refHigh}}" placeholder="上限，如 5.6" data-index="{{item.index}}" data-field="refRangeHigh" bindinput="onMetricInput" />
+            </view>
+            <view wx:elif="{{item.refMode === 'lower_bound'}}" class="ref-single-input">
+              <input class="mini-input" value="{{item.refLow}}" placeholder="下限，如 40" data-index="{{item.index}}" data-field="refRangeLow" bindinput="onMetricInput" />
+            </view>
+            <view wx:elif="{{item.refMode === 'complex_text'}}" class="ref-text-edit">
+              <textarea class="ref-textarea" value="{{item.refText}}" placeholder="填写复杂参考范围原文" data-index="{{item.index}}" data-field="refText" bindinput="onMetricInput" />
+            </view>
+            <view wx:if="{{item.showTonePicker}}" class="ref-mode-row">
+              <view class="tiny">状态</view>
+              <picker range="{{toneLabels}}" value="{{item.toneIndex}}" data-index="{{item.index}}" bindchange="onMetricToneChange">
+                <view class="mini-input picker-mini">{{item.toneLabel}}</view>
+              </picker>
+            </view>
           </view>
         </view>
       </view>
@@ -109,6 +143,7 @@
       </view>
     </view>
   </view>
+  <view wx:if="{{editing}}" class="card-last-spacer"></view>
   <view class="bottom-action">
     <view wx:if="{{!editing}}" class="btn" bindtap="startEdit">编辑</view>
     <view wx:else class="bottom-grid">

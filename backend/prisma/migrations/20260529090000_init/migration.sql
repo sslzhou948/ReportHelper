@@ -34,6 +34,30 @@ CREATE TABLE "profiles" (
 );
 
 -- CreateTable
+CREATE TABLE "manual_entry_templates" (
+    "id" UUID NOT NULL,
+    "profile_id" UUID NOT NULL,
+    "user_id" UUID NOT NULL,
+    "metric_key" VARCHAR(128) NOT NULL,
+    "metric_name" VARCHAR(128) NOT NULL,
+    "category" VARCHAR(128) NOT NULL,
+    "category_cn" VARCHAR(128) NOT NULL,
+    "value_type" VARCHAR(32) NOT NULL,
+    "unit" VARCHAR(64),
+    "ref_range_low" DECIMAL(18,6),
+    "ref_range_high" DECIMAL(18,6),
+    "ref_qualitative" VARCHAR(64),
+    "ref_text" TEXT,
+    "source" VARCHAR(32) NOT NULL DEFAULT 'custom',
+    "status" VARCHAR(32) NOT NULL DEFAULT 'active',
+    "created_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ(6) NOT NULL,
+    "archived_at" TIMESTAMPTZ(6),
+
+    CONSTRAINT "manual_entry_templates_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "report_types" (
     "id" UUID NOT NULL,
     "type_key" VARCHAR(128) NOT NULL,
@@ -178,6 +202,8 @@ CREATE TABLE "recognized_report_drafts" (
     "findings" JSONB NOT NULL,
     "conflicts" JSONB NOT NULL,
     "warnings" JSONB NOT NULL,
+    "ocr_evidence" JSONB,
+    "provider_metadata" JSONB,
     "status" VARCHAR(32) NOT NULL,
     "version" INTEGER NOT NULL DEFAULT 1,
     "created_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -334,6 +360,12 @@ CREATE UNIQUE INDEX "users_wx_openid_key" ON "users"("wx_openid");
 CREATE INDEX "profiles_user_id_deleted_at_idx" ON "profiles"("user_id", "deleted_at");
 
 -- CreateIndex
+CREATE INDEX "manual_entry_templates_user_id_profile_id_status_idx" ON "manual_entry_templates"("user_id", "profile_id", "status");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "manual_entry_templates_profile_id_metric_key_key" ON "manual_entry_templates"("profile_id", "metric_key");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "report_types_type_key_key" ON "report_types"("type_key");
 
 -- CreateIndex
@@ -416,6 +448,12 @@ CREATE INDEX "recheck_todos_plan_id_sort_order_idx" ON "recheck_todos"("plan_id"
 
 -- AddForeignKey
 ALTER TABLE "profiles" ADD CONSTRAINT "profiles_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "manual_entry_templates" ADD CONSTRAINT "manual_entry_templates_profile_id_fkey" FOREIGN KEY ("profile_id") REFERENCES "profiles"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "manual_entry_templates" ADD CONSTRAINT "manual_entry_templates_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "metric_definitions" ADD CONSTRAINT "metric_definitions_category_id_fkey" FOREIGN KEY ("category_id") REFERENCES "metric_categories"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

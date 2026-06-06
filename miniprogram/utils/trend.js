@@ -10,14 +10,23 @@ function getReferenceSpan(values) {
   return refs[0] || 1;
 }
 
-function calculateTone(value, refLow, refHigh, valueType) {
+const { validTone } = require('./reference-range');
+
+function isNumber(value) {
+  return typeof value === 'number' && Number.isFinite(value);
+}
+
+function calculateTone(value, refLow, refHigh, valueType, fallbackTone = '') {
   if (valueType === 'qualitative') {
     return value === '阳性' || value === '+' || value === '++' || value === '+++' ? 'positive' : 'ok';
   }
-  if (typeof value !== 'number') return 'ok';
-  if (typeof refLow === 'number' && value < refLow) return 'low';
-  if (typeof refHigh === 'number' && value > refHigh) return 'high';
-  return 'ok';
+  if (!isNumber(value)) return 'unknown';
+  const hasLow = isNumber(refLow);
+  const hasHigh = isNumber(refHigh);
+  if (hasLow && value < refLow) return 'low';
+  if (hasHigh && value > refHigh) return 'high';
+  if (hasLow || hasHigh) return 'ok';
+  return validTone(fallbackTone);
 }
 
 function calculateTrend(values) {

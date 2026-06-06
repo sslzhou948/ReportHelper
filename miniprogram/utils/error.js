@@ -6,6 +6,7 @@ const FRIENDLY_ERROR_MESSAGES = {
   NOT_FOUND: '内容不存在或已删除',
   RATE_LIMITED: '操作太频繁，请稍后重试',
   INTERNAL_ERROR: '服务暂时不可用，请稍后重试',
+  OCR_DRAFT_NOT_SPLITTABLE: '这份报告不能继续拆分',
   WX_LOGIN_FAILED: '微信登录失败，请重试',
   WX_LOGIN_NO_CODE: '微信登录失败，请重试'
 };

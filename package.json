@@ -4,17 +4,25 @@
   "private": true,
   "description": "我的病例夹微信小程序工程",
   "scripts": {
-    "test": "node tests/run-unit-tests.js && node tests/static-check.js && node --check tests/devtools-flow.js && node --check tests/devtools-hybrid-flow.js",
+    "test": "node tests/run-unit-tests.js && node tests/static-check.js && node tests/check-fixtures.js && node --check scripts/create-ocr-table-crop-experiment.js && node --check tests/devtools-flow.js && node --check tests/devtools-hybrid-flow.js && node --check tests/devtools-real-upload-flow.js && node --check tests/devtools-gpt-real-upload-flow.js",
     "check:all": "npm run test && npm run visual:check && npm run fixtures:check && npm --prefix backend run migration:check && npm --prefix backend run build && npm --prefix backend test",
     "static:check": "node tests/static-check.js",
     "visual:check": "node tests/check-visual-contracts.js",
     "fixtures:check": "node tests/check-fixtures.js",
+    "synthetic:ocr-fixtures": "powershell.exe -ExecutionPolicy Bypass -File scripts/generate-synthetic-ocr-fixtures.ps1",
     "assets:tabs": "node scripts/generate-tab-icons.js",
     "devtools:open": "node scripts/wechat-devtools.js open",
     "devtools:preview": "node scripts/wechat-devtools.js preview",
     "devtools:cli-check": "node scripts/wechat-devtools.js check",
+    "backend:env:init": "node scripts/init-backend-env.js",
+    "gpt-ocr:readiness": "node scripts/check-gpt-ocr-readiness.js",
+    "ocr:crop-experiment": "node scripts/create-ocr-table-crop-experiment.js",
     "devtools:flow": "node tests/devtools-flow.js",
-    "devtools:hybrid-flow": "node tests/devtools-hybrid-flow.js"
+    "devtools:hybrid-flow": "node tests/devtools-hybrid-flow.js",
+    "devtools:real-upload-flow": "node tests/devtools-real-upload-flow.js",
+    "devtools:gpt-real-upload-flow": "node tests/devtools-gpt-real-upload-flow.js",
+    "backend:gpt-memory": "node scripts/start-gpt-memory-backend.js",
+    "backend:gpt-memory:detached": "node scripts/start-gpt-memory-backend.js --detached"
   },
   "engines": {
     "node": ">=18"

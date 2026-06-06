@@ -1,0 +1,47 @@
+{
+  "sourceDir": "../../../realtestcase",
+  "cases": [
+    {
+      "id": "headless_blood_routine_screenshot",
+      "file": "无头检查单测试样品.jpg",
+      "modality": "laboratory",
+      "expectedGolden": "../../golden/headless_blood_routine_screenshot.json"
+    },
+    {
+      "id": "blood_routine_double_column_photo",
+      "file": "检查报告单样品2.jpg",
+      "modality": "laboratory",
+      "expectedGolden": "../../golden/blood_routine_double_column_photo.json"
+    },
+    {
+      "id": "sample_4_lab_photo",
+      "file": "检测样本4.jpg",
+      "modality": "laboratory",
+      "expectedGolden": "../../golden/sample_4_lab_photo.json"
+    },
+    {
+      "id": "community_blood_routine_photo",
+      "file": "社区检查.jpg",
+      "modality": "laboratory",
+      "expectedGolden": "../../golden/community_blood_routine_photo.json"
+    },
+    {
+      "id": "community_lipid_photo",
+      "file": "社区检查2.jpg",
+      "modality": "laboratory",
+      "expectedGolden": "../../golden/community_lipid_photo.json"
+    },
+    {
+      "id": "serum_thyroid_photo",
+      "file": "血清检测报告单.jpg",
+      "modality": "laboratory",
+      "expectedGolden": "../../golden/serum_thyroid_photo.json"
+    },
+    {
+      "id": "recognition_sample_3_wide",
+      "file": "识别样品3.png",
+      "modality": "laboratory",
+      "expectedGolden": "../../golden/recognition_sample_3_wide.json"
+    }
+  ]
+}

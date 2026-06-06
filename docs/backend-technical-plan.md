@@ -230,3 +230,18 @@ v1 强重复核心：
 4. 切换 API service 的 `DATABASE_URL`。
 5. 逐步迁移 object storage。
 6. 认证体系继续由自有后端签发 token；如需使用 Supabase RLS，再单独设计 JWT claims。
+
+## 11. OCR Production Path
+
+真实 OCR 能力按混合架构推进，详见 `docs/ocr-hybrid-architecture.md`。
+
+后端实现顺序：
+
+1. 继续保持 `/api/ocr/tasks` 作为唯一小程序入口。
+2. 当前 `gpt_vision` provider 可在开发阶段同时完成图片理解和结构化。
+3. 下一步增加 `ocr_evidence_v1`：保存 raw text、raw tables、layout blocks、field sources 和 provider metadata。
+4. 再把 provider 拆成 `OcrTextExtractor` 和 `OcrStructurer`，使商业 OCR 只替换 text extraction，LLM 只负责 evidence-to-draft。
+5. 所有 provider 最终仍输出 `ocr_draft_v1`，并由后端规则做 typeKey、metricKey、日期优先级、异常方向和查重归一。
+6. 用户确认页仍是入库前的质量闸口；低置信度、缺字段、未知映射和冲突不应静默入库。
+
+这一路径不依赖管理员后台才能启动。管理员后台主要用于后续未知指标、别名冲突、映射发布、回填和系统健康监控，不阻塞当前用户端真实上传链路。

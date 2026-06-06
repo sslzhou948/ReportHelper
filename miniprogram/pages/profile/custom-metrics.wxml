@@ -42,12 +42,30 @@
         <input class="form-input" value="{{form.unit}}" placeholder="如 ng/mL、mmol/L，可不填" data-field="unit" bindinput="onFormInput" />
       </view>
       <view wx:if="{{form.category === 'lab' && form.valueType === 'quantitative'}}" class="form-row">
-        <view class="label">参考范围</view>
+        <view class="label">参考范围模式</view>
+        <picker range="{{refModeLabels}}" value="{{form.refModeIndex}}" bindchange="onRefModeChange">
+          <view class="form-input picker-value">{{form.refModeLabel}}</view>
+        </picker>
+      </view>
+      <view wx:if="{{form.category === 'lab' && form.valueType === 'quantitative' && form.refMode === 'simple_range'}}" class="form-row">
+        <view class="label">区间范围</view>
         <view class="range-inputs">
           <input class="form-input" type="digit" value="{{form.refRangeLow}}" placeholder="下限" data-field="refRangeLow" bindinput="onFormInput" />
           <view class="range-dash">-</view>
           <input class="form-input" type="digit" value="{{form.refRangeHigh}}" placeholder="上限" data-field="refRangeHigh" bindinput="onFormInput" />
         </view>
+      </view>
+      <view wx:elif="{{form.category === 'lab' && form.valueType === 'quantitative' && form.refMode === 'upper_bound'}}" class="form-row">
+        <view class="label">参考上限</view>
+        <input class="form-input" type="digit" value="{{form.refRangeHigh}}" placeholder="如 5.6" data-field="refRangeHigh" bindinput="onFormInput" />
+      </view>
+      <view wx:elif="{{form.category === 'lab' && form.valueType === 'quantitative' && form.refMode === 'lower_bound'}}" class="form-row">
+        <view class="label">参考下限</view>
+        <input class="form-input" type="digit" value="{{form.refRangeLow}}" placeholder="如 40" data-field="refRangeLow" bindinput="onFormInput" />
+      </view>
+      <view wx:elif="{{form.category === 'lab' && form.valueType === 'quantitative' && form.refMode === 'complex_text'}}" class="form-row">
+        <view class="label">参考范围原文</view>
+        <textarea class="form-textarea" value="{{form.refText}}" placeholder="如 按年龄、孕周、周期阶段分段的参考范围" data-field="refText" bindinput="onFormInput" />
       </view>
       <view wx:elif="{{form.category === 'lab' && form.valueType === 'qualitative'}}" class="form-row">
         <view class="label">默认参考</view>
@@ -74,7 +92,7 @@
         <view class="metric-dot {{item.source}}">{{item.sourceText}}</view>
         <view class="flex">
           <view class="body strong">{{item.metricName}}</view>
-          <view class="tiny">{{item.categoryCn}}<text wx:if="{{item.unit}}"> · {{item.unit}}</text><text wx:if="{{item.measureCount}}"> · 已记录 {{item.measureCount}} 次</text></view>
+          <view class="tiny">{{item.categoryCn}}<text wx:if="{{item.unit}}"> · {{item.unit}}</text><text wx:if="{{item.refDisplay && item.refDisplay !== '--'}}"> · 参考 {{item.refDisplay}}</text><text wx:if="{{item.measureCount}}"> · 已记录 {{item.measureCount}} 次</text></view>
         </view>
         <view wx:if="{{item.source === 'custom'}}" class="pill primary">自定义</view>
         <view wx:if="{{isManageMode && item.source === 'custom'}}" class="mini-link" catchtap="editMetric" data-key="{{item.metricKey}}">编辑</view>

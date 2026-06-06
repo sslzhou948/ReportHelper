@@ -8,8 +8,35 @@ const envSchema = z.object({
   WECHAT_APP_ID: z.string().min(1),
   WECHAT_APP_SECRET: z.string().min(1),
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
-  PORT: z.coerce.number().int().positive().default(8787)
+  PORT: z.coerce.number().int().positive().default(8787),
+  BACKEND_PUBLIC_BASE_URL: z.string().url().default('http://127.0.0.1:8787'),
+  UPLOAD_STORAGE_PROVIDER: z.enum(['local', 'object_storage']).default('local'),
+  ALLOW_LOCAL_UPLOAD_STORAGE_IN_PRODUCTION: z.string().optional().default('').transform((value) => (
+    ['1', 'true', 'yes', 'on'].includes(value.trim().toLowerCase())
+  )),
+  LOCAL_OBJECT_STORAGE_DIR: z.string().min(1).default('../local-object-storage'),
+  OCR_PROVIDER: z.enum(['fixture', 'gpt_vision', 'commercial_ocr']).default('fixture'),
+  OCR_FALLBACK_PROVIDER: z.enum(['none', 'gpt_vision']).default('none'),
+  OPENAI_API_KEY: z.string().optional().default(''),
+  OPENAI_OCR_MODEL: z.string().min(1).default('gpt-4.1-mini'),
+  OPENAI_API_BASE_URL: z.string().url().default('https://api.openai.com/v1'),
+  OCR_FALLBACK_API_KEY: z.string().optional().default(''),
+  OCR_FALLBACK_OCR_MODEL: z.string().min(1).default('gpt-4.1-mini'),
+  OCR_FALLBACK_API_BASE_URL: z.string().url().default('https://api.openai.com/v1'),
+  OCR_MAX_RETRIES: z.coerce.number().int().min(0).max(3).default(1),
+  OCR_RETRY_BASE_MS: z.coerce.number().int().min(0).max(5000).default(250),
+  OCR_GROUP_CONCURRENCY: z.coerce.number().int().min(1).max(4).default(2),
+  OCR_REQUEST_TIMEOUT_MS: z.coerce.number().int().min(1000).max(300000).default(240000),
+  OCR_MAX_OUTPUT_TOKENS: z.coerce.number().int().min(256).max(16000).default(6000)
 }).superRefine((env, ctx) => {
+  if (env.OCR_FALLBACK_PROVIDER !== 'none' && !env.OCR_FALLBACK_API_KEY) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['OCR_FALLBACK_API_KEY'],
+      message: `OCR_FALLBACK_API_KEY is required when OCR_FALLBACK_PROVIDER is ${env.OCR_FALLBACK_PROVIDER}`
+    });
+  }
+
   if (env.NODE_ENV !== 'production') return;
 
   const placeholders = [
@@ -25,6 +52,30 @@ const envSchema = z.object({
         message: `${field} must not use the local placeholder in production`
       });
     }
+  }
+
+  if (env.UPLOAD_STORAGE_PROVIDER === 'local' && !env.ALLOW_LOCAL_UPLOAD_STORAGE_IN_PRODUCTION) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['UPLOAD_STORAGE_PROVIDER'],
+      message: 'UPLOAD_STORAGE_PROVIDER must not be local in production unless ALLOW_LOCAL_UPLOAD_STORAGE_IN_PRODUCTION=true'
+    });
+  }
+
+  if (env.OCR_PROVIDER === 'fixture') {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['OCR_PROVIDER'],
+      message: 'OCR_PROVIDER must not be fixture in production'
+    });
+  }
+
+  if (['gpt_vision', 'commercial_ocr'].includes(env.OCR_PROVIDER) && !env.OPENAI_API_KEY) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['OPENAI_API_KEY'],
+      message: `OPENAI_API_KEY is required when OCR_PROVIDER is ${env.OCR_PROVIDER}`
+    });
   }
 });
 

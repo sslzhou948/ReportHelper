@@ -1,41 +1,62 @@
 const { calculateTone, calculateTrend } = require('./trend');
+const { toNumberOrNull } = require('./reference-range');
+const { metricReportMarkers } = require('./report-markers');
+const { normalizeMetricCategory } = require('./metric-category');
+const { canonicalMetricKey } = require('./metric-key');
 
 function normalizeReportMetrics(report, metricDefinitions) {
   return report.metrics.map((row) => {
-    const definition = metricDefinitions[row.metricKey] || {
-      key: row.metricKey,
-      nameCn: row.metricName || row.metricKey,
+    const metricKey = canonicalMetricKey(row, { fallback: row.metricKey || row.metricName || 'unknown' });
+    const definition = metricDefinitions[metricKey] || metricDefinitions[row.metricKey] || {
+      key: metricKey,
+      nameCn: row.metricName || row.metricKey || metricKey,
       category: row.category || 'other',
       categoryCn: row.categoryCn || '其他',
       valueType: row.valueType || 'quantitative'
     };
     const valueType = row.valueType || definition.valueType;
     const value = valueType === 'qualitative' ? row.valueQualitative : row.valueNumeric;
+    const refLow = toNumberOrNull(row.refRangeLow);
+    const refHigh = toNumberOrNull(row.refRangeHigh);
+    const calculatedTone = calculateTone(value, refLow, refHigh, valueType, row.tone);
+    const reportMarkers = metricReportMarkers(row);
+    const categoryInfo = normalizeMetricCategory({
+      ...row,
+      category: definition.category,
+      categoryCn: definition.categoryCn
+    });
     return {
       ...row,
+      metricKey,
       reportId: report.id,
       reportDate: report.reportDate,
       hospital: report.hospital,
       metricName: definition.nameCn,
-      category: definition.category,
-      categoryCn: definition.categoryCn,
+      category: categoryInfo.category,
+      categoryCn: categoryInfo.categoryCn,
       valueType,
-      tone: row.tone || calculateTone(value, row.refRangeLow, row.refRangeHigh, valueType)
+      reportMarkers,
+      tone: calculatedTone
     };
   });
 }
 
 function groupMetricsByCategory(metricRows) {
   return metricRows.reduce((acc, row) => {
-    const key = row.category || 'other';
+    const categoryInfo = normalizeMetricCategory(row);
+    const key = categoryInfo.category;
     if (!acc[key]) {
       acc[key] = {
         category: key,
-        categoryCn: row.categoryCn || '其他',
+        categoryCn: categoryInfo.categoryCn,
         items: []
       };
     }
-    acc[key].items.push(row);
+    acc[key].items.push({
+      ...row,
+      category: categoryInfo.category,
+      categoryCn: categoryInfo.categoryCn
+    });
     return acc;
   }, {});
 }
@@ -44,7 +65,8 @@ function buildMetricSnapshots(reports, metricDefinitions) {
   const allRows = reports
     .filter((report) => (report.analysisPolicy || 'metric_analysis') !== 'view_only')
     .flatMap((report) => normalizeReportMetrics(report, metricDefinitions))
-    .filter((row) => row.category === 'custom' || !['pending', 'conflicted'].includes(row.mappingStatus));
+    .filter((row) => row.category === 'custom' || row.mappingStatus !== 'conflicted')
+    .filter((row) => row.category === 'custom' || row.mappingStatus !== 'pending' || row.valueType !== 'text');
   const byMetric = allRows.reduce((acc, row) => {
     if (!acc[row.metricKey]) acc[row.metricKey] = [];
     acc[row.metricKey].push(row);

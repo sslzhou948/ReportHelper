@@ -22,6 +22,7 @@ export class MemoryPrisma {
   reportPhotos: Row[] = [];
   reportMetricValues: Row[] = [];
   userMetricSnapshots: Row[] = [];
+  manualEntryTemplates: Row[] = [];
   recheckPlans: Row[] = [];
   recheckTodos: Row[] = [];
 
@@ -137,6 +138,19 @@ export class MemoryPrisma {
       if (!task) throw new Error('task not found');
       Object.assign(task, data, { updatedAt: now() });
       return this.withTaskIncludes(task, include);
+    },
+    updateMany: async ({ where, data }: any) => {
+      const rows = this.ocrTasks.filter((item) => {
+        if (where.id && item.id !== where.id) return false;
+        if (where.profileId && item.profileId !== where.profileId) return false;
+        if (where.userId && item.userId !== where.userId) return false;
+        if (typeof where.status === 'string' && item.status !== where.status) return false;
+        if (where.status?.in && !where.status.in.includes(item.status)) return false;
+        if (where.updatedAt && item.updatedAt.getTime() !== new Date(where.updatedAt).getTime()) return false;
+        return true;
+      });
+      rows.forEach((task) => Object.assign(task, data, { updatedAt: now() }));
+      return { count: rows.length };
     }
   };
 
@@ -339,6 +353,27 @@ export class MemoryPrisma {
         });
       }
       return { count: data.length };
+    },
+    findMany: async ({ where, orderBy }: any) => {
+      const rows = this.ocrTaskPhotos.filter((photo) => {
+        if (where.ocrTaskId && photo.ocrTaskId !== where.ocrTaskId) return false;
+        if (where.photoId?.in && !where.photoId.in.includes(photo.photoId)) return false;
+        return true;
+      });
+      if (Array.isArray(orderBy)) {
+        rows.sort((a, b) => {
+          for (const item of orderBy) {
+            const key = Object.keys(item)[0];
+            const direction = item[key];
+            if (a[key] === b[key]) continue;
+            return direction === 'desc'
+              ? (a[key] > b[key] ? -1 : 1)
+              : (a[key] > b[key] ? 1 : -1);
+          }
+          return 0;
+        });
+      }
+      return rows;
     }
   };
 
@@ -370,6 +405,58 @@ export class MemoryPrisma {
         this.userMetricSnapshots.push(snapshot as Row);
       }
       return snapshot as Row;
+    }
+  };
+
+  manualEntryTemplate = {
+    findMany: async ({ where, orderBy }: any) => {
+      const rows = this.manualEntryTemplates.filter((template) => {
+        if (where.profileId && template.profileId !== where.profileId) return false;
+        if (where.userId && template.userId !== where.userId) return false;
+        if (where.status?.not && template.status === where.status.not) return false;
+        if (where.status && typeof where.status === 'string' && template.status !== where.status) return false;
+        return true;
+      });
+      if (Array.isArray(orderBy)) {
+        rows.sort((a, b) => {
+          for (const item of orderBy) {
+            const key = Object.keys(item)[0];
+            const direction = item[key];
+            const left = a[key] instanceof Date ? a[key].getTime() : a[key];
+            const right = b[key] instanceof Date ? b[key].getTime() : b[key];
+            if (left === right) continue;
+            return direction === 'desc' ? (right > left ? 1 : -1) : (left > right ? 1 : -1);
+          }
+          return 0;
+        });
+      }
+      return rows;
+    },
+    findFirst: async ({ where }: any) => {
+      return this.manualEntryTemplates.find((template) => {
+        if (where.id && template.id !== where.id) return false;
+        if (where.profileId && template.profileId !== where.profileId) return false;
+        if (where.userId && template.userId !== where.userId) return false;
+        if (where.metricKey && template.metricKey !== where.metricKey) return false;
+        if (where.status?.not && template.status === where.status.not) return false;
+        return true;
+      }) || null;
+    },
+    create: async ({ data }: any) => {
+      const template = {
+        id: randomUUID(),
+        ...data,
+        createdAt: now(),
+        updatedAt: now()
+      };
+      this.manualEntryTemplates.push(template);
+      return template;
+    },
+    update: async ({ where, data }: any) => {
+      const template = this.manualEntryTemplates.find((item) => item.id === where.id);
+      if (!template) throw new Error('manual entry template not found');
+      Object.assign(template, data, { updatedAt: now() });
+      return template;
     }
   };
 
@@ -473,6 +560,12 @@ export class MemoryPrisma {
       if (!todo) throw new Error('recheck todo not found');
       Object.assign(todo, data, { updatedAt: now() });
       return todo;
+    },
+    delete: async ({ where }: any) => {
+      const before = this.recheckTodos.length;
+      this.recheckTodos = this.recheckTodos.filter((item) => item.id !== where.id);
+      if (before === this.recheckTodos.length) throw new Error('recheck todo not found');
+      return { id: where.id };
     }
   };
 

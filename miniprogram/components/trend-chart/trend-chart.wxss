@@ -66,6 +66,16 @@
   z-index: 1;
 }
 
+.ref-band {
+  position: absolute;
+  left: 72rpx;
+  right: 36rpx;
+  min-height: 4rpx;
+  background: var(--primary-soft);
+  opacity: 0.52;
+  z-index: 0;
+}
+
 .ref-label {
   position: absolute;
   right: 0;

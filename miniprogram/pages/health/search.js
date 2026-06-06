@@ -1,6 +1,18 @@
 const { api } = require('../../utils/api');
-const { formatMonthDay } = require('../../utils/date');
+const { addDays, formatDate, formatMonthDay } = require('../../utils/date');
 const { showApiErrorToast } = require('../../utils/error');
+
+function isAbnormalTone(tone) {
+  return ['high', 'low', 'abnormal', 'positive'].includes(String(tone || ''));
+}
+
+function defaultRangeQuery() {
+  const today = formatDate(new Date());
+  return {
+    since: addDays(today, -29),
+    until: today
+  };
+}
 
 Page({
   data: {
@@ -17,16 +29,21 @@ Page({
   },
   load() {
     this.setData({ loading: true });
+    const query = defaultRangeQuery();
     Promise.all([
-      api.listMetricSnapshots(this.profileId),
-      api.listReports(this.profileId)
+      api.listMetricSnapshots(this.profileId, query),
+      api.listReports(this.profileId, query)
     ]).then(([metrics, reports]) => {
       const displayReports = reports.map((report) => ({
         ...report,
-        displayDate: formatMonthDay(report.reportDate)
+        displayDate: formatMonthDay(report.reportDate),
+        hasAbnormalTone: isAbnormalTone(report.lastTone)
       }));
       this.setData({
-        allMetrics: metrics,
+        allMetrics: metrics.map((metric) => ({
+          ...metric,
+          hasAbnormalTone: isAbnormalTone(metric.lastTone)
+        })),
         allReports: displayReports,
         loading: false
       });

@@ -20,6 +20,7 @@ model User {
   reports        Report[]
   ocrTasks       OcrTask[]
   reportPhotos   ReportPhoto[]
+  manualEntryTemplates ManualEntryTemplate[]
 
   @@map("users")
 }
@@ -49,9 +50,38 @@ model Profile {
   metricSnapshots   UserMetricSnapshot[]
   recheckPlans      RecheckPlan[]
   duplicateCandidates DuplicateReportCandidate[]
+  manualEntryTemplates ManualEntryTemplate[]
 
   @@index([userId, deletedAt])
   @@map("profiles")
+}
+
+model ManualEntryTemplate {
+  id             String    @id @default(uuid()) @db.Uuid
+  profileId      String    @map("profile_id") @db.Uuid
+  userId         String    @map("user_id") @db.Uuid
+  metricKey      String    @map("metric_key") @db.VarChar(128)
+  metricName     String    @map("metric_name") @db.VarChar(128)
+  category       String    @db.VarChar(128)
+  categoryCn     String    @map("category_cn") @db.VarChar(128)
+  valueType      String    @map("value_type") @db.VarChar(32)
+  unit           String?   @db.VarChar(64)
+  refRangeLow    Decimal?  @map("ref_range_low") @db.Decimal(18, 6)
+  refRangeHigh   Decimal?  @map("ref_range_high") @db.Decimal(18, 6)
+  refQualitative String?   @map("ref_qualitative") @db.VarChar(64)
+  refText        String?   @map("ref_text")
+  source         String    @default("custom") @db.VarChar(32)
+  status         String    @default("active") @db.VarChar(32)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  archivedAt     DateTime? @map("archived_at") @db.Timestamptz(6)
+
+  profile        Profile   @relation(fields: [profileId], references: [id])
+  user           User      @relation(fields: [userId], references: [id])
+
+  @@unique([profileId, metricKey])
+  @@index([userId, profileId, status])
+  @@map("manual_entry_templates")
 }
 
 model ReportType {
@@ -226,6 +256,8 @@ model RecognizedReportDraft {
   findings       Json
   conflicts      Json
   warnings       Json
+  ocrEvidence    Json?    @map("ocr_evidence")
+  providerMetadata Json?  @map("provider_metadata")
   status         String   @db.VarChar(32)
   version        Int      @default(1)
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)

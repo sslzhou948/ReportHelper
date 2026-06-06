@@ -24,13 +24,16 @@
     <view class="section-title">{{item.categoryCn}}</view>
     <view class="pad">
       <view class="card">
-        <view wx:for="{{item.items}}" wx:key="metricKey" class="row metric-row {{item.tone}}" data-key="{{item.metricKey}}" data-value-type="{{item.valueType}}" bindtap="goMetric">
+        <view wx:for="{{item.items}}" wx:key="metricKey" class="row metric-row {{item.tone}} {{item.valueType === 'text' ? 'text-metric-row' : ''}}" data-key="{{item.metricKey}}" data-value-type="{{item.valueType}}" bindtap="goMetric">
           <view class="flex">
-            <view class="body strong">{{item.metricName}}</view>
-            <view wx:if="{{item.valueType !== 'text'}}" class="tiny">参考 {{item.refRangeLow}}-{{item.refRangeHigh}}</view>
+            <view class="metric-name-line">
+              <view wx:if="{{item.hasReportMarkers}}" class="report-marker-badge">{{item.markerText}}</view>
+              <view class="body {{item.valueType !== 'text' ? 'strong' : ''}}">{{item.metricName}}</view>
+            </view>
+            <view wx:if="{{item.valueType !== 'text'}}" class="tiny">参考 {{item.referenceText}}</view>
           </view>
           <view class="right">
-            <view class="metric-value {{item.tone}}">{{item.valueNumeric || item.valueQualitative}}</view>
+            <view class="{{item.valueType === 'text' ? 'text-metric-value' : 'metric-value'}} {{item.tone}}">{{item.valueNumeric || item.valueQualitative}}</view>
             <view class="tiny">{{item.unit}}</view>
           </view>
           <view wx:if="{{item.valueType !== 'text'}}" class="trend-icon">趋</view>

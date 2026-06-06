@@ -9,10 +9,13 @@ Build a production-grade WeChat mini program for "我的病例夹", starting fro
 Before implementing feature logic, use these local contracts as the source of truth:
 
 - `docs/product-logic-contract.md`: product rules, state machines, upload/OCR behavior, metric/trend rules, profile ownership, and v1 decisions.
+- `docs/ocr-provider-contract.md`: OCR provider input/output schema, GPT vision adapter rules, future commercial OCR replacement boundary, and acceptance tests.
 - `docs/edge-case-matrix.md`: P0/P1/P2 boundary scenarios, expected UI behavior, API constraints, and test expectations.
 - `docs/api-contract.md`: frontend/backend request and response shapes, error format, idempotency, and endpoint list.
 - `docs/database-schema.md`: backend data model, stable IDs/keys, OCR draft/report persistence, duplicate-save decisions, and backfill safety rules.
 - `docs/backend-technical-plan.md`: backend architecture, implementation slices, duplicate detection rules, and minimum production loop.
+- `docs/environment-release-plan.md`: local development, test, trial run, production release, account isolation, deployment, rollback, and continuous iteration plan.
+- `docs/wechat-console-checklist.md`: WeChat mini program console, AppID, member permission, domain, privacy, and release blocker checklist.
 - `docs/development-status.md`: current implementation status, verified commands, remaining product items, and next recommended slice.
 
 If code behavior and these contracts diverge, update the contract first, then update code and tests.

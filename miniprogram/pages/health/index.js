@@ -1,5 +1,5 @@
 const { api } = require('../../utils/api');
-const { formatMonthDay } = require('../../utils/date');
+const { addDays, formatDate, formatMonthDay } = require('../../utils/date');
 const { showApiErrorToast } = require('../../utils/error');
 const {
   beginSlowLoading,
@@ -8,9 +8,10 @@ const {
 } = require('../../utils/loading');
 const { bindNetworkStatus, refreshNetworkStatus } = require('../../utils/network');
 const { isProfileRequiredError } = require('../../utils/profile');
+const { normalizeMetricCategory } = require('../../utils/metric-category');
 
 const FILTER_ALL = '\u5168\u90e8';
-const FILTER_ABNORMAL = '\u5f02\u5e38';
+const FILTER_ABNORMAL = '\u5f02\u5e38\u6307\u6807';
 const DEFAULT_CHIPS = [
   FILTER_ALL,
   FILTER_ABNORMAL,
@@ -19,30 +20,45 @@ const DEFAULT_CHIPS = [
   '\u80be\u529f\u80fd',
   '\u80bf\u7624\u6807\u5fd7\u7269'
 ];
+const RANGE_OPTIONS = [
+  { key: '30d', label: '近30天', days: 30 },
+  { key: '90d', label: '近90天', days: 90 },
+  { key: '1y', label: '近1年', days: 365 },
+  { key: 'all', label: '全部' }
+];
+
+function isAbnormalTone(tone) {
+  return ['high', 'low', 'abnormal', 'positive'].includes(String(tone || ''));
+}
 
 function groupMetrics(metrics) {
   return Object.values(metrics.reduce((acc, item) => {
-    const key = item.category;
+    const categoryInfo = normalizeMetricCategory(item);
+    const key = categoryInfo.category;
     if (!acc[key]) {
       acc[key] = {
         category: key,
-        categoryCn: item.categoryCn,
+        categoryCn: categoryInfo.categoryCn,
         abnormalCount: 0,
         latestDate: item.lastDate,
         items: []
       };
     }
-    acc[key].items.push(item);
-    if (item.lastTone !== 'ok') acc[key].abnormalCount += 1;
+    acc[key].items.push({
+      ...item,
+      category: categoryInfo.category,
+      categoryCn: categoryInfo.categoryCn
+    });
+    if (isAbnormalTone(item.lastTone)) acc[key].abnormalCount += 1;
     if (new Date(item.lastDate) > new Date(acc[key].latestDate)) acc[key].latestDate = item.lastDate;
     return acc;
   }, {}));
 }
 
 function filterMetrics(metrics, filter) {
-  if (filter === FILTER_ABNORMAL) return metrics.filter((item) => item.lastTone !== 'ok');
+  if (filter === FILTER_ABNORMAL) return metrics.filter((item) => isAbnormalTone(item.lastTone));
   if (filter === FILTER_ALL) return metrics;
-  return metrics.filter((item) => item.categoryCn === filter);
+  return metrics.filter((item) => normalizeMetricCategory(item).categoryCn === filter);
 }
 
 function buildReportsByMonth(reports) {
@@ -65,13 +81,32 @@ function buildReportsByMonth(reports) {
   }, {}));
 }
 
+function rangeQuery(rangeKey) {
+  const option = RANGE_OPTIONS.find((item) => item.key === rangeKey) || RANGE_OPTIONS[0];
+  const today = formatDate(new Date());
+  if (!option.days) return {};
+  return {
+    since: addDays(today, -(option.days - 1)),
+    until: today
+  };
+}
+
+function rangeLabel(rangeKey) {
+  const option = RANGE_OPTIONS.find((item) => item.key === rangeKey) || RANGE_OPTIONS[0];
+  return option.label;
+}
+
 Page({
   data: {
     view: 'metric',
+    range: '30d',
+    rangeLabel: rangeLabel('30d'),
+    rangeOptions: RANGE_OPTIONS,
     filter: FILTER_ALL,
     metricCount: 0,
     reportCount: 0,
     abnormalCount: 0,
+    reportAbnormalTotal: 0,
     metrics: [],
     groupedMetrics: [],
     reportsByMonth: [],
@@ -87,31 +122,49 @@ Page({
 
   onShow() {
     bindNetworkStatus(this);
+    const savedRange = wx.getStorageSync('healthDataRange');
+    if (savedRange && savedRange !== this.data.range) {
+      this.setData({ range: savedRange, rangeLabel: rangeLabel(savedRange) });
+    }
     const defaultView = wx.getStorageSync('healthDefaultView');
     if (defaultView) {
       wx.removeStorageSync('healthDefaultView');
       this.setData({ view: defaultView });
     }
-    this.load();
+    const savedToast = wx.getStorageSync('lastSavedReportToast');
+    if (savedToast) {
+      wx.removeStorageSync('lastSavedReportToast');
+      setTimeout(() => wx.showToast({ title: savedToast, icon: 'success' }), 300);
+    }
+    this.load(savedRange || this.data.range, this.data.filter);
   },
 
-  load() {
+  load(rangeKey = this.data.range, filterKey = this.data.filter) {
     const app = getApp();
     const loadingToken = beginSlowLoading(this);
+    const requestId = (this.loadRequestId || 0) + 1;
+    this.loadRequestId = requestId;
+    const query = rangeQuery(rangeKey);
     app.ensureCurrentProfileId(api).then((profileId) => Promise.all([
-      api.listMetricSnapshots(profileId),
-      api.listReports(profileId)
+      api.listMetricSnapshots(profileId, query),
+      api.listReports(profileId, query)
     ])).then(([metrics, reports]) => {
+      if (requestId !== this.loadRequestId) return;
       if (!finishSlowLoading(this, loadingToken)) return;
       this.setData({
+        range: rangeKey,
+        rangeLabel: rangeLabel(rangeKey),
+        filter: filterKey,
         metrics,
         metricCount: metrics.length,
         reportCount: reports.length,
-        abnormalCount: metrics.filter((item) => item.lastTone !== 'ok').length,
-        groupedMetrics: groupMetrics(filterMetrics(metrics, this.data.filter)),
+        abnormalCount: metrics.filter((item) => isAbnormalTone(item.lastTone)).length,
+        reportAbnormalTotal: reports.reduce((sum, report) => sum + (Number(report.abnormalCount) || 0), 0),
+        groupedMetrics: groupMetrics(filterMetrics(metrics, filterKey)),
         reportsByMonth: buildReportsByMonth(reports)
       });
     }).catch((error) => {
+      if (requestId !== this.loadRequestId) return;
       if (!finishSlowLoading(this, loadingToken)) return;
       if (isProfileRequiredError(error)) return;
       showApiErrorToast(error, '\u52a0\u8f7d\u5065\u5eb7\u6570\u636e\u5931\u8d25');
@@ -122,12 +175,20 @@ Page({
     this.setData({ view: event.currentTarget.dataset.view });
   },
 
+  switchRange(event) {
+    const range = event.currentTarget.dataset.range;
+    this.setData({
+      range,
+      rangeLabel: rangeLabel(range)
+    });
+    wx.setStorageSync('healthDataRange', range);
+    this.load(range, this.data.filter);
+  },
+
   switchFilter(event) {
     const filter = event.currentTarget.dataset.filter;
-    this.setData({
-      filter,
-      groupedMetrics: groupMetrics(filterMetrics(this.data.metrics, filter))
-    });
+    this.setData({ filter });
+    this.load(this.data.range, filter);
   },
 
   goUpload() {
@@ -143,8 +204,8 @@ Page({
   },
 
   goMetric(event) {
-    const metricKey = event.detail.metricKey || event.currentTarget.dataset.key;
-    wx.navigateTo({ url: `/pages/health/metric-detail?metricKey=${metricKey}` });
+    const metricKey = (event.detail && event.detail.metricKey) || event.currentTarget.dataset.key;
+    wx.navigateTo({ url: `/pages/health/metric-detail?metricKey=${metricKey}&range=${this.data.range}` });
   },
 
   goReport(event) {

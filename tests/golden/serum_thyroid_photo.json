@@ -1,0 +1,49 @@
+{
+  "caseId": "serum_thyroid_photo",
+  "status": "structured",
+  "modality": "laboratory",
+  "expectedFields": [
+    "hospital",
+    "type",
+    "metricName",
+    "value",
+    "unit",
+    "referenceRange",
+    "tone"
+  ],
+  "basicInfo": {
+    "hospital": "天津迪安医学检验实验室",
+    "reportDate": "",
+    "type": "甲状腺功能",
+    "typeKey": "thyroid_function"
+  },
+  "metrics": [
+    {
+      "metricKey": "t3",
+      "metricName": "血清三碘甲状原氨酸",
+      "valueNumeric": 1.091,
+      "unit": "nmol/L",
+      "refRangeLow": 0.85,
+      "refRangeHigh": 2.68,
+      "tone": "ok"
+    },
+    {
+      "metricKey": "t4",
+      "metricName": "血清甲状腺素",
+      "valueNumeric": 58.477,
+      "unit": "nmol/L",
+      "refRangeLow": 60.72,
+      "refRangeHigh": 170.00,
+      "tone": "low"
+    },
+    {
+      "metricKey": "tsh",
+      "metricName": "血清促甲状腺激素",
+      "valueNumeric": 3.523,
+      "unit": "mIU/L",
+      "refRangeLow": 0.30,
+      "refRangeHigh": 4.30,
+      "tone": "ok"
+    }
+  ]
+}

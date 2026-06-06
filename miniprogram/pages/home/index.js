@@ -1,5 +1,5 @@
 const { api } = require('../../utils/api');
-const { formatMonthDay, daysBetween } = require('../../utils/date');
+const { addDays, formatDate, formatMonthDay, daysBetween } = require('../../utils/date');
 const { showApiErrorToast } = require('../../utils/error');
 const {
   beginSlowLoading,
@@ -10,6 +10,20 @@ const { bindNetworkStatus, refreshNetworkStatus } = require('../../utils/network
 const { isProfileRequiredError } = require('../../utils/profile');
 
 const ACTIVE_OCR_STATUSES = ['queued', 'processing', 'needs_confirmation', 'ready_to_save', 'failed'];
+const HOME_RECENT_REPORT_LIMIT = 6;
+const HOME_ALERT_METRIC_LIMIT = 5;
+
+function isAbnormalTone(tone) {
+  return ['high', 'low', 'abnormal', 'positive'].includes(String(tone || ''));
+}
+
+function recentAlertQuery() {
+  const today = formatDate(new Date());
+  return {
+    since: addDays(today, -29),
+    until: today
+  };
+}
 
 function readPendingOcrTasks() {
   const pending = wx.getStorageSync('pendingOcrTasks');
@@ -125,12 +139,32 @@ function reportDisplayType(report) {
   return label.length > 4 ? `${label.slice(0, 3)}…` : label;
 }
 
+function reportDisplayHospital(report) {
+  const label = String(report.hospital || '待确认医院').trim();
+  return label.length > 4 ? `${label.slice(0, 3)}…` : label;
+}
+
 function reportFullType(report) {
   const metrics = report.metrics || [];
   if (String(report.typeKey || '').startsWith('manual_') && metrics[0] && metrics[0].metricName) {
     return metrics[0].metricName;
   }
   return report.canonicalTypeName || report.type || '\u68c0\u67e5';
+}
+
+function formatAlertSummary(metrics) {
+  const names = (metrics || []).map((item) => item.metricName).filter(Boolean);
+  if (names.length <= 3) return names.join('、');
+  return `${names.slice(0, 3).join('、')}等 ${names.length} 项`;
+}
+
+function getGreetingText(now = new Date()) {
+  const hour = now.getHours();
+  if (hour < 6) return '\u591c\u6df1\u4e86\uff0c\u613f\u60a8\u65e9\u65e5\u5eb7\u590d';
+  if (hour < 11) return '\u65e9\u4e0a\u597d\uff0c\u613f\u60a8\u65e9\u65e5\u5eb7\u590d';
+  if (hour < 14) return '\u4e2d\u5348\u597d\uff0c\u613f\u60a8\u65e9\u65e5\u5eb7\u590d';
+  if (hour < 18) return '\u4e0b\u5348\u597d\uff0c\u613f\u60a8\u65e9\u65e5\u5eb7\u590d';
+  return '\u665a\u4e0a\u597d\uff0c\u613f\u60a8\u65e9\u65e5\u5eb7\u590d';
 }
 
 Page({
@@ -140,11 +174,12 @@ Page({
     reports: [],
     pinnedMetrics: [],
     alertMetrics: [],
+    alertSummaryText: '',
     nextPlan: null,
     daysToNext: 0,
     layout: {},
+    greetingText: getGreetingText(),
     switcherVisible: false,
-    recognizing: false,
     pendingOcrTask: null,
     networkOffline: false,
     loading: false,
@@ -159,33 +194,37 @@ Page({
   load() {
     const app = getApp();
     const loadingToken = beginSlowLoading(this);
-    this.setData({ layout: app.getLayout() });
+    this.setData({ layout: app.getLayout(), greetingText: getGreetingText() });
 
     app.ensureCurrentProfileId(api).then((profileId) => Promise.all([
       api.getProfile(profileId),
       api.getProfiles(),
       api.listReports(profileId),
       api.listMetricSnapshots(profileId),
+      api.listMetricSnapshots(profileId, recentAlertQuery()),
       api.listRecheckPlans(profileId),
       this.loadPendingOcrTask(profileId)
-    ])).then(([profile, profiles, reports, snapshots, recheck, pendingOcrTask]) => {
+    ])).then(([profile, profiles, reports, snapshots, recentSnapshots, recheck, pendingOcrTask]) => {
       if (!finishSlowLoading(this, loadingToken)) return;
       const nextPlan = recheck.nextPlan || null;
+      const alertMetrics = recentSnapshots.filter((item) => isAbnormalTone(item.lastTone)).slice(0, HOME_ALERT_METRIC_LIMIT);
       this.setData({
         profile,
         profiles,
-        reports: reports.slice(0, 3).map((report) => ({
+        reports: reports.slice(0, HOME_RECENT_REPORT_LIMIT).map((report) => ({
           ...report,
           displayType: reportDisplayType(report),
+          displayHospital: reportDisplayHospital(report),
           fullType: reportFullType(report),
+          fullHospital: report.hospital || '待确认医院',
           displayDate: formatMonthDay(report.reportDate)
         })),
         pinnedMetrics: snapshots.filter((item) => item.isPinned).slice(0, 8),
-        alertMetrics: snapshots.filter((item) => item.lastTone !== 'ok').slice(0, 3),
+        alertMetrics,
+        alertSummaryText: formatAlertSummary(alertMetrics),
         nextPlan,
         daysToNext: nextPlan ? Math.max(0, daysBetween(new Date(), nextPlan.date)) : 0,
-        pendingOcrTask,
-        recognizing: pendingOcrTask ? (this.data.recognizing || ['ready', 'warning'].includes(pendingOcrTask.tone)) : false
+        pendingOcrTask
       });
     }).catch((error) => {
       if (!finishSlowLoading(this, loadingToken)) return;
@@ -263,17 +302,19 @@ Page({
     wx.switchTab({ url: '/pages/health/index' });
   },
 
-  showRecognizing() {
-    this.setData({ recognizing: !this.data.recognizing });
-  },
-
   goOcrTask() {
-    const pending = readPendingOcrTasks();
+    const currentTask = this.data.pendingOcrTask || {};
+    if (currentTask.taskId) {
+      wx.navigateTo({ url: `/pages/upload/confirm?taskId=${currentTask.taskId}` });
+      return;
+    }
+
     const currentProfileId = getApp().getCurrentProfileId();
-    const task = sortPendingOcrTasks(pending.filter((item) => item.profileId === currentProfileId))[0]
-      || sortPendingOcrTasks(pending)[0];
+    const pending = readPendingOcrTasks();
+    const task = sortPendingOcrTasks(pending.filter((item) => item.profileId === currentProfileId))[0];
     if (!task) {
-      wx.navigateTo({ url: '/pages/upload/pick' });
+      wx.showToast({ title: '识别任务已更新，请刷新首页', icon: 'none' });
+      this.load();
       return;
     }
     wx.navigateTo({ url: `/pages/upload/confirm?taskId=${task.taskId}` });

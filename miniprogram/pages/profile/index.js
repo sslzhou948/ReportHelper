@@ -7,6 +7,7 @@ const {
 } = require('../../utils/loading');
 const { bindNetworkStatus, refreshNetworkStatus } = require('../../utils/network');
 const { isProfileRequiredError } = require('../../utils/profile');
+const { DEFAULT_BACKEND_BASE_URL } = require('../../utils/api-config');
 
 const ROUTE_MAP = {
   '\u6570\u636e\u5bfc\u51fa': '/pages/profile/export',
@@ -17,6 +18,7 @@ const ROUTE_MAP = {
   '\u610f\u89c1\u53cd\u9988': '/pages/profile/feedback',
   '\u5173\u4e8e\u6211\u4eec v1.0.0': '/pages/profile/about'
 };
+const REAL_UPLOAD_BACKEND_BASE_URL = 'http://127.0.0.1:18788';
 
 Page({
   data: {
@@ -26,13 +28,39 @@ Page({
     metricsCount: 0,
     recheckCount: 0,
     switcherVisible: false,
+    devRuntimeVisible: false,
+    devApiMode: 'mock',
+    devBackendBaseUrl: DEFAULT_BACKEND_BASE_URL,
+    devBackendProfileId: '',
+    devBackendStatus: '未检测',
     networkOffline: false,
     loading: false,
     loadingSlow: false
   },
   onShow() {
     bindNetworkStatus(this);
+    this.refreshDevRuntime();
     this.load();
+  },
+  getEnvVersion() {
+    if (!wx.getAccountInfoSync) return '';
+    try {
+      const account = wx.getAccountInfoSync();
+      return account && account.miniProgram ? account.miniProgram.envVersion || '' : '';
+    } catch (error) {
+      return '';
+    }
+  },
+  refreshDevRuntime() {
+    const envVersion = this.getEnvVersion();
+    const mode = wx.getStorageSync('healthhelperApiMode') || 'mock';
+    const baseUrl = wx.getStorageSync('healthhelperBackendBaseUrl') || DEFAULT_BACKEND_BASE_URL;
+    this.setData({
+      devRuntimeVisible: envVersion !== 'release',
+      devApiMode: mode,
+      devBackendBaseUrl: baseUrl,
+      devBackendProfileId: wx.getStorageSync('healthhelperBackendProfileId') || ''
+    });
   },
   load() {
     const app = getApp();
@@ -91,6 +119,64 @@ Page({
       return;
     }
     wx.showToast({ title, icon: 'none' });
+  },
+  setDevApiMode(event) {
+    const mode = event.currentTarget.dataset.mode || 'mock';
+    wx.setStorageSync('healthhelperApiMode', mode);
+    if (mode === 'mock') {
+      wx.removeStorageSync('healthhelperBackendProfileId');
+      this.setData({ devBackendStatus: '已切换到 mock' });
+      this.refreshDevRuntime();
+      this.load();
+      return;
+    }
+    const currentBaseUrl = wx.getStorageSync('healthhelperBackendBaseUrl');
+    if (mode === 'hybrid-upload' && (!currentBaseUrl || currentBaseUrl === DEFAULT_BACKEND_BASE_URL)) {
+      wx.setStorageSync('healthhelperBackendBaseUrl', REAL_UPLOAD_BACKEND_BASE_URL);
+    } else if (!currentBaseUrl) {
+      wx.setStorageSync('healthhelperBackendBaseUrl', DEFAULT_BACKEND_BASE_URL);
+    }
+    this.refreshDevRuntime();
+    this.connectDevBackend();
+  },
+  chooseDevBackendBaseUrl() {
+    const urls = [
+      DEFAULT_BACKEND_BASE_URL,
+      REAL_UPLOAD_BACKEND_BASE_URL
+    ];
+    wx.showActionSheet({
+      itemList: ['本地后端 8787', '自动化后端 18788'],
+      success: (res) => {
+        const value = urls[res.tapIndex] || DEFAULT_BACKEND_BASE_URL;
+        wx.setStorageSync('healthhelperBackendBaseUrl', value);
+        this.refreshDevRuntime();
+        this.connectDevBackend();
+      }
+    });
+  },
+  connectDevBackend() {
+    const baseUrl = wx.getStorageSync('healthhelperBackendBaseUrl') || DEFAULT_BACKEND_BASE_URL;
+    this.setData({ devBackendStatus: '检测中...' });
+    wx.request({
+      url: `${baseUrl}/api/profiles`,
+      method: 'GET',
+      success: (res) => {
+        const profile = res.data && res.data.data && res.data.data[0];
+        if (res.statusCode >= 200 && res.statusCode < 300 && profile && profile.id) {
+          wx.setStorageSync('healthhelperBackendProfileId', profile.id);
+          this.setData({
+            devBackendProfileId: profile.id,
+            devBackendStatus: '已连接'
+          });
+          this.load();
+          return;
+        }
+        this.setData({ devBackendStatus: `连接失败 ${res.statusCode}` });
+      },
+      fail: () => {
+        this.setData({ devBackendStatus: '连接失败，请确认后端已启动' });
+      }
+    });
   },
   logout() {
     wx.showModal({

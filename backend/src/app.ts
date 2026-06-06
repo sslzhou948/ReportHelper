@@ -17,6 +17,8 @@ type BuildAppOptions = {
   prisma: PrismaClient;
 };
 
+const REQUEST_BODY_LIMIT_BYTES = 11 * 1024 * 1024;
+
 async function getDatabaseHealth(prisma: PrismaClient) {
   const rawPrisma = prisma as unknown as {
     $queryRawUnsafe?: (query: string) => Promise<unknown>;
@@ -45,7 +47,8 @@ async function getDatabaseHealth(prisma: PrismaClient) {
 
 export function buildApp({ env, prisma }: BuildAppOptions) {
   const app = Fastify({
-    logger: env.NODE_ENV !== 'test'
+    logger: env.NODE_ENV !== 'test',
+    bodyLimit: REQUEST_BODY_LIMIT_BYTES
   });
 
   app.decorate('prisma', prisma);

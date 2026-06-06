@@ -1,0 +1,29 @@
+{
+    "sourceDir":  "./images",
+    "cases":  [
+                  {
+                      "modality":  "laboratory",
+                      "expectedGolden":  "./golden/synthetic_acth.json",
+                      "id":  "synthetic_acth",
+                      "file":  "synthetic_acth.png"
+                  },
+                  {
+                      "modality":  "laboratory",
+                      "expectedGolden":  "./golden/synthetic_thyroid.json",
+                      "id":  "synthetic_thyroid",
+                      "file":  "synthetic_thyroid.png"
+                  },
+                  {
+                      "modality":  "laboratory",
+                      "expectedGolden":  "./golden/synthetic_biochem_lipid.json",
+                      "id":  "synthetic_biochem_lipid",
+                      "file":  "synthetic_biochem_lipid.png"
+                  },
+                  {
+                      "modality":  "imaging",
+                      "expectedGolden":  "./golden/synthetic_chest_ct.json",
+                      "id":  "synthetic_chest_ct",
+                      "file":  "synthetic_chest_ct.png"
+                  }
+              ]
+}

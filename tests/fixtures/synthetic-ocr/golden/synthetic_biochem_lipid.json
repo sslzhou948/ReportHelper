@@ -1,0 +1,56 @@
+{
+    "modality":  "laboratory",
+    "expectedFields":  [
+                           "hospital",
+                           "reportDate",
+                           "metricName",
+                           "value",
+                           "unit",
+                           "referenceRange",
+                           "tone"
+                       ],
+    "metrics":  [
+                    {
+                        "refRangeHigh":  35,
+                        "metricName":  "天门冬氨酸氨基转移酶",
+                        "unit":  "U/L",
+                        "valueNumeric":  41,
+                        "refRangeLow":  13,
+                        "metricKey":  "ast",
+                        "tone":  "high"
+                    },
+                    {
+                        "refRangeHigh":  84,
+                        "metricName":  "肌酐(酶法)",
+                        "unit":  "μmol/L",
+                        "valueNumeric":  43,
+                        "refRangeLow":  45,
+                        "metricKey":  "creatinine",
+                        "tone":  "low"
+                    },
+                    {
+                        "refRangeHigh":  357,
+                        "metricName":  "尿酸",
+                        "unit":  "μmol/L",
+                        "valueNumeric":  112,
+                        "refRangeLow":  150,
+                        "metricKey":  "uric_acid",
+                        "tone":  "low"
+                    },
+                    {
+                        "refRangeHigh":  5.2,
+                        "metricName":  "总胆固醇",
+                        "unit":  "mmol/L",
+                        "valueNumeric":  5.81,
+                        "metricKey":  "tc",
+                        "tone":  "high"
+                    }
+                ],
+    "basicInfo":  {
+                      "hospital":  "北京协和医院",
+                      "type":  "尿酸、电解质、血脂",
+                      "reportDate":  "2025-12-22"
+                  },
+    "status":  "structured",
+    "caseId":  "synthetic_biochem_lipid"
+}

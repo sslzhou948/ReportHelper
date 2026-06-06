@@ -1,0 +1,227 @@
+{
+  "caseId": "headless_blood_routine_screenshot",
+  "status": "structured",
+  "modality": "laboratory",
+  "expectedFields": [
+    "metricName",
+    "value",
+    "unit",
+    "referenceRange",
+    "tone"
+  ],
+  "basicInfo": {
+    "hospital": "",
+    "reportDate": "",
+    "type": "",
+    "typeKey": "blood_routine"
+  },
+  "metrics": [
+    {
+      "metricKey": "wbc",
+      "metricName": "白细胞",
+      "valueNumeric": 2.47,
+      "unit": "10^9/L",
+      "refRangeLow": 3.5,
+      "refRangeHigh": 9.5,
+      "tone": "low"
+    },
+    {
+      "metricKey": "lym_percent",
+      "metricName": "淋巴细胞百分比",
+      "valueNumeric": 30.0,
+      "unit": "%",
+      "refRangeLow": 20.0,
+      "refRangeHigh": 40.0,
+      "tone": "ok"
+    },
+    {
+      "metricKey": "mon_percent",
+      "metricName": "单核细胞百分比",
+      "valueNumeric": 11.3,
+      "unit": "%",
+      "refRangeLow": 3.0,
+      "refRangeHigh": 8.0,
+      "tone": "high"
+    },
+    {
+      "metricKey": "neu_percent",
+      "metricName": "中性粒细胞百分比",
+      "valueNumeric": 55.5,
+      "unit": "%",
+      "refRangeLow": 50.0,
+      "refRangeHigh": 75.0,
+      "tone": "ok"
+    },
+    {
+      "metricKey": "eos_percent",
+      "metricName": "嗜酸性粒细胞百分比",
+      "valueNumeric": 2.4,
+      "unit": "%",
+      "refRangeLow": 0.5,
+      "refRangeHigh": 5.0,
+      "tone": "ok"
+    },
+    {
+      "metricKey": "bas_percent",
+      "metricName": "嗜碱性粒细胞百分比",
+      "valueNumeric": 0.8,
+      "unit": "%",
+      "refRangeLow": 0.0,
+      "refRangeHigh": 1.0,
+      "tone": "ok"
+    },
+    {
+      "metricKey": "lym_abs",
+      "metricName": "淋巴细胞绝对值",
+      "valueNumeric": 0.74,
+      "unit": "10^9/L",
+      "refRangeLow": 0.8,
+      "refRangeHigh": 4.0,
+      "tone": "low"
+    },
+    {
+      "metricKey": "mon_abs",
+      "metricName": "单核细胞绝对值",
+      "valueNumeric": 0.28,
+      "unit": "10^9/L",
+      "refRangeLow": 0.12,
+      "refRangeHigh": 0.8,
+      "tone": "ok"
+    },
+    {
+      "metricKey": "neu_abs",
+      "metricName": "中性粒细胞绝对值",
+      "valueNumeric": 1.37,
+      "unit": "10^9/L",
+      "refRangeLow": 2.0,
+      "refRangeHigh": 7.5,
+      "tone": "low"
+    },
+    {
+      "metricKey": "eos_abs",
+      "metricName": "嗜酸性粒细胞绝对值",
+      "valueNumeric": 0.06,
+      "unit": "10^9/L",
+      "refRangeLow": 0.02,
+      "refRangeHigh": 0.5,
+      "tone": "ok"
+    },
+    {
+      "metricKey": "bas_abs",
+      "metricName": "嗜碱性粒细胞绝对值",
+      "valueNumeric": 0.02,
+      "unit": "10^9/L",
+      "refRangeLow": 0.0,
+      "refRangeHigh": 0.1,
+      "tone": "ok"
+    },
+    {
+      "metricKey": "rbc",
+      "metricName": "红细胞",
+      "valueNumeric": 4.0,
+      "unit": "10^12/L",
+      "refRangeLow": 3.5,
+      "refRangeHigh": 5.0,
+      "tone": "ok"
+    },
+    {
+      "metricKey": "hgb",
+      "metricName": "血红蛋白",
+      "valueNumeric": 133,
+      "unit": "g/L",
+      "refRangeLow": 110,
+      "refRangeHigh": 150,
+      "tone": "ok"
+    },
+    {
+      "metricKey": "hct",
+      "metricName": "红细胞压积",
+      "valueNumeric": 39.7,
+      "unit": "%",
+      "refRangeLow": 35.0,
+      "refRangeHigh": 50.0,
+      "tone": "ok"
+    },
+    {
+      "metricKey": "mcv",
+      "metricName": "平均红细胞体积",
+      "valueNumeric": 99.3,
+      "unit": "fL",
+      "refRangeLow": 82.0,
+      "refRangeHigh": 97.0,
+      "tone": "high"
+    },
+    {
+      "metricKey": "mchc",
+      "metricName": "平均红细胞血红蛋白浓度",
+      "valueNumeric": 335,
+      "unit": "g/L",
+      "refRangeLow": 320,
+      "refRangeHigh": 360,
+      "tone": "ok"
+    },
+    {
+      "metricKey": "mch",
+      "metricName": "平均红细胞血红蛋白",
+      "valueNumeric": 33.3,
+      "unit": "pg",
+      "refRangeLow": 27.0,
+      "refRangeHigh": 32.0,
+      "tone": "high"
+    },
+    {
+      "metricKey": "rdw_sd",
+      "metricName": "红细胞体积分布宽度(SD)",
+      "valueNumeric": 45.7,
+      "unit": "fL",
+      "refRangeLow": 39.0,
+      "refRangeHigh": 46.0,
+      "tone": "ok"
+    },
+    {
+      "metricKey": "rdw_cv",
+      "metricName": "红细胞体积分布宽度(CV)",
+      "valueNumeric": 12.5,
+      "unit": "%",
+      "refRangeLow": 0.0,
+      "refRangeHigh": 15.0,
+      "tone": "ok"
+    },
+    {
+      "metricKey": "plt",
+      "metricName": "血小板",
+      "valueNumeric": 169,
+      "unit": "10^9/L",
+      "refRangeLow": 100,
+      "refRangeHigh": 350,
+      "tone": "ok"
+    },
+    {
+      "metricKey": "pct",
+      "metricName": "血小板压积",
+      "valueNumeric": 0.18,
+      "unit": "%",
+      "refRangeLow": 0.11,
+      "refRangeHigh": 0.28,
+      "tone": "ok"
+    },
+    {
+      "metricKey": "pdw",
+      "metricName": "血小板体积分布宽度",
+      "valueNumeric": 11.8,
+      "unit": "fL",
+      "refRangeLow": 9.0,
+      "refRangeHigh": 17.0,
+      "tone": "ok"
+    },
+    {
+      "metricKey": "mpv",
+      "metricName": "平均血小板体积",
+      "valueNumeric": 10.7,
+      "unit": "fL",
+      "refRangeLow": 7.0,
+      "refRangeHigh": 13.0,
+      "tone": "ok"
+    }
+  ]
+}

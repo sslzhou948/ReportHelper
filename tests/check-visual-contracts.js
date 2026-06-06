@@ -47,6 +47,11 @@ function assertDecl(rule, declaration, message) {
   assert.ok(rule.includes(declaration), message || `missing declaration: ${declaration}`);
 }
 
+function assertPageBottomPadding(source, name, minRpx = 192) {
+  const match = source.match(/padding-bottom:\s*calc\((\d+)rpx \+ env\(safe-area-inset-bottom\)\)/);
+  assert.ok(match && Number(match[1]) >= minRpx, `${name} page must reserve more than the fixed bottom action height`);
+}
+
 assert.ok(appWxss.includes('--bg: #EDEAE4'), 'page background token must match wireframe');
 assert.ok(appWxss.includes('--primary: #5A7A5A'), 'primary color token must match wireframe');
 assert.ok(appWxss.includes('padding: 0 32rpx'), 'page horizontal padding must be 16px / 32rpx');
@@ -91,10 +96,10 @@ const reportMain = getRule(homeWxss, '.report-main');
 assertDecl(reportMain, 'flex: 1', 'home report main text must take remaining row width');
 assertDecl(reportMain, 'min-width: 0', 'home report main text must be allowed to shrink horizontally');
 
-const ocrStatusEntry = getRule(homeWxss, '.ocr-status-entry');
-assertDecl(ocrStatusEntry, 'margin-left: auto', 'home OCR status entry must align to the safe right side of the header');
-assertDecl(ocrStatusEntry, 'max-width: 220rpx', 'home OCR status entry must stay compact beside the profile chip');
-assertDecl(ocrStatusEntry, 'white-space: nowrap', 'home OCR status entry text must not wrap into the banner');
+assert.ok(!homeWxss.includes('.ocr-status-entry'), 'home OCR status must not use a cramped banner chip');
+const ocrCard = getRule(homeWxss, '.ocr-card');
+assertDecl(ocrCard, 'width: 100%', 'home OCR status card must use the available content width');
+assertDecl(ocrCard, 'display: flex', 'home OCR status card must keep icon, text, and action aligned');
 
 const sectionAction = getRule(homeWxss, '.section-action');
 assertDecl(sectionAction, 'margin-left: auto', 'home section actions must be right aligned');
@@ -117,8 +122,9 @@ assertDecl(pinAction, 'min-width: 128rpx', 'metric detail follow action must be 
 assertDecl(pinAction, 'height: 56rpx', 'metric detail follow action must stay compact but legible');
 
 assert.ok(trendChartWxml.includes('wx:for="{{yTicks}}"'), 'trend chart must render y-axis ticks');
-assert.ok(trendChartWxml.includes('wx:if="{{refLine}}"'), 'trend chart must render latest reference line');
-assert.ok(trendChartJs.includes('最新参考下限'), 'trend chart reference line must explain what it marks');
+assert.ok(trendChartWxml.includes('wx:for="{{refLines}}"'), 'trend chart must render latest reference limit lines');
+assert.ok(trendChartWxml.includes('wx:if="{{refBand}}"'), 'trend chart must render a range band when both reference limits are available');
+assert.ok(trendChartJs.includes('latestRefLow') && trendChartJs.includes('latestRefHigh'), 'trend chart reference lines must use the latest numeric limits');
 assert.ok(trendChartJs.includes('formatDateLabel'), 'trend chart x-axis labels must show real report dates');
 assert.ok(trendChartJs.includes('pointGap'), 'trend chart points must be evenly spaced rather than true-date mapped');
 
@@ -135,7 +141,7 @@ for (const [name, source] of [
   ['upload edit', uploadEditWxss],
   ['upload conflict', uploadConflictWxss]
 ]) {
-  assert.ok(source.includes('padding-bottom: calc(192rpx + env(safe-area-inset-bottom))'), `${name} page must reserve more than the fixed bottom action height`);
+  assertPageBottomPadding(source, name);
   assert.ok(source.includes('env(safe-area-inset-bottom)'), `${name} bottom action must respect safe area`);
 }
 

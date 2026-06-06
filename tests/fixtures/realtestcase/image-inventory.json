@@ -1,0 +1,103 @@
+{
+  "sourceDir": "../../../realtestcase",
+  "cases": [
+    {
+      "id": "acth",
+      "file": "ACTH.jpg",
+      "modality": "laboratory",
+      "layout": "long_lab_screenshot",
+      "coverage": "fixture_golden"
+    },
+    {
+      "id": "uric_electrolyte_lipid",
+      "file": "尿酸、电解质、血脂.jpg",
+      "modality": "laboratory",
+      "layout": "long_lab_screenshot",
+      "coverage": "fixture_golden"
+    },
+    {
+      "id": "headless_blood_routine_screenshot",
+      "file": "无头检查单测试样品.jpg",
+      "modality": "laboratory",
+      "layout": "headless_lab_screenshot",
+      "coverage": "ocr_eval_golden"
+    },
+    {
+      "id": "blood_routine_double_column_photo",
+      "file": "检查报告单样品2.jpg",
+      "modality": "laboratory",
+      "layout": "double_column_lab_photo",
+      "coverage": "ocr_eval_golden"
+    },
+    {
+      "id": "sample_4_lab_photo",
+      "file": "检测样本4.jpg",
+      "modality": "laboratory",
+      "layout": "lab_photo",
+      "coverage": "ocr_eval_golden"
+    },
+    {
+      "id": "thyroid",
+      "file": "甲功.jpg",
+      "modality": "laboratory",
+      "layout": "long_lab_screenshot",
+      "coverage": "fixture_golden"
+    },
+    {
+      "id": "cortisol",
+      "file": "皮质醇.jpg",
+      "modality": "laboratory",
+      "layout": "long_lab_screenshot",
+      "coverage": "fixture_golden"
+    },
+    {
+      "id": "community_blood_routine_photo",
+      "file": "社区检查.jpg",
+      "modality": "laboratory",
+      "layout": "occluded_single_column_lab_photo",
+      "coverage": "ocr_eval_golden"
+    },
+    {
+      "id": "community_lipid_photo",
+      "file": "社区检查2.jpg",
+      "modality": "laboratory",
+      "layout": "single_panel_lipid_photo",
+      "coverage": "ocr_eval_golden"
+    },
+    {
+      "id": "liver_function",
+      "file": "肝功.jpg",
+      "modality": "laboratory",
+      "layout": "long_lab_screenshot",
+      "coverage": "fixture_golden"
+    },
+    {
+      "id": "chest_ct_plain",
+      "file": "胸部CT平扫.png",
+      "modality": "imaging",
+      "layout": "imaging_report_screenshot",
+      "coverage": "fixture_golden"
+    },
+    {
+      "id": "abdomen_pelvis_ct_plain",
+      "file": "腹盆CT平扫.png",
+      "modality": "imaging",
+      "layout": "imaging_report_screenshot",
+      "coverage": "fixture_golden"
+    },
+    {
+      "id": "serum_thyroid_photo",
+      "file": "血清检测报告单.jpg",
+      "modality": "laboratory",
+      "layout": "folded_thyroid_photo",
+      "coverage": "ocr_eval_golden"
+    },
+    {
+      "id": "recognition_sample_3_wide",
+      "file": "识别样品3.png",
+      "modality": "laboratory",
+      "layout": "wide_lab_screenshot",
+      "coverage": "ocr_eval_golden"
+    }
+  ]
+}

@@ -6,15 +6,20 @@ import {
   DuplicateReportRequiresDecisionError,
   getDraftsForTask,
   InvalidDuplicateDecisionError,
-  UnresolvedDraftConflictsError
+  UnresolvedDraftConflictsError,
+  UnreviewedOcrDraftsError
 } from '../services/report-service.js';
 import {
+  archiveManualEntryTemplate,
   deleteReportForUser,
   createManualReport,
   getMetricHistory,
   getReportDetail,
+  listManualEntryTemplates,
   listMetricSnapshots,
+  listPendingMetricCandidates,
   listReportsForProfile,
+  saveManualEntryTemplate,
   setMetricPinned,
   updateReportDetail
 } from '../services/report-query-service.js';
@@ -37,13 +42,38 @@ const batchCreateSchema = z.object({
 });
 
 const listReportsQuerySchema = z.object({
-  limit: z.coerce.number().int().positive().optional()
+  limit: z.coerce.number().int().positive().optional(),
+  since: z.string().optional(),
+  until: z.string().optional()
 });
 
 const metricSnapshotQuerySchema = z.object({
   filter: z.enum(['all', 'abnormal', 'pinned']).optional(),
-  category: z.string().optional()
+  category: z.string().optional(),
+  since: z.string().optional(),
+  until: z.string().optional()
 });
+
+const metricHistoryQuerySchema = z.object({
+  since: z.string().optional(),
+  until: z.string().optional()
+});
+
+const pendingMetricCandidateQuerySchema = z.object({
+  since: z.string().optional(),
+  until: z.string().optional()
+});
+
+function mergeDateRangeFromUrl<T extends { since?: string; until?: string }>(url: string, params: T): T {
+  const queryIndex = url.indexOf('?');
+  if (queryIndex < 0) return params;
+  const searchParams = new URLSearchParams(url.slice(queryIndex + 1));
+  return {
+    ...params,
+    since: params.since || searchParams.get('since') || undefined,
+    until: params.until || searchParams.get('until') || undefined
+  };
+}
 
 const pinMetricSchema = z.object({
   isPinned: z.boolean()
@@ -58,9 +88,22 @@ const updateReportSchema = z.object({
 
 const manualReportSchema = z.object({
   reportDate: z.string().min(4).optional(),
-  hospital: z.string().optional(),
+  hospital: z.string().trim().min(1),
   note: z.string().optional(),
   metric: z.record(z.string(), z.unknown())
+});
+
+const manualTemplateSchema = z.object({
+  metricKey: z.string().max(128).optional(),
+  metricName: z.string().min(1).max(128),
+  category: z.string().max(128).optional(),
+  categoryCn: z.string().max(128).optional(),
+  valueType: z.enum(['quantitative', 'qualitative', 'text']).optional(),
+  unit: z.string().max(64).optional(),
+  refRangeLow: z.union([z.string(), z.number(), z.null()]).optional(),
+  refRangeHigh: z.union([z.string(), z.number(), z.null()]).optional(),
+  refQualitative: z.string().max(64).optional(),
+  refText: z.string().optional()
 });
 
 export async function registerReportRoutes(app: FastifyInstance) {
@@ -81,7 +124,7 @@ export async function registerReportRoutes(app: FastifyInstance) {
     const session = await requireSession(app, request, reply);
     if (!session) return;
     const { user } = session;
-    const reports = await listReportsForProfile(app.prisma, request.params.profileId, user.id, parsed.data.limit);
+    const reports = await listReportsForProfile(app.prisma, request.params.profileId, user.id, mergeDateRangeFromUrl(request.url, parsed.data));
     if (!reports) {
       return reply.status(404).send({
         error: { code: 'NOT_FOUND', message: '档案不存在' },
@@ -180,6 +223,66 @@ export async function registerReportRoutes(app: FastifyInstance) {
     return { data: detail, requestId };
   });
 
+  app.get<{ Params: { profileId: string } }>('/api/profiles/:profileId/manual-templates', async (request, reply) => {
+    const requestId = getRequestId(request);
+    const session = await requireSession(app, request, reply);
+    if (!session) return;
+    const { user } = session;
+    const templates = await listManualEntryTemplates(app.prisma, request.params.profileId, user.id);
+    if (!templates) {
+      return reply.status(404).send({
+        error: { code: 'NOT_FOUND', message: 'Profile not found' },
+        requestId
+      });
+    }
+
+    return { data: templates, requestId };
+  });
+
+  app.post<{ Params: { profileId: string } }>('/api/profiles/:profileId/manual-templates', async (request, reply) => {
+    const requestId = getRequestId(request);
+    const parsed = manualTemplateSchema.safeParse(request.body || {});
+    if (!parsed.success) {
+      return reply.status(400).send({
+        error: {
+          code: 'VALIDATION_FAILED',
+          message: 'Manual template payload is invalid',
+          details: parsed.error.flatten()
+        },
+        requestId
+      });
+    }
+
+    const session = await requireSession(app, request, reply);
+    if (!session) return;
+    const { user } = session;
+    const template = await saveManualEntryTemplate(app.prisma, request.params.profileId, user.id, parsed.data);
+    if (!template) {
+      return reply.status(404).send({
+        error: { code: 'NOT_FOUND', message: 'Profile not found' },
+        requestId
+      });
+    }
+
+    return { data: template, requestId };
+  });
+
+  app.delete<{ Params: { profileId: string; metricKey: string } }>('/api/profiles/:profileId/manual-templates/:metricKey', async (request, reply) => {
+    const requestId = getRequestId(request);
+    const session = await requireSession(app, request, reply);
+    if (!session) return;
+    const { user } = session;
+    const result = await archiveManualEntryTemplate(app.prisma, request.params.profileId, user.id, decodeURIComponent(request.params.metricKey));
+    if (!result) {
+      return reply.status(404).send({
+        error: { code: 'NOT_FOUND', message: 'Manual template not found' },
+        requestId
+      });
+    }
+
+    return { data: result, requestId };
+  });
+
   app.get<{ Params: { profileId: string }; Querystring: { filter?: string; category?: string } }>('/api/profiles/:profileId/metrics/snapshots', async (request, reply) => {
     const requestId = getRequestId(request);
     const parsed = metricSnapshotQuerySchema.safeParse(request.query || {});
@@ -197,7 +300,7 @@ export async function registerReportRoutes(app: FastifyInstance) {
     const session = await requireSession(app, request, reply);
     if (!session) return;
     const { user } = session;
-    const snapshots = await listMetricSnapshots(app.prisma, request.params.profileId, user.id, parsed.data);
+    const snapshots = await listMetricSnapshots(app.prisma, request.params.profileId, user.id, mergeDateRangeFromUrl(request.url, parsed.data));
     if (!snapshots) {
       return reply.status(404).send({
         error: { code: 'NOT_FOUND', message: '档案不存在' },
@@ -208,12 +311,51 @@ export async function registerReportRoutes(app: FastifyInstance) {
     return { data: snapshots, requestId };
   });
 
-  app.get<{ Params: { profileId: string; metricKey: string } }>('/api/profiles/:profileId/metrics/:metricKey/history', async (request, reply) => {
+  app.get<{ Params: { profileId: string }; Querystring: { since?: string; until?: string } }>('/api/profiles/:profileId/metrics/pending-candidates', async (request, reply) => {
     const requestId = getRequestId(request);
+    const parsed = pendingMetricCandidateQuerySchema.safeParse(request.query || {});
+    if (!parsed.success) {
+      return reply.status(400).send({
+        error: {
+          code: 'VALIDATION_FAILED',
+          message: 'Pending metric candidate query is invalid',
+          details: parsed.error.flatten()
+        },
+        requestId
+      });
+    }
+
     const session = await requireSession(app, request, reply);
     if (!session) return;
     const { user } = session;
-    const history = await getMetricHistory(app.prisma, request.params.profileId, user.id, request.params.metricKey);
+    const candidates = await listPendingMetricCandidates(app.prisma, request.params.profileId, user.id, mergeDateRangeFromUrl(request.url, parsed.data));
+    if (!candidates) {
+      return reply.status(404).send({
+        error: { code: 'NOT_FOUND', message: 'Profile not found' },
+        requestId
+      });
+    }
+
+    return { data: candidates, requestId };
+  });
+
+  app.get<{ Params: { profileId: string; metricKey: string }; Querystring: { since?: string; until?: string } }>('/api/profiles/:profileId/metrics/:metricKey/history', async (request, reply) => {
+    const requestId = getRequestId(request);
+    const parsed = metricHistoryQuerySchema.safeParse(request.query || {});
+    if (!parsed.success) {
+      return reply.status(400).send({
+        error: {
+          code: 'VALIDATION_FAILED',
+          message: '指标历史参数无效',
+          details: parsed.error.flatten()
+        },
+        requestId
+      });
+    }
+    const session = await requireSession(app, request, reply);
+    if (!session) return;
+    const { user } = session;
+    const history = await getMetricHistory(app.prisma, request.params.profileId, user.id, request.params.metricKey, mergeDateRangeFromUrl(request.url, parsed.data));
     if (!history) {
       return reply.status(404).send({
         error: { code: 'NOT_FOUND', message: '档案不存在' },
@@ -382,6 +524,18 @@ export async function registerReportRoutes(app: FastifyInstance) {
             message: error.message,
             details: {
               conflicts: error.conflicts
+            }
+          },
+          requestId
+        });
+      }
+      if (error instanceof UnreviewedOcrDraftsError) {
+        return reply.status(error.statusCode).send({
+          error: {
+            code: error.code,
+            message: error.message,
+            details: {
+              drafts: error.drafts
             }
           },
           requestId

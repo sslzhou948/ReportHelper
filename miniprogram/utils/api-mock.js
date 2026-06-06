@@ -4,6 +4,13 @@ const { buildMetricSnapshots, groupMetricsByCategory, normalizeReportMetrics } =
 const { avatarText, formatProfileSummary: buildProfileSummary } = require('./profile');
 const { buildRecognitionReports } = require('./upload');
 const { calculateTone } = require('./trend');
+const { normalizeReferenceByMode, toNumberOrNull } = require('./reference-range');
+const { canonicalMetricKey } = require('./metric-key');
+const {
+  archiveCustomMetric,
+  listCustomMetrics,
+  saveCustomMetric
+} = require('./custom-metrics');
 const { buildRealcaseOcrTask } = require('../data/ocr-fixtures');
 
 function clone(value) {
@@ -33,6 +40,15 @@ function extractNumber(value, fallback) {
   return match ? Number(match[0]) : fallback;
 }
 
+function normalizedMetricTone(metric, valueType = metric.valueType || 'quantitative') {
+  const value = valueType === 'qualitative'
+    ? metric.valueQualitative
+    : toNumberOrNull(metric.valueNumeric);
+  const refLow = toNumberOrNull(metric.refRangeLow);
+  const refHigh = toNumberOrNull(metric.refRangeHigh);
+  return calculateTone(value, refLow, refHigh, valueType, metric.tone);
+}
+
 function toProfileListItem(profile) {
   return {
     id: profile.id,
@@ -43,7 +59,46 @@ function toProfileListItem(profile) {
   };
 }
 
+function isMockImagingReport(report) {
+  return /CT|MRI|MR|DR|X光|影像|超声|B超/.test(`${report.type || ''} ${report.count || ''}`);
+}
+
+function mockMetricForReport(report) {
+  if (isMockImagingReport(report)) return [];
+  const biochemical = /生化|肝功|肾功|血脂/.test(report.type || '');
+  const valueNumeric = biochemical ? 32 : 4.3;
+  const refRangeLow = biochemical ? 9 : 3.5;
+  const refRangeHigh = biochemical ? 50 : 9.5;
+  const metricKey = biochemical ? 'alt' : 'wbc';
+  const metricName = biochemical ? '丙氨酸氨基转移酶(ALT)' : '白细胞数目(WBC)';
+  return [{
+    metricKey,
+    metricName,
+    originalMetricName: metricName,
+    category: biochemical ? 'biochemistry' : 'blood_routine',
+    categoryCn: biochemical ? '生化' : '血常规',
+    mappingStatus: 'suggested',
+    valueType: 'quantitative',
+    valueNumeric,
+    valueQualitative: null,
+    valueText: String(valueNumeric),
+    unit: biochemical ? 'U/L' : '10^9/L',
+    refRangeLow,
+    refRangeHigh,
+    refQualitative: null,
+    refText: `${refRangeLow}-${refRangeHigh}`,
+    tone: calculateTone(valueNumeric, refRangeLow, refRangeHigh, 'quantitative'),
+    ocrConfidence: 0.86
+  }];
+}
+
+function mockFindingsForReport(report) {
+  if (!isMockImagingReport(report)) return [];
+  return ['双肺纹理清晰，未见明确急性异常。'];
+}
+
 function toOcrDraft(report) {
+  const imaging = isMockImagingReport(report);
   return {
     draftId: report.id,
     sourcePhotoIds: report.photoIds.map((id) => `photo_${id}`),
@@ -53,16 +108,19 @@ function toOcrDraft(report) {
       originalType: report.type,
       typeKey: 'mock',
       canonicalTypeName: report.type,
-      modality: 'laboratory',
+      modality: imaging ? 'imaging' : 'laboratory',
+      analysisPolicy: imaging ? 'view_only' : 'metric_analysis',
       examPart: '',
       examMethod: '',
       hospital: report.meta.split(' 路 ')[0] || '',
       hospitalSource: 'ocr',
       reportDate: '2026-04-28',
       reportDateSource: 'ocr',
-      confidence: 0.9
+      confidence: 0.9,
+      reportLike: true
     },
-    metrics: [],
+    metrics: mockMetricForReport(report),
+    findings: mockFindingsForReport(report),
     conflicts: report.conflict ? [{
       metricKey: 'wbc',
       metricName: '\u767d\u7ec6\u80de',
@@ -88,11 +146,13 @@ function toPersistedReport(draft, profileId, ocrTaskId, index) {
       mappingStatus: metric.mappingStatus || 'confirmed',
       ...metric,
       valueType,
-      tone: metric.tone || calculateTone(value, metric.refRangeLow, metric.refRangeHigh, valueType),
+      tone: normalizedMetricTone(metric, valueType),
       isManuallyEdited: !!metric.isManuallyEdited
     };
   });
-  const abnormalCount = metrics.filter((metric) => metric.tone && metric.tone !== 'ok').length;
+  const abnormalCount = metrics.filter((metric) => (
+    ['high', 'low', 'abnormal', 'positive'].includes(String(metric.tone || ''))
+  )).length;
 
   return {
     id: `report_${draft.draftId}_${index + 1}`,
@@ -126,13 +186,16 @@ function normalizeEditedDraft(draft) {
     const valueType = metric.valueType || 'quantitative';
     const value = valueType === 'qualitative' ? metric.valueQualitative : Number(metric.valueNumeric);
     const numericValue = valueType === 'quantitative' && Number.isFinite(value) ? value : metric.valueNumeric;
-    return {
+    const reference = normalizeReferenceByMode({
       ...metric,
       valueType,
+      valueNumeric: valueType === 'quantitative' ? numericValue : metric.valueNumeric
+    });
+    return {
+      ...reference,
+      valueType,
       valueNumeric: valueType === 'quantitative' ? numericValue : metric.valueNumeric,
-      refRangeLow: metric.refRangeLow === '' ? null : metric.refRangeLow,
-      refRangeHigh: metric.refRangeHigh === '' ? null : metric.refRangeHigh,
-      tone: metric.tone || calculateTone(value, metric.refRangeLow, metric.refRangeHigh, valueType)
+      tone: normalizedMetricTone(reference, valueType)
     };
   });
   return next;
@@ -238,6 +301,14 @@ function createMockApi() {
       .sort((a, b) => new Date(b.reportDate) - new Date(a.reportDate));
   }
 
+  function inRange(report, params = {}) {
+    const date = new Date(`${String(report.reportDate || '').slice(0, 10)}T00:00:00`);
+    if (Number.isNaN(date.getTime())) return false;
+    if (params.since && date < new Date(`${String(params.since).slice(0, 10)}T00:00:00`)) return false;
+    if (params.until && date > new Date(`${String(params.until).slice(0, 10)}T00:00:00`)) return false;
+    return true;
+  }
+
   function getReport(reportId) {
     return reports.find((report) => report.id === reportId && !report.deletedAt) || null;
   }
@@ -249,8 +320,8 @@ function createMockApi() {
     return Object.values(groupMetricsByCategory(rows));
   }
 
-  function getMetricSnapshots(profileId) {
-    return buildMetricSnapshots(getActiveReports(profileId), store.mock.metricDefinitions)
+  function getMetricSnapshots(profileId, params = {}) {
+    return buildMetricSnapshots(getActiveReports(profileId).filter((report) => inRange(report, params)), store.mock.metricDefinitions)
       .sort((a, b) => {
         const abnormalA = a.lastTone === 'ok' ? 0 : 1;
         const abnormalB = b.lastTone === 'ok' ? 0 : 1;
@@ -259,11 +330,102 @@ function createMockApi() {
       });
   }
 
-  function getMetricHistory(profileId, metricKey) {
+  function getMetricHistory(profileId, metricKey, params = {}) {
+    const canonicalKey = canonicalMetricKey({ metricKey });
     return getActiveReports(profileId)
+      .filter((report) => inRange(report, params))
       .flatMap((report) => normalizeReportMetrics(report, store.mock.metricDefinitions))
-      .filter((row) => row.metricKey === metricKey)
+      .filter((row) => row.metricKey === canonicalKey)
       .sort((a, b) => new Date(b.reportDate) - new Date(a.reportDate));
+  }
+
+  function compactText(value) {
+    return String(value || '').trim();
+  }
+
+  function pendingCandidateKey(row) {
+    const name = compactText(row.metricName) || compactText(row.originalMetricName) || compactText(row.metricKey);
+    return [
+      name.toLowerCase(),
+      compactText(row.unit).toLowerCase(),
+      compactText(row.category).toLowerCase(),
+      compactText(row.valueType).toLowerCase()
+    ].join('|');
+  }
+
+  function addCompact(set, value) {
+    const text = compactText(value);
+    if (text) set.add(text);
+  }
+
+  function getPendingMetricCandidates(profileId, params = {}) {
+    const groups = getActiveReports(profileId)
+      .filter((report) => inRange(report, params))
+      .filter((report) => (report.analysisPolicy || 'metric_analysis') !== 'view_only')
+      .flatMap((report) => normalizeReportMetrics(report, store.mock.metricDefinitions))
+      .filter((row) => row.mappingStatus === 'pending')
+      .reduce((acc, row) => {
+        const key = pendingCandidateKey(row);
+        if (!acc[key]) {
+          acc[key] = {
+            candidateKey: key,
+            metricName: row.metricName || row.originalMetricName || row.metricKey,
+            category: row.category || 'other',
+            categoryCn: row.categoryCn || 'Other',
+            valueType: row.valueType || 'quantitative',
+            rows: [],
+            metricKeys: new Set(),
+            originalMetricNames: new Set(),
+            units: new Set(),
+            refTexts: new Set(),
+            reportIds: new Set()
+          };
+        }
+        acc[key].rows.push(row);
+        addCompact(acc[key].metricKeys, row.metricKey);
+        addCompact(acc[key].originalMetricNames, row.originalMetricName);
+        addCompact(acc[key].units, row.unit);
+        addCompact(acc[key].refTexts, row.refText);
+        addCompact(acc[key].reportIds, row.reportId);
+        return acc;
+      }, {});
+
+    return Object.values(groups).map((group) => {
+      const byDateAsc = group.rows.slice().sort((a, b) => new Date(a.reportDate) - new Date(b.reportDate));
+      const byDateDesc = byDateAsc.slice().reverse();
+      return {
+        candidateKey: group.candidateKey,
+        metricKey: [...group.metricKeys][0] || '',
+        metricKeys: [...group.metricKeys],
+        metricName: group.metricName,
+        originalMetricNames: [...group.originalMetricNames].slice(0, 5),
+        category: group.category,
+        categoryCn: group.categoryCn,
+        valueType: group.valueType,
+        units: [...group.units],
+        refTexts: [...group.refTexts].slice(0, 5),
+        occurrenceCount: group.rows.length,
+        reportCount: group.reportIds.size,
+        abnormalCount: group.rows.filter((row) => ['high', 'low', 'abnormal', 'positive'].includes(String(row.tone || ''))).length,
+        firstSeenAt: byDateAsc[0] && byDateAsc[0].reportDate || '',
+        latestSeenAt: byDateDesc[0] && byDateDesc[0].reportDate || '',
+        examples: byDateDesc.slice(0, 3).map((row) => ({
+          reportId: row.reportId,
+          reportDate: row.reportDate,
+          hospital: row.hospital,
+          metricKey: row.metricKey,
+          originalMetricName: row.originalMetricName,
+          valueNumeric: row.valueNumeric,
+          valueQualitative: row.valueQualitative,
+          unit: row.unit,
+          tone: row.tone,
+          refText: row.refText
+        }))
+      };
+    }).sort((a, b) => {
+      if (a.occurrenceCount !== b.occurrenceCount) return b.occurrenceCount - a.occurrenceCount;
+      return new Date(b.latestSeenAt) - new Date(a.latestSeenAt);
+    });
   }
 
   function detectDuplicateCandidates({ profileId, ocrTaskId, reports: draftReports }) {
@@ -418,8 +580,9 @@ function createMockApi() {
       });
     },
 
-    listReports(profileId) {
-      return ok(getActiveReports(profileId));
+    listReports(profileId, params = {}) {
+      const rows = getActiveReports(profileId).filter((report) => inRange(report, params));
+      return ok(params.limit ? rows.slice(0, Number(params.limit)) : rows);
     },
 
     getReportDetail(reportId) {
@@ -437,13 +600,13 @@ function createMockApi() {
         Object.assign(report, payload.basicInfo);
       }
       if (payload.metrics) {
-        report.metrics = payload.metrics;
+        report.metrics = payload.metrics.map((metric) => ({
+          ...metric,
+          tone: normalizedMetricTone(metric, metric.valueType || 'quantitative')
+        }));
       }
       report.abnormalCount = (report.metrics || []).filter((metric) => {
-        if (metric.valueType === 'qualitative') return metric.valueQualitative && metric.valueQualitative !== '\u9634\u6027';
-        if (metric.refRangeLow !== undefined && metric.valueNumeric < metric.refRangeLow) return true;
-        if (metric.refRangeHigh !== undefined && metric.valueNumeric > metric.refRangeHigh) return true;
-        return false;
+        return ['high', 'low', 'abnormal', 'positive'].includes(String(metric.tone || ''));
       }).length;
       persistStoredReports(reports);
       return this.getReportDetail(reportId);
@@ -475,7 +638,7 @@ function createMockApi() {
         },
         metrics: [{
           ...metric,
-          metricKey: metric.metricKey || `manual_metric_${Date.now()}`,
+          metricKey: canonicalMetricKey(metric, { fallback: `manual_metric_${Date.now()}` }),
           metricName: metric.metricName || '\u624b\u52a8\u6307\u6807',
           originalMetricName: metric.originalMetricName || metric.metricName || '\u624b\u52a8\u6307\u6807',
           mappingStatus: metric.mappingStatus || 'confirmed',
@@ -493,6 +656,19 @@ function createMockApi() {
       return this.getReportDetail(report.id);
     },
 
+    listManualTemplates(profileId) {
+      return ok(listCustomMetrics(profileId));
+    },
+
+    saveManualTemplate(profileId, payload = {}) {
+      return ok(saveCustomMetric(profileId, payload));
+    },
+
+    archiveManualTemplate(profileId, metricKey) {
+      archiveCustomMetric(profileId, metricKey);
+      return ok({ ok: true });
+    },
+
     deleteReport(reportId) {
       const report = reports.find((item) => item.id === reportId);
       if (report) report.deletedAt = new Date().toISOString();
@@ -501,17 +677,22 @@ function createMockApi() {
     },
 
     listMetricSnapshots(profileId, params = {}) {
-      let rows = getMetricSnapshots(profileId).map(applyPinned);
-      if (params.filter === 'abnormal') rows = rows.filter((item) => item.lastTone !== 'ok');
+      let rows = getMetricSnapshots(profileId, params).map(applyPinned);
+      if (params.filter === 'abnormal') rows = rows.filter((item) => ['high', 'low', 'abnormal', 'positive'].includes(String(item.lastTone || '')));
       if (params.filter === 'pinned') rows = rows.filter((item) => item.isPinned);
       if (params.category) rows = rows.filter((item) => item.category === params.category || item.categoryCn === params.category);
       return ok(rows);
     },
 
-    getMetricHistory(profileId, metricKey) {
-      const history = getMetricHistory(profileId, metricKey);
+    listPendingMetricCandidates(profileId, params = {}) {
+      return ok(getPendingMetricCandidates(profileId, params));
+    },
+
+    getMetricHistory(profileId, metricKey, params = {}) {
+      const canonicalKey = canonicalMetricKey({ metricKey });
+      const history = getMetricHistory(profileId, canonicalKey, params);
       return ok({
-        metricKey,
+        metricKey: canonicalKey,
         metricName: history[0] && history[0].metricName,
         valueType: history[0] && history[0].valueType,
         history
@@ -519,15 +700,16 @@ function createMockApi() {
     },
 
     setMetricPinned(profileId, metricKey, isPinned) {
+      const canonicalKey = canonicalMetricKey({ metricKey });
       return this.listMetricSnapshots(profileId).then((rows) => {
-        const snapshot = rows.find((item) => item.metricKey === metricKey);
+        const snapshot = rows.find((item) => item.metricKey === canonicalKey);
         if (!snapshot) {
           return Promise.reject({
             code: 'NOT_FOUND',
             message: '指标不存在'
           });
         }
-        pinnedOverrides[`${profileId}:${metricKey}`] = !!isPinned;
+        pinnedOverrides[`${profileId}:${canonicalKey}`] = !!isPinned;
         return { ...snapshot, isPinned: !!isPinned };
       });
     },
@@ -590,6 +772,13 @@ function createMockApi() {
         sortOrder
       };
       plan.todos = (plan.todos || []).concat(todo);
+      return ok(plan);
+    },
+
+    deleteRecheckTodo(planId, todoId) {
+      const plan = findRecheckPlan(planId);
+      if (!plan) return ok(null);
+      plan.todos = (plan.todos || []).filter((todo) => todo.id !== todoId);
       return ok(plan);
     },
 
@@ -666,36 +855,7 @@ function createMockApi() {
           processedReports: reports.length,
           totalReports: reports.length
         },
-        drafts: reports.map((report) => ({
-          draftId: report.id,
-          sourcePhotoIds: report.photoIds.map((id) => `photo_${id}`),
-          pageCount: report.pageCount,
-          basicInfo: {
-            type: report.type,
-            originalType: report.type,
-            typeKey: 'mock',
-            canonicalTypeName: report.type,
-            modality: 'laboratory',
-            examPart: '',
-            examMethod: '',
-            hospital: report.meta.split(' · ')[0] || '',
-            hospitalSource: 'ocr',
-            reportDate: '2026-04-28',
-            reportDateSource: 'ocr',
-            confidence: 0.9
-          },
-          metrics: [],
-          conflicts: report.conflict ? [{
-            metricKey: 'wbc',
-            metricName: '\u767d\u7ec6\u80de',
-            candidates: [
-              { value: '3.2', unit: '\u00d710\u2079/L', sourcePhotoId: report.photoIds[0] ? `photo_${report.photoIds[0]}` : 'photo_1', confidence: 0.86 },
-              { value: '3.5', unit: '\u00d710\u2079/L', sourcePhotoId: report.photoIds[1] ? `photo_${report.photoIds[1]}` : 'photo_2', confidence: 0.78 }
-            ]
-          }] : [],
-          warnings: [],
-          status: report.conflict ? 'has_conflict' : 'needs_review'
-        }))
+        drafts: reports.map(toOcrDraft)
       };
       ocrTasks[task.id] = task;
       return ok(task);
@@ -769,15 +929,62 @@ function createMockApi() {
       return ok(task);
     },
 
-    resolveOcrConflict({ taskId, draftId, metricKey, selectedCandidateIndex = 0 }) {
+    resolveOcrConflict({ taskId, draftId, metricKey, selectedCandidateIndex = 0, resolution }) {
+      const identityValues = (conflict) => [
+        conflict && conflict.metricKey,
+        conflict && conflict.metricName,
+        ...((conflict && conflict.candidates) || []).flatMap((candidate) => [
+          candidate && candidate.metricKey,
+          candidate && candidate.metricName,
+          candidate && candidate.originalMetricName
+        ])
+      ].map((value) => String(value || '').trim()).filter(Boolean);
+      const conflictMatchesKey = (conflict) => identityValues(conflict).indexOf(String(metricKey || '').trim()) >= 0;
+      const metricMatchesConflict = (metric, conflict) => {
+        const keys = identityValues(conflict).concat(String(metricKey || '').trim()).filter(Boolean);
+        return [metric && metric.metricKey, metric && metric.metricName, metric && metric.originalMetricName]
+          .map((value) => String(value || '').trim())
+          .filter(Boolean)
+          .some((value) => keys.indexOf(value) >= 0);
+      };
       const task = ocrTasks[taskId];
       if (!task) return ok({ taskId, draftId, metricKey, selectedCandidateIndex, status: 'resolved' });
       const draft = task.drafts.find((item) => item.draftId === draftId);
       if (!draft) return ok({ taskId, draftId, metricKey, selectedCandidateIndex, status: 'resolved' });
-      draft.conflicts = (draft.conflicts || []).filter((conflict) => conflict.metricKey !== metricKey);
+      const conflict = (draft.conflicts || []).find(conflictMatchesKey);
+      const resolvedResolution = resolution || (selectedCandidateIndex < 0 ? 'delete' : 'keep');
+      const candidate = conflict && resolvedResolution !== 'delete' && selectedCandidateIndex >= 0 ? conflict.candidates[selectedCandidateIndex] : null;
+      if (candidate) {
+        const valueNumeric = Number(candidate.value);
+        const refRangeLow = 3.5;
+        const refRangeHigh = 9.5;
+        const metric = {
+          metricKey: candidate.metricKey || conflict.metricKey || metricKey,
+          metricName: candidate.metricName || conflict.metricName || metricKey,
+          originalMetricName: candidate.originalMetricName || candidate.metricName || conflict.metricName || metricKey,
+          category: 'blood_routine',
+          categoryCn: '血常规',
+          mappingStatus: 'confirmed',
+          valueType: 'quantitative',
+          valueNumeric: Number.isFinite(valueNumeric) ? valueNumeric : null,
+          valueQualitative: null,
+          valueText: String(candidate.value || ''),
+          unit: candidate.unit || '',
+          refRangeLow,
+          refRangeHigh,
+          refQualitative: null,
+          refText: `${refRangeLow}-${refRangeHigh}`,
+          tone: Number.isFinite(valueNumeric) ? calculateTone(valueNumeric, refRangeLow, refRangeHigh, 'quantitative') : 'unknown',
+          ocrConfidence: candidate.confidence || 0.8
+        };
+        draft.metrics = (draft.metrics || []).filter((item) => !metricMatchesConflict(item, conflict)).concat(metric);
+      } else if (resolvedResolution === 'delete') {
+        draft.metrics = (draft.metrics || []).filter((item) => !metricMatchesConflict(item, conflict));
+      }
+      draft.conflicts = (draft.conflicts || []).filter((conflict) => !conflictMatchesKey(conflict));
       if (draft.conflicts.length === 0) draft.status = 'needs_review';
       task.status = task.drafts.some((item) => (item.conflicts || []).length > 0) ? 'needs_confirmation' : 'ready_to_save';
-      return ok({ taskId, draftId, metricKey, selectedCandidateIndex, status: 'resolved' });
+      return ok({ taskId, draftId, metricKey, selectedCandidateIndex, resolution: resolvedResolution, status: 'resolved' });
     },
 
     updateOcrDraft({ taskId, draftId, draft }) {
@@ -791,6 +998,64 @@ function createMockApi() {
         draftId
       });
       return ok(task.drafts[index]);
+    },
+
+    deleteOcrDraft(taskId, draftId) {
+      const task = ocrTasks[taskId];
+      if (!task) return ok({ id: taskId, drafts: [], reportCount: 0, status: 'cancelled' });
+      task.drafts = (task.drafts || []).filter((draft) => draft.draftId !== draftId);
+      task.reportCount = task.drafts.length;
+      task.status = task.reportCount
+        ? (task.drafts.some((draft) => (draft.conflicts || []).length > 0) ? 'needs_confirmation' : 'ready_to_save')
+        : 'cancelled';
+      return ok(task);
+    },
+
+    splitOcrDraft(taskId, draftId) {
+      const task = ocrTasks[taskId];
+      if (!task) return Promise.reject(new ApiError({ code: 'NOT_FOUND', statusCode: 404, message: 'OCR draft not found' }));
+      const index = (task.drafts || []).findIndex((draft) => draft.draftId === draftId);
+      if (index < 0) return Promise.reject(new ApiError({ code: 'NOT_FOUND', statusCode: 404, message: 'OCR draft not found' }));
+      if (['confirmed', 'cancelled'].includes(task.status)) {
+        return Promise.reject(new ApiError({ code: 'CONFLICT', statusCode: 409, message: 'OCR draft cannot be split in its current task status' }));
+      }
+      const draft = task.drafts[index];
+      const sourcePhotoIds = (draft.sourcePhotoIds || []).filter(Boolean);
+      if (sourcePhotoIds.length < 2) {
+        return Promise.reject(new ApiError({ code: 'OCR_DRAFT_NOT_SPLITTABLE', statusCode: 409, message: 'Only multi-page OCR drafts can be split' }));
+      }
+      const originalMetrics = draft.metrics || [];
+      const originalFindings = draft.findings || [];
+      const originalConflicts = draft.conflicts || [];
+      const firstSplitStatus = ['needs_manual_input', 'not_report'].includes(draft.status)
+        ? draft.status
+        : (originalConflicts.length ? 'needs_confirmation' : (originalMetrics.length || originalFindings.length ? 'needs_review' : 'needs_manual_input'));
+      const splitWarning = {
+        code: 'OCR_DRAFT_SPLIT_FROM_MULTIPAGE',
+        message: 'This report was split from a multi-page OCR draft. Please review each page before saving.'
+      };
+      const splitDrafts = sourcePhotoIds.map((photoId, photoIndex) => ({
+        ...clone(draft),
+        draftId: `${draftId}_split_${photoIndex + 1}`,
+        sourcePhotoIds: [photoId],
+        pageCount: 1,
+        basicInfo: {
+          ...(draft.basicInfo || {}),
+          reportLike: draft.basicInfo?.reportLike !== false,
+          splitFromDraftId: draftId,
+          splitPageIndex: photoIndex + 1,
+          splitPageCount: sourcePhotoIds.length
+        },
+        metrics: photoIndex === 0 ? originalMetrics : [],
+        findings: photoIndex === 0 ? originalFindings : [],
+        conflicts: photoIndex === 0 ? originalConflicts : [],
+        warnings: (draft.warnings || []).concat(splitWarning),
+        status: photoIndex === 0 ? firstSplitStatus : 'needs_manual_input'
+      }));
+      task.drafts.splice(index, 1, ...splitDrafts);
+      task.reportCount = task.drafts.length;
+      task.status = task.drafts.some((item) => (item.conflicts || []).length > 0) ? 'needs_confirmation' : 'ready_to_save';
+      return ok(task);
     },
 
     checkDuplicateReports({ profileId, ocrTaskId, reports: draftReports }) {
@@ -818,6 +1083,19 @@ function createMockApi() {
       const task = ocrTaskId && ocrTasks[ocrTaskId];
       const drafts = draftReports || (task && task.drafts) || [];
       const profileId = (task && task.profileId) || (reports[0] && reports[0].profileId) || store.getProfiles()[0].id;
+      if (task && !['needs_confirmation', 'ready_to_save', 'confirmed'].includes(task.status)) {
+        return Promise.reject({
+          code: 'UNREVIEWED_OCR_DRAFTS',
+          message: 'OCR reports still need review or manual completion before saving',
+          details: {
+            drafts: [{
+              draftId: '',
+              status: task.status,
+              reason: ['queued', 'processing'].includes(task.status) ? 'task_still_processing' : 'task_not_ready'
+            }]
+          }
+        });
+      }
       const unresolvedConflicts = drafts
         .map((draft) => ({
           draftId: draft.draftId,
@@ -830,6 +1108,32 @@ function createMockApi() {
           message: '请先处理冲突后再保存',
           details: {
             conflicts: unresolvedConflicts
+          }
+        });
+      }
+      const blockedDrafts = drafts.map((draft) => {
+        const info = draft.basicInfo || {};
+        const metrics = draft.metrics || [];
+        const findings = (draft.findings || []).filter((item) => String(item || '').trim());
+        let reason = '';
+        if (['needs_manual_input', 'not_report', 'cancelled', 'failed'].includes(draft.status)) reason = 'status_not_reviewed';
+        else if (info.reportLike === false) reason = 'not_report_like';
+        else if (!metrics.length && !findings.length) reason = 'empty_report_content';
+        else if (!info.hospital || !info.reportDate || info.hospital === '待确认医院' || info.reportDate === '待确认日期') reason = 'missing_basic_info';
+        return {
+          draftId: draft.draftId || '',
+          status: draft.status || '',
+          reason
+        };
+      }).filter((draft) => draft.reason);
+      if (!drafts.length || blockedDrafts.length) {
+        return Promise.reject({
+          code: 'UNREVIEWED_OCR_DRAFTS',
+          message: 'OCR reports still need review or manual completion before saving',
+          details: {
+            drafts: blockedDrafts.length
+              ? blockedDrafts
+              : [{ draftId: '', status: 'empty', reason: 'no_reviewable_drafts' }]
           }
         });
       }

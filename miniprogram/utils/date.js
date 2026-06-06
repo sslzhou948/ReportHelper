@@ -39,10 +39,17 @@ function relativeFromToday(input, todayInput) {
   return `${Math.round(abs / 30)} 月后`;
 }
 
+function addDays(input, days) {
+  const d = toDate(input);
+  d.setDate(d.getDate() + days);
+  return formatDate(d);
+}
+
 module.exports = {
   formatDate,
   formatCnDate,
   formatMonthDay,
+  addDays,
   daysBetween,
   relativeFromToday
 };

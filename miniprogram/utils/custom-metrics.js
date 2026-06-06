@@ -1,4 +1,5 @@
 const STORAGE_KEY = 'customMetricTemplates';
+const { inferRefMode, normalizeReferenceByMode } = require('./reference-range');
 
 function canUseStorage() {
   return typeof wx !== 'undefined' && wx.getStorageSync && wx.setStorageSync;
@@ -26,6 +27,7 @@ function saveCustomMetric(profileId, metric) {
   const rows = all[profileId] || [];
   const now = Date.now();
   const metricKey = metric.metricKey || `custom_${now}`;
+  const reference = normalizeReferenceByMode(metric, metric.refMode || inferRefMode(metric));
   const next = {
     metricKey,
     metricName: String(metric.metricName || '').trim(),
@@ -33,10 +35,10 @@ function saveCustomMetric(profileId, metric) {
     categoryCn: metric.categoryCn || '\u68c0\u9a8c',
     valueType: metric.valueType || 'quantitative',
     unit: String(metric.unit || '').trim(),
-    refRangeLow: metric.refRangeLow === '' ? null : metric.refRangeLow,
-    refRangeHigh: metric.refRangeHigh === '' ? null : metric.refRangeHigh,
+    refRangeLow: reference.refRangeLow,
+    refRangeHigh: reference.refRangeHigh,
     refQualitative: metric.refQualitative || '',
-    refText: metric.refText || '',
+    refText: reference.refText || '',
     status: 'active',
     source: 'custom',
     createdAt: metric.createdAt || now,

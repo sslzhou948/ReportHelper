@@ -44,7 +44,9 @@
       </view>
       <view class="form-row">
         <view class="sub label">分期</view>
-        <input class="field-input" value="{{form.stage}}" placeholder="未填写" data-key="stage" bindinput="inputField" />
+        <picker class="field-control" mode="selector" range="{{stageOptions}}" range-key="label" value="{{stageIndex}}" bindchange="pickStage">
+          <view class="field-value {{form.stage ? '' : 'placeholder'}}">{{stageText}}</view>
+        </picker>
       </view>
       <view class="form-row">
         <view class="sub label">治疗阶段</view>

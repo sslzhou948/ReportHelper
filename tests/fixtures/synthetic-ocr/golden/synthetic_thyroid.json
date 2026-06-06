@@ -1,0 +1,48 @@
+{
+    "modality":  "laboratory",
+    "expectedFields":  [
+                           "hospital",
+                           "reportDate",
+                           "metricName",
+                           "value",
+                           "unit",
+                           "referenceRange",
+                           "tone"
+                       ],
+    "metrics":  [
+                    {
+                        "refRangeHigh":  4.1,
+                        "metricName":  "游离三碘甲状腺原氨酸",
+                        "unit":  "pg/ml",
+                        "valueNumeric":  3.65,
+                        "refRangeLow":  1.8,
+                        "metricKey":  "ft3",
+                        "tone":  "ok"
+                    },
+                    {
+                        "refRangeHigh":  1.89,
+                        "metricName":  "游离甲状腺素",
+                        "unit":  "ng/dl",
+                        "valueNumeric":  1.04,
+                        "refRangeLow":  0.81,
+                        "metricKey":  "ft4",
+                        "tone":  "ok"
+                    },
+                    {
+                        "refRangeHigh":  4.34,
+                        "metricName":  "促甲状腺激素",
+                        "unit":  "μIU/mL",
+                        "valueNumeric":  3.596,
+                        "refRangeLow":  0.38,
+                        "metricKey":  "tsh",
+                        "tone":  "ok"
+                    }
+                ],
+    "basicInfo":  {
+                      "hospital":  "北京协和医院",
+                      "type":  "甲功1",
+                      "reportDate":  "2025-12-22"
+                  },
+    "status":  "structured",
+    "caseId":  "synthetic_thyroid"
+}

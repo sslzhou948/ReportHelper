@@ -6,29 +6,21 @@
         <text>{{profile.relation}} · {{profile.realName}}</text>
         <text>⌄</text>
       </view>
-      <view wx:if="{{pendingOcrTask}}" class="ocr-status-entry {{pendingOcrTask.tone}}" bindtap="showRecognizing">
-        <view class="ocr-status-icon">识</view>
-        <text>{{pendingOcrTask.statusLabel}}</text>
-      </view>
     </view>
-    <view class="greeting">早上好，愿您今天舒心</view>
+    <view class="greeting">{{greetingText}}</view>
   </view>
 
   <network-banner offline="{{networkOffline}}" bind:retry="retryAfterNetwork" />
   <loading-slow-banner visible="{{loadingSlow}}" bind:retry="retrySlowLoading" bind:cancel="cancelSlowLoading" />
 
-  <view wx:if="{{recognizing}}" class="pad mt-12">
+  <view wx:if="{{pendingOcrTask}}" class="pad mt-12">
     <view class="ocr-card" bindtap="goOcrTask">
       <view class="ocr-icon">识</view>
-      <view wx:if="{{pendingOcrTask}}" class="flex">
+      <view class="flex">
         <view class="body strong">{{pendingOcrTask.title}}</view>
         <view class="tiny">{{pendingOcrTask.detail}}</view>
       </view>
-      <view wx:else class="flex">
-        <view class="body strong">暂无识别中的报告</view>
-        <view class="tiny">可以继续上传新的检查报告。</view>
-      </view>
-      <hh-pill tone="primary">{{pendingOcrTask ? pendingOcrTask.actionText : '上传 ›'}}</hh-pill>
+      <hh-pill tone="primary">{{pendingOcrTask.actionText}}</hh-pill>
     </view>
   </view>
 
@@ -84,9 +76,9 @@
   <view class="pad">
     <view class="card">
       <view wx:for="{{reports}}" wx:key="id" class="row" data-id="{{item.id}}" bindtap="goReport">
-        <view class="report-type" title="{{item.fullType}}">{{item.displayType}}</view>
+        <view class="report-type" title="{{item.fullHospital}}">{{item.displayHospital}}</view>
         <view class="report-main">
-          <view class="body strong">{{item.hospital}}</view>
+          <view class="body strong report-title" title="{{item.fullType}}">{{item.fullType}}</view>
           <view class="tiny">{{item.displayDate}}</view>
         </view>
         <view wx:if="{{item.abnormalCount > 0}}" class="abnormal">{{item.abnormalCount}} 项异常</view>
@@ -106,7 +98,7 @@
   <view wx:if="{{alertMetrics.length > 0}}" class="pad">
     <view class="card card-pad alert-card" bindtap="goHealthTime">
       <view class="body strong">最近 {{alertMetrics.length}} 项指标需要关注</view>
-      <view class="tiny mt-8">{{alertMetrics[0].metricName}}<text wx:if="{{alertMetrics[1]}}">、{{alertMetrics[1].metricName}}</text><text wx:if="{{alertMetrics[2]}}">、{{alertMetrics[2].metricName}}</text></view>
+      <view class="tiny alert-summary mt-8">{{alertSummaryText}}</view>
       <view class="pill-row">
         <hh-pill wx:for="{{alertMetrics}}" wx:key="metricKey" tone="{{item.lastTone}}">{{item.metricName}}</hh-pill>
       </view>

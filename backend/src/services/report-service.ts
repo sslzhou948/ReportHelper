@@ -1,5 +1,7 @@
 import { Prisma, type PrismaClient } from '@prisma/client';
 import { findDuplicateCandidates, type DuplicateReportIdentity, type DuplicateCandidate } from '../domain/duplicate.js';
+import { normalizeMetricCategory } from '../domain/metric-category.js';
+import { canonicalMetricKey } from '../domain/metric-key.js';
 
 type JsonObject = Record<string, any>;
 
@@ -34,6 +36,7 @@ type ReportLike = {
     valueNumeric: Prisma.Decimal | number | string | null;
     valueQualitative: string | null;
     unit: string | null;
+    mappingStatus: string;
   }>;
 };
 
@@ -65,6 +68,15 @@ export class UnresolvedDraftConflictsError extends Error {
 
   constructor(public conflicts: Array<{ draftId: string; conflicts: JsonObject[] }>) {
     super('OCR 结果仍有未处理冲突，请先完成校准后再保存');
+  }
+}
+
+export class UnreviewedOcrDraftsError extends Error {
+  code = 'UNREVIEWED_OCR_DRAFTS';
+  statusCode = 409;
+
+  constructor(public drafts: Array<{ draftId: string; status: string; reason: string }>) {
+    super('OCR reports still need review or manual completion before saving');
   }
 }
 
@@ -105,8 +117,12 @@ function toNumberOrNull(value: unknown): number | null {
   return Number.isFinite(next) ? next : null;
 }
 
+function normalizedTone(value: unknown) {
+  const tone = String(value || '').trim();
+  return ['low', 'ok', 'high', 'abnormal', 'unknown', 'positive'].includes(tone) ? tone : '';
+}
+
 function calculateTone(metric: JsonObject): string {
-  if (metric.tone) return String(metric.tone);
   if (metric.valueType === 'qualitative') {
     return metric.valueQualitative && metric.valueQualitative !== '阴性' ? 'positive' : 'ok';
   }
@@ -116,7 +132,8 @@ function calculateTone(metric: JsonObject): string {
   if (value === null) return 'unknown';
   if (low !== null && value < low) return 'low';
   if (high !== null && value > high) return 'high';
-  return 'ok';
+  if (low !== null || high !== null) return 'ok';
+  return normalizedTone(metric.tone) || 'unknown';
 }
 
 function metricValueSignature(metric: JsonObject): string {
@@ -125,7 +142,7 @@ function metricValueSignature(metric: JsonObject): string {
     ? String(metric.valueQualitative || '').trim()
     : String(metric.valueNumeric ?? '').trim();
   return [
-    String(metric.metricKey || metric.metricName || 'unknown'),
+    canonicalMetricKey(metric, { fallback: metric.metricName || 'unknown' }),
     valueType,
     value,
     String(metric.unit || '').trim()
@@ -154,6 +171,29 @@ function analysisPolicy(info: JsonObject, draft: DraftLike): string {
   const draftPolicy = (toPlainObject(draft.basicInfo).analysisPolicy || (draft as any).analysisPolicy) as string | undefined;
   if (draftPolicy) return draftPolicy;
   return info.modality === 'imaging' ? 'view_only' : 'metric_analysis';
+}
+
+function isMissingReportHospital(value: unknown) {
+  const text = String(value || '').trim();
+  return !text || text === '\u5f85\u786e\u8ba4\u533b\u9662';
+}
+
+function isMissingReportDate(value: unknown) {
+  const text = String(value || '').trim();
+  return !text || text === '\u5f85\u786e\u8ba4\u65e5\u671f';
+}
+
+function draftSaveBlockReason(draft: DraftLike) {
+  const info = toPlainObject(draft.basicInfo);
+  const metrics = toArray<JsonObject>(draft.metrics);
+  const findings = toArray<string>(draft.findings).filter((item) => String(item || '').trim());
+  if (['needs_manual_input', 'not_report', 'cancelled', 'failed'].includes(draft.status)) {
+    return 'status_not_reviewed';
+  }
+  if (info.reportLike === false) return 'not_report_like';
+  if (!metrics.length && !findings.length) return 'empty_report_content';
+  if (isMissingReportHospital(info.hospital) || isMissingReportDate(info.reportDate)) return 'missing_basic_info';
+  return '';
 }
 
 function draftIdentity(draft: DraftLike): DuplicateReportIdentity {
@@ -189,7 +229,8 @@ function reportIdentity(report: ReportLike): DuplicateReportIdentity {
       valueType: metric.valueType,
       valueNumeric: metric.valueNumeric === null ? null : String(metric.valueNumeric),
       valueQualitative: metric.valueQualitative,
-      unit: metric.unit
+      unit: metric.unit,
+      mappingStatus: metric.mappingStatus
     }))
   };
 }
@@ -229,18 +270,20 @@ function reportCreateData(draft: DraftLike, userId: string) {
 function metricCreateData(reportId: string, draft: DraftLike, reportDate: Date) {
   return dedupeMetrics(toArray<JsonObject>(draft.metrics)).map((metric) => {
     const valueType = String(metric.valueType || 'quantitative');
+    const categoryInfo = normalizeMetricCategory(metric);
+    const metricKey = canonicalMetricKey(metric, { fallback: metric.metricName || 'unknown' });
     return {
       reportId,
       profileId: draft.profileId,
-      metricKey: String(metric.metricKey || metric.metricName || 'unknown'),
+      metricKey: metricKey || 'unknown',
       metricName: String(metric.metricName || metric.metricKey || '未知指标'),
       originalMetricName: String(metric.originalMetricName || metric.metricName || metric.metricKey || '未知指标'),
-      category: String(metric.category || 'other'),
-      categoryCn: String(metric.categoryCn || '其他'),
+      category: categoryInfo.category,
+      categoryCn: categoryInfo.categoryCn,
       mappingStatus: String(metric.mappingStatus || 'confirmed'),
       valueType,
       valueNumeric: valueType === 'quantitative' ? toNumberOrNull(metric.valueNumeric) : null,
-      valueQualitative: valueType === 'qualitative' ? String(metric.valueQualitative || '') : null,
+      valueQualitative: ['qualitative', 'text'].includes(valueType) ? String(metric.valueQualitative || '') : null,
       unit: metric.unit ? String(metric.unit) : null,
       normalizedUnit: metric.normalizedUnit ? String(metric.normalizedUnit) : null,
       refRangeLow: toNumberOrNull(metric.refRangeLow),
@@ -264,7 +307,7 @@ export async function getDraftsForTask(prisma: PrismaClient, profileId: string, 
     },
     orderBy: { createdAt: 'asc' }
   });
-  return drafts as DraftLike[];
+  return (drafts as DraftLike[]).filter((draft) => !['superseded', 'discarded'].includes(draft.status));
 }
 
 export async function checkDuplicateReports(prisma: PrismaClient, profileId: string, drafts: DraftLike[]) {
@@ -321,6 +364,15 @@ export async function batchCreateReports(prisma: PrismaClient, input: BatchCreat
     if (task?.status === 'confirmed') {
       return savedReportsForTask(tx as PrismaClient, input.profileId, input.ocrTaskId);
     }
+    if (!['needs_confirmation', 'ready_to_save'].includes(task.status)) {
+      throw new UnreviewedOcrDraftsError([{
+        draftId: '',
+        status: task.status,
+        reason: task.status === 'queued' || task.status === 'processing'
+          ? 'task_still_processing'
+          : 'task_not_ready'
+      }]);
+    }
 
     const drafts = await getDraftsForTask(tx as PrismaClient, input.profileId, input.ocrTaskId);
     const unresolvedConflicts = drafts
@@ -330,6 +382,21 @@ export async function batchCreateReports(prisma: PrismaClient, input: BatchCreat
       }))
       .filter((item) => item.conflicts.length > 0);
     if (unresolvedConflicts.length) throw new UnresolvedDraftConflictsError(unresolvedConflicts);
+
+    const blockedDrafts = drafts
+      .map((draft) => ({
+        draftId: draft.id,
+        status: draft.status,
+        reason: draftSaveBlockReason(draft)
+      }))
+      .filter((draft) => draft.reason);
+    if (!drafts.length || blockedDrafts.length) {
+      throw new UnreviewedOcrDraftsError(
+        blockedDrafts.length
+          ? blockedDrafts
+          : [{ draftId: '', status: 'empty', reason: 'no_reviewable_drafts' }]
+      );
+    }
 
     const candidates = await checkDuplicateReports(tx as PrismaClient, input.profileId, drafts);
     const unresolved = candidates.filter((candidate) => !candidate.draftId || !decisionByDraft.has(candidate.draftId));

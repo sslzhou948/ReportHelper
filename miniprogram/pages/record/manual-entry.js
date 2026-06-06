@@ -7,18 +7,25 @@ const {
 } = require('../../utils/loading');
 const { bindNetworkStatus, refreshNetworkStatus } = require('../../utils/network');
 const { isProfileRequiredError } = require('../../utils/profile');
+const { calculateTone } = require('../../utils/trend');
+const {
+  REF_RANGE_MODES,
+  TONE_OPTIONS,
+  formatReference,
+  inferRefMode,
+  modeState,
+  normalizeReferenceByMode,
+  toNumberOrNull,
+  toneState
+} = require('../../utils/reference-range');
 
 function today() {
   return new Date().toISOString().slice(0, 10);
 }
 
-function toNumberOrNull(value) {
-  if (value === '' || value === null || value === undefined) return null;
-  const next = Number(value);
-  return Number.isFinite(next) ? next : null;
-}
-
 function buildForm(template) {
+  const refMode = inferRefMode(template);
+  const reference = normalizeReferenceByMode(template, refMode);
   return {
     reportDate: today(),
     hospital: '',
@@ -27,11 +34,26 @@ function buildForm(template) {
     valueText: '',
     qualitativeIndex: 0,
     unit: template.unit || '',
-    refRangeLow: template.refRangeLow === null || template.refRangeLow === undefined ? '' : String(template.refRangeLow),
-    refRangeHigh: template.refRangeHigh === null || template.refRangeHigh === undefined ? '' : String(template.refRangeHigh),
-    refText: template.refText || '',
+    ...modeState(refMode),
+    ...toneState('unknown'),
+    refRangeLow: reference.refRangeLow === null || reference.refRangeLow === undefined ? '' : String(reference.refRangeLow),
+    refRangeHigh: reference.refRangeHigh === null || reference.refRangeHigh === undefined ? '' : String(reference.refRangeHigh),
+    refText: reference.refText || '',
     note: ''
   };
+}
+
+function needsManualTone(form) {
+  return form.refMode === 'complex_text' || form.refMode === 'none';
+}
+
+function buildReferencePayload(form) {
+  return normalizeReferenceByMode({
+    refMode: form.refMode,
+    refRangeLow: form.refRangeLow,
+    refRangeHigh: form.refRangeHigh,
+    refText: form.refText
+  }, form.refMode);
 }
 
 Page({
@@ -39,6 +61,9 @@ Page({
     template: {},
     form: buildForm({}),
     qualitativeOptions: ['阴性', '阳性', '弱阳性', '可疑'],
+    refModeLabels: REF_RANGE_MODES.map((item) => item.label),
+    toneLabels: TONE_OPTIONS.map((item) => item.label),
+    showManualTone: false,
     networkOffline: false,
     loading: false,
     loadingSlow: false,
@@ -47,9 +72,11 @@ Page({
 
   onLoad() {
     const template = wx.getStorageSync('manualEntryTemplate') || {};
+    const form = buildForm(template);
     this.setData({
       template,
-      form: buildForm(template)
+      form,
+      showManualTone: needsManualTone(form)
     });
   },
 
@@ -60,6 +87,33 @@ Page({
   onInput(event) {
     const field = event.currentTarget.dataset.field;
     this.setData({ form: { ...this.data.form, [field]: event.detail.value } });
+  },
+
+  onRefModeChange(event) {
+    const index = Number(event.detail.value) || 0;
+    const mode = REF_RANGE_MODES[index] || REF_RANGE_MODES[0];
+    const reference = normalizeReferenceByMode(this.data.form, mode.key);
+    const form = {
+      ...this.data.form,
+      ...reference,
+      ...modeState(reference.refMode),
+      refRangeLow: reference.refRangeLow === null ? '' : String(reference.refRangeLow),
+      refRangeHigh: reference.refRangeHigh === null ? '' : String(reference.refRangeHigh)
+    };
+    this.setData({
+      form,
+      showManualTone: needsManualTone(form)
+    });
+  },
+
+  onToneChange(event) {
+    const index = Number(event.detail.value) || 0;
+    this.setData({
+      form: {
+        ...this.data.form,
+        ...toneState((TONE_OPTIONS[index] || TONE_OPTIONS[0]).key)
+      }
+    });
   },
 
   onDateChange(event) {
@@ -85,6 +139,10 @@ Page({
       wx.showToast({ title: '\u8bf7\u5148\u9009\u62e9\u68c0\u67e5\u9879\u76ee', icon: 'none' });
       return;
     }
+    if (!String(form.hospital || '').trim()) {
+      wx.showToast({ title: '\u8bf7\u586b\u5199\u533b\u9662', icon: 'none' });
+      return;
+    }
     if (template.valueType === 'qualitative' && !form.valueQualitative) {
       wx.showToast({ title: '\u8bf7\u9009\u62e9\u7ed3\u679c', icon: 'none' });
       return;
@@ -99,6 +157,11 @@ Page({
     }
     this.setData({ saving: true });
     const loadingToken = beginSlowLoading(this);
+    const reference = buildReferencePayload(form);
+    const valueNumeric = template.valueType === 'quantitative' ? toNumberOrNull(form.valueNumeric) : null;
+    const tone = template.valueType === 'quantitative'
+      ? calculateTone(valueNumeric, reference.refRangeLow, reference.refRangeHigh, 'quantitative', needsManualTone(form) ? form.tone : '')
+      : undefined;
     getApp().ensureCurrentProfileId(api).then((profileId) => api.createManualReport(profileId, {
       reportDate: form.reportDate,
       hospital: form.hospital,
@@ -110,13 +173,14 @@ Page({
         category: template.category || 'lab',
         categoryCn: template.categoryCn || '\u68c0\u9a8c',
         valueType: template.valueType || 'quantitative',
-        valueNumeric: template.valueType === 'quantitative' ? toNumberOrNull(form.valueNumeric) : null,
+        valueNumeric,
         valueQualitative: template.valueType === 'qualitative' ? form.valueQualitative : (template.valueType === 'text' ? form.valueText : ''),
         unit: form.unit,
-        refRangeLow: toNumberOrNull(form.refRangeLow),
-        refRangeHigh: toNumberOrNull(form.refRangeHigh),
+        refRangeLow: reference.refRangeLow,
+        refRangeHigh: reference.refRangeHigh,
         refQualitative: template.refQualitative || '',
-        refText: form.refText,
+        refText: reference.refText,
+        tone,
         mappingStatus: 'confirmed',
         isManuallyEdited: true
       }

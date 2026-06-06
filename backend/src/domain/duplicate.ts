@@ -5,6 +5,7 @@ export type DuplicateMetric = {
   valueNumeric?: number | string | null;
   valueQualitative?: string | null;
   unit?: string | null;
+  mappingStatus?: string | null;
 };
 
 export type DuplicateReportIdentity = {
@@ -65,10 +66,14 @@ function metricValueSignature(metric: DuplicateMetric): string {
   return `${metric.metricKey || metric.metricName || ''}:${valueType}:${String(value ?? '').trim()}:${metric.unit || ''}`;
 }
 
+function isComparableMetric(metric: DuplicateMetric): boolean {
+  return !!metric.metricKey && !['pending', 'conflicted'].includes(String(metric.mappingStatus || ''));
+}
+
 export function compareMetricResults(incomingMetrics: DuplicateMetric[] = [], existingMetrics: DuplicateMetric[] = []) {
-  const incoming = incomingMetrics.filter((metric) => metric.metricKey);
+  const incoming = incomingMetrics.filter(isComparableMetric);
   const existingByKey = existingMetrics.reduce<Record<string, DuplicateMetric>>((acc, metric) => {
-    if (metric.metricKey) acc[metric.metricKey] = metric;
+    if (isComparableMetric(metric)) acc[metric.metricKey || ''] = metric;
     return acc;
   }, {});
   if (!incoming.length) return { metricOverlapRatio: 0, sameResultRatio: 0 };

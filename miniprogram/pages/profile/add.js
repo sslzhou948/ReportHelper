@@ -18,6 +18,14 @@ const phaseOptions = [
   { label: '\u6cbb\u7597\u4e2d', value: 'treating' },
   { label: '\u5eb7\u590d\u968f\u8bbf', value: 'recovery' }
 ];
+const stageOptions = [
+  { label: '\u672a\u586b\u5199', value: '' },
+  { label: 'I \u671f', value: 'I \u671f' },
+  { label: 'II \u671f', value: 'II \u671f' },
+  { label: 'III \u671f', value: 'III \u671f' },
+  { label: 'IV \u671f', value: 'IV \u671f' },
+  { label: '\u4e0d\u9002\u7528 / \u5f85\u786e\u8ba4', value: '\u4e0d\u9002\u7528 / \u5f85\u786e\u8ba4' }
+];
 
 function todayString() {
   return new Date().toISOString().slice(0, 10);
@@ -55,6 +63,8 @@ function refreshForm(page, form) {
     relationText: form.relation || '\u8bf7\u9009\u62e9',
     genderIndex: optionIndex(genderOptions, form.gender),
     genderText: optionLabel(genderOptions, form.gender),
+    stageIndex: optionIndex(stageOptions, form.stage),
+    stageText: optionLabel(stageOptions, form.stage),
     phaseIndex: optionIndex(phaseOptions, form.treatmentPhase),
     phaseText: optionLabel(phaseOptions, form.treatmentPhase)
   });
@@ -65,12 +75,15 @@ Page({
     form: {},
     relationOptions,
     genderOptions,
+    stageOptions,
     phaseOptions,
     relationIndex: 0,
     genderIndex: 0,
+    stageIndex: 0,
     phaseIndex: 0,
     relationText: '\u8bf7\u9009\u62e9',
     genderText: '\u672a\u586b\u5199',
+    stageText: '\u672a\u586b\u5199',
     phaseText: '\u672a\u586b\u5199',
     today: todayString(),
     saving: false
@@ -105,6 +118,14 @@ Page({
     refreshForm(this, {
       ...this.data.form,
       gender: option.value
+    });
+  },
+
+  pickStage(event) {
+    const option = stageOptions[Number(event.detail.value)] || stageOptions[0];
+    refreshForm(this, {
+      ...this.data.form,
+      stage: option.value
     });
   },
 

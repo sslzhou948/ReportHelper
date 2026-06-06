@@ -10,7 +10,7 @@
 
   <view class="pad mt-12">
     <view class="intro-card">
-      <view class="title">为{{profile.relation || '当前档案'}}新增健康记录</view>
+      <view class="title">新增健康记录</view>
       <view class="sub mt-8">有报告单就拍照识别；没有报告单，就手动录入一次检查结果。</view>
     </view>
   </view>

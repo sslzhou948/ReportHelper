@@ -1,11 +1,13 @@
 const { api } = require('../../utils/api');
 const { showApiErrorToast } = require('../../utils/error');
+const { mergeMetricTemplates } = require('../../utils/custom-metrics');
 const {
-  archiveCustomMetric,
-  listCustomMetrics,
-  mergeMetricTemplates,
-  saveCustomMetric
-} = require('../../utils/custom-metrics');
+  REF_RANGE_MODES,
+  formatReference,
+  inferRefMode,
+  modeState,
+  normalizeReferenceByMode
+} = require('../../utils/reference-range');
 const {
   beginSlowLoading,
   cancelSlowLoading: cancelPageLoading,
@@ -66,11 +68,24 @@ function sanitizeFormByCategory(form) {
       unit: '',
       refRangeLow: '',
       refRangeHigh: '',
-      refQualitative: ''
+      refQualitative: '',
+      refText: ''
+    };
+  }
+  if (next.valueType === 'quantitative') {
+    const reference = normalizeReferenceByMode(next, next.refMode || inferRefMode(next));
+    return {
+      ...next,
+      ...reference,
+      ...modeState(reference.refMode),
+      refRangeLow: reference.refRangeLow === null ? '' : String(reference.refRangeLow),
+      refRangeHigh: reference.refRangeHigh === null ? '' : String(reference.refRangeHigh)
     };
   }
   return {
     ...next,
+    refRangeLow: '',
+    refRangeHigh: '',
     refText: ''
   };
 }
@@ -85,6 +100,7 @@ function emptyForm() {
     categoryIndex: DEFAULT_CATEGORY_INDEX,
     ...valueTypeState,
     unit: '',
+    ...modeState('simple_range'),
     refRangeLow: '',
     refRangeHigh: '',
     refQualitative: '阴性',
@@ -104,6 +120,7 @@ function normalizeForm(metric = {}) {
     categoryIndex: categoryIndex >= 0 ? categoryIndex : DEFAULT_CATEGORY_INDEX,
     categoryCn: categoryOption.label,
     valueType,
+    ...modeState(inferRefMode(metric)),
     refRangeLow: metric.refRangeLow === null || metric.refRangeLow === undefined ? '' : String(metric.refRangeLow),
     refRangeHigh: metric.refRangeHigh === null || metric.refRangeHigh === undefined ? '' : String(metric.refRangeHigh),
     refText: metric.refText || ''
@@ -127,6 +144,7 @@ Page({
     categoryLabels: CATEGORY_LABELS,
     valueTypeLabels: VALUE_TYPE_LABELS,
     labValueTypeLabels: LAB_VALUE_TYPE_LABELS,
+    refModeLabels: REF_RANGE_MODES.map((item) => item.label),
     networkOffline: false,
     loading: false,
     loadingSlow: false
@@ -152,7 +170,7 @@ Page({
   load() {
     const loadingToken = beginSlowLoading(this);
     getApp().ensureCurrentProfileId(api).then((profileId) => Promise.all([
-      Promise.resolve(listCustomMetrics(profileId)),
+      api.listManualTemplates(profileId),
       this.data.mode === 'select' ? api.listMetricSnapshots(profileId) : Promise.resolve([])
     ]).then(([customRows, snapshots]) => ({ profileId, customRows, snapshots }))).then(({ profileId, customRows, snapshots }) => {
       if (!finishSlowLoading(this, loadingToken)) return;
@@ -179,7 +197,8 @@ Page({
   decorateItems(items) {
     return (items || []).map((item) => ({
       ...item,
-      sourceText: item.source === 'custom' ? '自' : '史'
+      sourceText: item.source === 'custom' ? '自' : '史',
+      refDisplay: item.valueType === 'quantitative' ? formatReference(item) : ''
     }));
   },
 
@@ -214,8 +233,9 @@ Page({
       confirmColor: '#C07060',
       success: (res) => {
         if (!res.confirm) return;
-        archiveCustomMetric(this.profileId, metricKey);
-        this.load();
+        api.archiveManualTemplate(this.profileId, metricKey)
+          .then(() => this.load())
+          .catch((error) => showApiErrorToast(error, '\u5220\u9664\u68c0\u67e5\u9879\u76ee\u5931\u8d25'));
       }
     });
   },
@@ -229,13 +249,27 @@ Page({
     const index = Number(event.detail.value) || 0;
     const valueType = LAB_VALUE_TYPES[index] || 'quantitative';
     const valueTypeIndex = VALUE_TYPES.indexOf(valueType);
+    const nextForm = sanitizeFormByCategory({
+      ...this.data.form,
+      valueTypeIndex,
+      valueType,
+      valueTypeLabel: VALUE_TYPE_LABELS[valueTypeIndex] || VALUE_TYPE_LABELS[0]
+    });
+    this.setData({ form: nextForm });
+  },
+
+  onRefModeChange(event) {
+    const index = Number(event.detail.value) || 0;
+    const mode = REF_RANGE_MODES[index] || REF_RANGE_MODES[0];
+    const reference = normalizeReferenceByMode(this.data.form, mode.key);
     this.setData({
-      form: {
+      form: sanitizeFormByCategory({
         ...this.data.form,
-        valueTypeIndex,
-        valueType,
-        valueTypeLabel: VALUE_TYPE_LABELS[valueTypeIndex] || VALUE_TYPE_LABELS[0]
-      }
+        ...reference,
+        ...modeState(reference.refMode),
+        refRangeLow: reference.refRangeLow === null ? '' : String(reference.refRangeLow),
+        refRangeHigh: reference.refRangeHigh === null ? '' : String(reference.refRangeHigh)
+      })
     });
   },
 
@@ -262,15 +296,16 @@ Page({
       return;
     }
     const normalizedForm = sanitizeFormByCategory(form);
-    const saved = saveCustomMetric(this.profileId, normalizedForm);
-    this.setData({ editing: false, formTitle: '新建录入模板', form: emptyForm() });
-    if (this.data.mode === 'select') {
-      wx.setStorageSync('manualEntryTemplate', saved);
-      wx.navigateTo({ url: `/pages/record/manual-entry?metricKey=${saved.metricKey}` });
-      return;
-    }
-    wx.showToast({ title: '\u5df2\u4fdd\u5b58', icon: 'success' });
-    this.load();
+    api.saveManualTemplate(this.profileId, normalizedForm).then((saved) => {
+      this.setData({ editing: false, formTitle: '新建录入模板', form: emptyForm() });
+      if (this.data.mode === 'select') {
+        wx.setStorageSync('manualEntryTemplate', saved);
+        wx.navigateTo({ url: `/pages/record/manual-entry?metricKey=${saved.metricKey}` });
+        return;
+      }
+      wx.showToast({ title: '\u5df2\u4fdd\u5b58', icon: 'success' });
+      this.load();
+    }).catch((error) => showApiErrorToast(error, '\u4fdd\u5b58\u68c0\u67e5\u9879\u76ee\u5931\u8d25'));
   },
 
   selectMetric(event) {

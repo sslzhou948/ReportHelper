@@ -1,7 +1,7 @@
 {
-  "appid": "wxeab2ae56843879da",
+  "appid": "wx382d538fd178a873",
   "compileType": "miniprogram",
-  "libVersion": "2.30.0",
+  "libVersion": "3.16.1",
   "projectname": "healthhelper",
   "miniprogramRoot": "miniprogram/",
   "setting": {

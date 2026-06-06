@@ -8,24 +8,41 @@
 
 .form-row {
   min-height: 108rpx;
+  box-sizing: border-box;
 }
 
 .field-label {
+  flex: 0 0 156rpx;
   width: 156rpx;
   color: var(--ink-2);
   font-size: 26rpx;
 }
 
+.field-control {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  justify-content: flex-end;
+}
+
 .field-value {
+  width: 100%;
+  min-height: 64rpx;
+  line-height: 64rpx;
   color: var(--ink);
+  font-size: 28rpx;
   font-weight: 600;
+  text-align: right;
 }
 
 .field-input {
   flex: 1;
   min-width: 0;
+  height: 64rpx;
+  line-height: 64rpx;
   text-align: right;
   color: var(--ink);
+  font-size: 28rpx;
 }
 
 .field-input.value {
@@ -40,23 +57,37 @@
 }
 
 .text-form-row {
-  padding: 24rpx 0;
+  padding: 24rpx 28rpx;
   border-bottom: 1rpx solid var(--border-soft);
+  box-sizing: border-box;
 }
 
 .text-form-row .field-label {
+  width: auto;
+  flex: none;
   margin-bottom: 14rpx;
 }
 
 .text-input {
   width: 100%;
-  min-height: 180rpx;
+  height: 172rpx;
+  min-height: 172rpx;
   padding: 20rpx;
   border-radius: 22rpx;
   background: #F6F3EE;
   box-sizing: border-box;
   color: var(--ink);
+  font-size: 28rpx;
   line-height: 1.55;
+}
+
+.compact-text-row .text-input {
+  height: 132rpx;
+  min-height: 132rpx;
+}
+
+.ref-text-input {
+  color: var(--ink-1);
 }
 
 .ref-row {

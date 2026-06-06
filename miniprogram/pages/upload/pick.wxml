@@ -7,7 +7,12 @@
   <block wx:if="{{!grouping}}">
     <view class="pad mt-12">
       <view class="sub">默认每张图为独立报告。同一份报告的多页，点曲别针建立关联。</view>
+      <view class="ocr-quality-tip">
+        <view class="tip-title">提高识别率</view>
+        <view class="tiny">优先上传医院 App、公众号或网页里的线上结果截图。纸质报告翻拍时让结果表格居中、拍正，减少折痕反光；解释/建议区占画面太多时，建议裁到结果表后再识别。</view>
+      </view>
       <view wx:if="{{hasDraft && photos.length > 0}}" class="draft-hint">已恢复上次未完成的上传草稿。</view>
+      <view wx:if="{{qualityWarningCount > 0}}" class="photo-quality-warning">{{qualityWarningCount}} 张图片可能影响 OCR，建议重拍清晰正面图或识别后重点核对。</view>
       <view wx:if="{{uploadError}}" class="upload-error">{{uploadError}}</view>
     </view>
     <view class="pad mt-12">
@@ -23,6 +28,8 @@
         <view wx:for="{{photos}}" wx:key="id" data-id="{{item.id}}" class="photo {{item.group ? 'grouped' : ''}}" bindtap="preview">
           <image wx:if="{{item.tempFilePath}}" class="photo-thumb" src="{{item.tempFilePath}}" mode="aspectFill" />
           <view wx:if="{{item.group}}" class="group-label">组 {{item.group}}</view>
+          <view class="photo-delete" data-id="{{item.id}}" catchtap="removePhoto">×</view>
+          <view wx:if="{{item.qualityWarning}}" class="quality-badge">!</view>
           <view class="photo-index">第 {{item.id}} 张</view>
           <view class="clip" data-id="{{item.id}}" catchtap="startGrouping">⌘</view>
           <view wx:if="{{item.group}}" class="split" data-group="{{item.group}}" catchtap="splitGroup">拆</view>

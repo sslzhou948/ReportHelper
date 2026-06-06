@@ -4,15 +4,6 @@ const { buildDefaultTodos, defaultRecheckDate, validateRecheckPlan } = require('
 
 const RECHECK_TEMPLATE_ID_KEY = 'recheckSubscribeTemplateId';
 
-function buildFields(form, errors) {
-  return [
-    { key: 'type', label: '\u68c0\u67e5\u7c7b\u578b', value: form.type, error: errors.type || '' },
-    { key: 'date', label: '\u65e5\u671f', value: form.date, error: errors.date || '' },
-    { key: 'hospital', label: '\u533b\u9662', value: form.hospital, error: errors.hospital || '' },
-    { key: 'department', label: '\u79d1\u5ba4', value: form.department || '\u672a\u6307\u5b9a', error: '' }
-  ];
-}
-
 function getSubscribeTemplateId() {
   try {
     return wx.getStorageSync(RECHECK_TEMPLATE_ID_KEY) || '';
@@ -45,21 +36,49 @@ Page({
     form: {
       type: '\u5e38\u89c4\u590d\u67e5',
       date: defaultRecheckDate(),
+      timeOfDay: '09:00',
       hospital: '\u534f\u548c\u533b\u9662',
       department: '\u80bf\u7624\u79d1'
     },
-    fields: [],
     todos: buildDefaultTodos(),
     errors: {},
+    today: defaultRecheckDate(new Date(), 0),
+    addingTodo: false,
+    todoDraft: '',
     saving: false
   },
-
-  onLoad() {
-    this.refreshFields();
+  setTodoSwipeOpen(index) {
+    this.setData({
+      todos: this.data.todos.map((todo, todoIndex) => ({
+        ...todo,
+        swipeOpen: todoIndex === index
+      }))
+    });
   },
-
-  refreshFields() {
-    this.setData({ fields: buildFields(this.data.form, this.data.errors) });
+  closeTodoSwipe() {
+    this.setTodoSwipeOpen(-1);
+  },
+  onTodoTouchStart(event) {
+    const touch = event.touches && event.touches[0];
+    if (!touch) return;
+    this.todoTouch = {
+      index: Number(event.currentTarget.dataset.index),
+      startX: touch.clientX,
+      startY: touch.clientY
+    };
+  },
+  onTodoTouchEnd(event) {
+    if (!this.todoTouch) return;
+    const touch = event.changedTouches && event.changedTouches[0];
+    if (!touch) {
+      this.todoTouch = null;
+      return;
+    }
+    const deltaX = touch.clientX - this.todoTouch.startX;
+    const deltaY = touch.clientY - this.todoTouch.startY;
+    const isHorizontal = Math.abs(deltaX) > 44 && Math.abs(deltaX) > Math.abs(deltaY) * 1.2;
+    if (isHorizontal) this.setTodoSwipeOpen(deltaX < 0 ? this.todoTouch.index : -1);
+    this.todoTouch = null;
   },
 
   goBack() {
@@ -67,40 +86,66 @@ Page({
   },
 
   setField(key, value) {
-    const form = { ...this.data.form, [key]: value };
-    this.setData({ form, errors: {} });
-    this.refreshFields();
+    const errors = { ...this.data.errors };
+    delete errors[key];
+    this.setData({
+      form: { ...this.data.form, [key]: value },
+      errors
+    });
+  },
+
+  onInput(event) {
+    this.setField(event.currentTarget.dataset.key, event.detail.value);
+  },
+
+  onDateChange(event) {
+    this.setField('date', event.detail.value);
   },
 
   toggleTodo(event) {
-    const index = event.currentTarget.dataset.index;
+    const index = Number(event.currentTarget.dataset.index);
     const todos = this.data.todos.slice();
+    if (todos[index] && todos[index].swipeOpen) {
+      this.closeTodoSwipe();
+      return;
+    }
     todos[index] = { ...todos[index], isDone: !todos[index].isDone };
     this.setData({ todos });
   },
 
   addTodo() {
-    wx.showModal({
-      title: '\u81ea\u5b9a\u4e49\u5f85\u529e',
-      editable: true,
-      placeholderText: '\u4f8b\u5982\uff1a\u5e26\u4e0a\u65e7\u62a5\u544a',
-      confirmText: '\u6dfb\u52a0',
-      success: (res) => {
-        if (!res.confirm) return;
-        const text = String(res.content || '').trim();
-        if (!text) {
-          wx.showToast({ title: '\u8bf7\u8f93\u5165\u5f85\u529e\u5185\u5bb9', icon: 'none' });
-          return;
-        }
-        const todos = this.data.todos.concat({
-          id: `todo_custom_${Date.now()}`,
-          text,
-          isDone: false,
-          isTemplate: false,
-          sortOrder: this.data.todos.length + 1
-        });
-        this.setData({ todos });
-      }
+    this.setData({ addingTodo: true, todoDraft: '' });
+  },
+
+  onTodoDraftInput(event) {
+    this.setData({ todoDraft: event.detail.value });
+  },
+
+  cancelTodoDraft() {
+    this.setData({ addingTodo: false, todoDraft: '' });
+  },
+
+  saveTodoDraft() {
+    const text = String(this.data.todoDraft || '').trim();
+    if (!text) {
+      wx.showToast({ title: '\u8bf7\u8f93\u5165\u5f85\u529e\u5185\u5bb9', icon: 'none' });
+      return;
+    }
+    const todos = this.data.todos.concat({
+      id: `todo_custom_${Date.now()}`,
+      text,
+      isDone: false,
+      isTemplate: false,
+      sortOrder: this.data.todos.length + 1,
+      swipeOpen: false
+    });
+    this.setData({ todos, addingTodo: false, todoDraft: '' });
+  },
+
+  deleteTodo(event) {
+    const index = Number(event.currentTarget.dataset.index);
+    this.setData({
+      todos: this.data.todos.filter((_, todoIndex) => todoIndex !== index)
     });
   },
 
@@ -109,7 +154,6 @@ Page({
     const result = validateRecheckPlan(this.data.form);
     if (!result.ok) {
       this.setData({ errors: result.errors });
-      this.refreshFields();
       wx.showToast({ title: Object.values(result.errors)[0], icon: 'none' });
       return;
     }
@@ -126,6 +170,7 @@ Page({
       })),
       reminderConfig: {
         advanceDays: [3, 1, 0],
+        timeOfDay: this.data.form.timeOfDay || '09:00',
         subscribeAccepted: subscribe.subscribeAccepted,
         templateId: subscribe.templateId
       }
@@ -141,16 +186,5 @@ Page({
       this.setData({ saving: false });
       showApiErrorFeedback(error, '\u4fdd\u5b58\u590d\u67e5\u8ba1\u5212\u5931\u8d25');
     });
-  },
-
-  pick(event) {
-    const key = event.currentTarget.dataset.key;
-    const demoValues = {
-      type: '\u5e38\u89c4\u590d\u67e5',
-      date: defaultRecheckDate(),
-      hospital: '\u534f\u548c\u533b\u9662',
-      department: '\u80bf\u7624\u79d1'
-    };
-    this.setField(key, demoValues[key] || '');
   }
 });

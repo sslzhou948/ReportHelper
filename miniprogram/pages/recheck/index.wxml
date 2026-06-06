@@ -7,9 +7,9 @@
   <network-banner offline="{{networkOffline}}" bind:retry="retryAfterNetwork" />
   <loading-slow-banner visible="{{loadingSlow}}" bind:retry="retrySlowLoading" bind:cancel="cancelSlowLoading" />
   <block wx:if="{{nextPlan}}">
-    <view class="section-title">下次复查</view>
+    <view class="section-title" bindtap="closeTodoSwipe">下次复查</view>
     <view class="pad">
-      <view class="card card-pad">
+      <view class="card card-pad" bindtap="closeTodoSwipe">
         <view class="plan-head">
           <view class="plan-date">{{nextPlan.displayDate}}</view>
           <view class="plan-weekday">{{nextPlan.weekday}}</view>
@@ -26,22 +26,32 @@
         </view>
       </view>
     </view>
-    <view class="section-title">待办事项</view>
+    <view class="section-title" bindtap="closeTodoSwipe">待办事项</view>
     <view class="pad">
       <view class="card">
-        <view wx:for="{{nextPlan.todos}}" wx:key="id" class="row" data-index="{{index}}" bindtap="toggleTodo">
-          <view class="todo-box {{item.isDone ? 'done' : ''}}">{{item.isDone ? '✓' : ''}}</view>
-          <view class="flex {{item.isDone ? 'todo-done' : ''}}">{{item.text}}</view>
+        <view wx:for="{{nextPlan.todos}}" wx:key="id" class="todo-swipe {{item.swipeOpen ? 'open' : ''}}" data-id="{{item.id}}" bindtouchstart="onTodoTouchStart" bindtouchend="onTodoTouchEnd" bindtouchcancel="onTodoTouchEnd">
+          <view class="swipe-delete" data-id="{{item.id}}" catchtap="deleteTodo">删除</view>
+          <view class="row todo-swipe-content" data-index="{{index}}" bindtap="toggleTodo">
+            <view class="todo-box {{item.isDone ? 'done' : ''}}">{{item.isDone ? '✓' : ''}}</view>
+            <view class="flex {{item.isDone ? 'todo-done' : ''}}">{{item.text}}</view>
+          </view>
         </view>
-        <view class="row add-row" bindtap="addTodo">+ 添加待办</view>
+        <view wx:if="{{addingTodo}}" class="row todo-draft-row">
+          <input class="todo-draft-input" value="{{todoDraft}}" placeholder="例如：准备检查单" bindinput="onTodoDraftInput" focus />
+          <view class="todo-draft-actions">
+            <view class="mini-action muted" bindtap="cancelTodoDraft">取消</view>
+            <view class="mini-action" bindtap="saveTodoDraft">添加</view>
+          </view>
+        </view>
+        <view wx:else class="row add-row" bindtap="addTodo">+ 添加待办</view>
       </view>
     </view>
   </block>
-  <view class="section-title">
+  <view class="section-title" bindtap="closeTodoSwipe">
     <view>之后还有</view>
     <view class="tiny">{{otherPlans.length}} 项</view>
   </view>
-  <view class="pad">
+  <view class="pad" bindtap="closeTodoSwipe">
     <view class="card">
       <view wx:for="{{otherPlans}}" wx:key="id" class="row" data-id="{{item.id}}" bindtap="goDetail">
         <view class="date-block">
@@ -57,5 +67,5 @@
       </view>
     </view>
   </view>
-  <view class="done-link">已完成 ({{doneCount}}) ›</view>
+  <view class="done-link" bindtap="closeTodoSwipe">已完成 ({{doneCount}}) ›</view>
 </view>

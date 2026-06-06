@@ -15,6 +15,11 @@ Implementation direction:
 
 ## Post-MVP Product / Platform Items
 
+- OCR quality bug to retest after model upgrade:
+  - Case: “检测样本4”, a photographed printed report.
+  - Symptom: recognition accuracy is poor and the duplicate/conflict screen flags `wbc` as a repeated conflicting item.
+  - Current decision: do not tune merge/conflict rules only for this sample yet, because the root cause may be low-quality image OCR/model extraction rather than business logic.
+  - Retest plan: run the same image through a stronger OCR/model provider, compare raw provider JSON, normalized draft, and mini program display before changing conflict heuristics.
 - Admin portal:
   - Field mapping management for report type aliases, metric aliases, unit normalization, and category rules.
   - Unknown metric / pending mapping review queue.

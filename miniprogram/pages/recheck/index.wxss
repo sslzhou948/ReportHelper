@@ -68,9 +68,57 @@
   text-decoration: line-through;
 }
 
+.delete-x {
+  flex: 0 0 auto;
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: 22rpx;
+  background: #F2EEE7;
+  color: var(--ink-3);
+  font-size: 26rpx;
+  line-height: 44rpx;
+  text-align: center;
+}
+
 .add-row {
   justify-content: center;
   color: var(--primary);
+}
+
+.todo-draft-row {
+  align-items: flex-start;
+}
+
+.todo-draft-input {
+  flex: 1;
+  min-width: 0;
+  height: 64rpx;
+  line-height: 64rpx;
+  color: var(--ink);
+  font-size: 28rpx;
+}
+
+.todo-draft-actions {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 16rpx;
+}
+
+.mini-action {
+  min-width: 84rpx;
+  height: 56rpx;
+  line-height: 56rpx;
+  border-radius: 18rpx;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: 24rpx;
+  font-weight: 700;
+  text-align: center;
+}
+
+.mini-action.muted {
+  background: #F2EEE7;
+  color: var(--ink-2);
 }
 
 .date-block {

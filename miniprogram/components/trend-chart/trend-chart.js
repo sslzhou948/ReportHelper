@@ -8,6 +8,12 @@ const CHART = {
   pointGap: 132
 };
 
+function toNumberOrNull(value) {
+  if (value === '' || value === null || value === undefined) return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
 function roundTick(value) {
   if (value >= 100) return Math.round(value / 10) * 10;
   if (value >= 10) return Math.round(value);
@@ -46,21 +52,22 @@ Component({
     prepare() {
       const rows = (this.data.history || [])
         .filter((row) => row.valueType !== 'qualitative')
+        .filter((row) => toNumberOrNull(row.valueNumeric) !== null)
         .slice()
         .reverse();
 
       if (!rows.length) {
-        this.setData({ points: [], segments: [], xLabels: [], yTicks: [], refLine: null, chartWidth: CHART.width });
+        this.setData({ points: [], segments: [], xLabels: [], yTicks: [], refLines: [], refBand: null, chartWidth: CHART.width });
         return;
       }
 
-      const values = rows.map((row) => Number(row.valueNumeric || 0));
+      const values = rows.map((row) => toNumberOrNull(row.valueNumeric));
       const latest = rows[rows.length - 1];
-      const latestRefLow = Number(latest.refRangeLow);
-      const latestRefHigh = Number(latest.refRangeHigh);
+      const latestRefLow = toNumberOrNull(latest.refRangeLow);
+      const latestRefHigh = toNumberOrNull(latest.refRangeHigh);
       const scaleValues = values.slice();
-      if (!Number.isNaN(latestRefLow)) scaleValues.push(latestRefLow);
-      if (!Number.isNaN(latestRefHigh)) scaleValues.push(latestRefHigh);
+      if (latestRefLow !== null) scaleValues.push(latestRefLow);
+      if (latestRefHigh !== null) scaleValues.push(latestRefHigh);
 
       let min = Math.min(...scaleValues);
       let max = Math.max(...scaleValues);
@@ -78,14 +85,31 @@ Component({
         y: yToPx(value)
       }));
 
-      const refLine = Number.isNaN(latestRefLow) ? null : {
-        y: yToPx(latestRefLow),
-        label: `最新参考下限 ${formatTick(latestRefLow)}`
-      };
+      const refLines = [];
+      if (latestRefLow !== null) {
+        refLines.push({
+          id: 'low',
+          y: yToPx(latestRefLow),
+          label: latestRefHigh !== null ? `下限 ${formatTick(latestRefLow)}` : `参考下限 ${formatTick(latestRefLow)}`
+        });
+      }
+      if (latestRefHigh !== null) {
+        refLines.push({
+          id: 'high',
+          y: yToPx(latestRefHigh),
+          label: latestRefLow !== null ? `上限 ${formatTick(latestRefHigh)}` : `参考上限 ${formatTick(latestRefHigh)}`
+        });
+      }
+      const refBand = latestRefLow !== null && latestRefHigh !== null
+        ? {
+          top: Math.min(yToPx(latestRefLow), yToPx(latestRefHigh)),
+          height: Math.abs(yToPx(latestRefLow) - yToPx(latestRefHigh))
+        }
+        : null;
 
       const points = rows.map((row, index) => {
         const x = CHART.left + index * CHART.pointGap;
-        const y = yToPx(Number(row.valueNumeric || 0));
+        const y = yToPx(toNumberOrNull(row.valueNumeric));
         return {
           x,
           y,
@@ -116,7 +140,7 @@ Component({
         text: formatDateLabel(point.date)
       }));
 
-      this.setData({ points, segments, xLabels, yTicks, refLine, chartWidth });
+      this.setData({ points, segments, xLabels, yTicks, refLines, refBand, chartWidth });
     }
   }
 });

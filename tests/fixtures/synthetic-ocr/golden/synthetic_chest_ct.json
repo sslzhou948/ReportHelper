@@ -1,0 +1,24 @@
+{
+    "expectedFields":  [
+                           "hospital",
+                           "reportDate",
+                           "examPart",
+                           "findings",
+                           "comparison"
+                       ],
+    "modality":  "imaging",
+    "findings":  [
+                     "双肺多发微、小结节，大致同前",
+                     "右肺下叶背段，呈实性密度，大小约为6mm×5mm",
+                     "双肺散在钙化灶，右肺门多发钙化灶",
+                     "双侧胸膜略增厚"
+                 ],
+    "basicInfo":  {
+                      "examDate":  "2025-12-22",
+                      "hospital":  "北京协和医院",
+                      "type":  "胸腹盆CT平扫",
+                      "reportDate":  "2025-12-24"
+                  },
+    "status":  "structured",
+    "caseId":  "synthetic_chest_ct"
+}

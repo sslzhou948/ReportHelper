@@ -1,9 +1,8 @@
 .home-head {
   display: flex;
   align-items: center;
-  gap: 20rpx;
   padding-right: 188rpx;
-  margin-bottom: 16rpx;
+  margin-bottom: 28rpx;
 }
 
 .profile-chip {
@@ -33,42 +32,6 @@
   align-items: center;
   justify-content: center;
   font-weight: 700;
-}
-
-.ocr-status-entry {
-  flex: 0 0 auto;
-  margin-left: auto;
-  min-height: 60rpx;
-  max-width: 220rpx;
-  padding: 8rpx 16rpx 8rpx 10rpx;
-  border-radius: 30rpx;
-  background: rgba(255, 255, 255, 0.24);
-  color: #FFFFFF;
-  display: flex;
-  align-items: center;
-  gap: 8rpx;
-  justify-content: center;
-  font-size: 24rpx;
-  font-weight: 700;
-  line-height: 34rpx;
-  white-space: nowrap;
-}
-
-.ocr-status-entry.ready,
-.ocr-status-entry.warning {
-  background: rgba(250, 240, 224, 0.34);
-}
-
-.ocr-status-icon {
-  width: 38rpx;
-  height: 38rpx;
-  border-radius: 14rpx;
-  background: rgba(255, 255, 255, 0.24);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 22rpx;
-  font-weight: 800;
 }
 
 .section-action {
@@ -177,15 +140,19 @@
 }
 
 .metric-scroll {
+  width: 100%;
   white-space: nowrap;
   padding-left: 32rpx;
   padding-bottom: 4rpx;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 .metric-card {
   display: inline-block;
   vertical-align: top;
   width: 296rpx;
+  min-width: 0;
   min-height: 194rpx;
   margin-right: 20rpx;
   padding: 24rpx;
@@ -194,6 +161,7 @@
   border: 1rpx solid var(--border-soft);
   text-align: left;
   white-space: normal;
+  box-sizing: border-box;
 }
 
 .empty-metric {
@@ -282,6 +250,12 @@
   min-width: 0;
 }
 
+.report-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .empty-report {
   padding: 32rpx 28rpx;
   color: var(--ink-2);
@@ -289,6 +263,12 @@
 
 .alert-card {
   border-left: 8rpx solid var(--high);
+}
+
+.alert-summary {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .pill-row {

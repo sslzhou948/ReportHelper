@@ -83,6 +83,29 @@
   margin-bottom: 20rpx;
 }
 
+.range-row {
+  margin-bottom: 18rpx;
+  display: flex;
+  gap: 12rpx;
+}
+
+.range-chip {
+  height: 50rpx;
+  padding: 0 20rpx;
+  border-radius: 25rpx;
+  background: #F5F2EC;
+  color: var(--ink-2);
+  font-size: 22rpx;
+  display: flex;
+  align-items: center;
+}
+
+.range-chip.active {
+  background: var(--primary);
+  color: #FFFFFF;
+  font-weight: 700;
+}
+
 .strong {
   font-weight: 700;
 }

@@ -46,6 +46,9 @@ function createHybridStorage(options = {}) {
     },
     set(key, value) {
       if (typeof wx !== 'undefined' && wx.setStorageSync) wx.setStorageSync(key, value);
+    },
+    remove(key) {
+      if (typeof wx !== 'undefined' && wx.removeStorageSync) wx.removeStorageSync(key);
     }
   };
 }
@@ -83,8 +86,7 @@ function createBackendApi(client) {
       return client.post('/api/uploads/complete', payload, config);
     },
     listReports(profileId, params = {}) {
-      const query = params.limit ? `?limit=${params.limit}` : '';
-      return client.get(`/api/profiles/${profileId}/reports${query}`);
+      return client.get(`/api/profiles/${profileId}/reports${toQuery(params)}`);
     },
     getReportDetail(reportId) {
       return client.get(`/api/reports/${reportId}`);
@@ -95,6 +97,15 @@ function createBackendApi(client) {
     createManualReport(profileId, payload, config) {
       return client.post(`/api/profiles/${profileId}/manual-reports`, payload, config);
     },
+    listManualTemplates(profileId) {
+      return client.get(`/api/profiles/${profileId}/manual-templates`);
+    },
+    saveManualTemplate(profileId, payload, config) {
+      return client.post(`/api/profiles/${profileId}/manual-templates`, payload, config);
+    },
+    archiveManualTemplate(profileId, metricKey, config) {
+      return client.delete(`/api/profiles/${profileId}/manual-templates/${encodeURIComponent(metricKey)}`, config);
+    },
     deleteReport(reportId, config) {
       return client.delete(`/api/reports/${reportId}`, config);
     },
@@ -104,8 +115,11 @@ function createBackendApi(client) {
         : '';
       return client.get(`/api/profiles/${profileId}/metrics/snapshots${query}`);
     },
-    getMetricHistory(profileId, metricKey) {
-      return client.get(`/api/profiles/${profileId}/metrics/${metricKey}/history`);
+    listPendingMetricCandidates(profileId, params = {}) {
+      return client.get(`/api/profiles/${profileId}/metrics/pending-candidates${toQuery(params)}`);
+    },
+    getMetricHistory(profileId, metricKey, params = {}) {
+      return client.get(`/api/profiles/${profileId}/metrics/${metricKey}/history${toQuery(params)}`);
     },
     setMetricPinned(profileId, metricKey, isPinned) {
       return client.patch(`/api/profiles/${profileId}/metrics/${metricKey}/pin`, { isPinned });
@@ -124,6 +138,9 @@ function createBackendApi(client) {
     },
     addRecheckTodo(planId, payload, config) {
       return client.post(`/api/recheck-plans/${planId}/todos`, payload, config);
+    },
+    deleteRecheckTodo(planId, todoId, config) {
+      return client.delete(`/api/recheck-plans/${planId}/todos/${todoId}`, config);
     },
     completeRecheckPlan(planId, config) {
       return client.post(`/api/recheck-plans/${planId}/complete`, {}, config);
@@ -156,10 +173,16 @@ function createBackendApi(client) {
       return client.post(`/api/ocr/tasks/${taskId}/retry`, payload, config);
     },
     resolveOcrConflict(payload, config) {
-      return client.patch(`/api/ocr/tasks/${payload.taskId}/drafts/${payload.draftId}/conflicts/${payload.metricKey}`, payload, config);
+      return client.patch(`/api/ocr/tasks/${encodeURIComponent(payload.taskId)}/drafts/${encodeURIComponent(payload.draftId)}/conflicts/${encodeURIComponent(payload.metricKey)}`, payload, config);
     },
     updateOcrDraft(payload, config) {
       return client.patch(`/api/ocr/tasks/${payload.taskId}/drafts/${payload.draftId}`, payload, config);
+    },
+    deleteOcrDraft(taskId, draftId, config) {
+      return client.post(`/api/ocr/tasks/${encodeURIComponent(taskId)}/drafts/${encodeURIComponent(draftId)}/delete`, {}, config);
+    },
+    splitOcrDraft(taskId, draftId, config) {
+      return client.post(`/api/ocr/tasks/${encodeURIComponent(taskId)}/drafts/${encodeURIComponent(draftId)}/split`, {}, config);
     },
     checkDuplicateReports(payload, config) {
       return client.post('/api/reports/duplicate-check', payload, config);
@@ -174,38 +197,80 @@ function createHybridUploadApi(options = {}) {
   const mockApi = createMockApi();
   const storage = createHybridStorage(options);
   const backendApi = createBackendApi(createApiClient(options));
+  let refreshProfilePromise = null;
   const backendProfileId = (profileId) => storage.get('healthhelperBackendProfileId') || profileId;
   const hasBackendProfile = () => !!storage.get('healthhelperBackendProfileId');
+  const forgetBackendProfile = () => {
+    if (storage.remove) {
+      storage.remove('healthhelperBackendProfileId');
+    } else {
+      storage.set('healthhelperBackendProfileId', '');
+    }
+  };
   const rememberProfile = (result) => {
     if (result && result.profileId) storage.set('healthhelperBackendProfileId', result.profileId);
     return result;
   };
+  const shouldRefreshProfile = (error) => {
+    if (!error) return false;
+    if (error.code === 'NOT_FOUND') return true;
+    if (error.code !== 'VALIDATION_FAILED') return false;
+    const detailsText = JSON.stringify(error.details || {});
+    return detailsText.includes('profileId');
+  };
+  const refreshBackendProfileId = () => {
+    if (refreshProfilePromise) return refreshProfilePromise;
+    refreshProfilePromise = backendApi.getProfiles().then((profiles) => {
+      const profile = (profiles || [])[0];
+      if (!profile || !profile.id) {
+        forgetBackendProfile();
+        return '';
+      }
+      storage.set('healthhelperBackendProfileId', profile.id);
+      return profile.id;
+    }).catch((error) => {
+      forgetBackendProfile();
+      throw error;
+    }).finally(() => {
+      refreshProfilePromise = null;
+    });
+    return refreshProfilePromise;
+  };
+  const withRefreshedProfile = (action) => action().catch((error) => {
+    if (!shouldRefreshProfile(error)) throw error;
+    return refreshBackendProfileId().then((profileId) => {
+      if (!profileId) throw error;
+      return action();
+    });
+  });
   return {
     ...mockApi,
     createOcrTask(payload, config) {
-      const backendPayload = toBackendCreateOcrTaskPayload({
-        ...payload,
-        profileId: payload.profileId ? backendProfileId(payload.profileId) : payload.profileId
+      return withRefreshedProfile(() => {
+        const backendPayload = toBackendCreateOcrTaskPayload({
+          ...payload,
+          profileId: payload.profileId ? backendProfileId(payload.profileId) : payload.profileId
+        });
+        return backendApi.createOcrTask(backendPayload, config).then(rememberProfile);
       });
-      return backendApi.createOcrTask(backendPayload, config).then(rememberProfile);
     },
     signUploads(payload, config) {
-      return backendApi.signUploads({
+      return withRefreshedProfile(() => backendApi.signUploads({
         ...payload,
         profileId: backendProfileId(payload.profileId)
-      }, config);
+      }, config));
     },
     completeUploads(payload, config) {
-      return backendApi.completeUploads({
+      return withRefreshedProfile(() => backendApi.completeUploads({
         ...payload,
         profileId: backendProfileId(payload.profileId)
-      }, config);
+      }, config));
     },
     listOcrTasks(params = {}) {
-      return backendApi.listOcrTasks({
+      return withRefreshedProfile(() => backendApi.listOcrTasks({
         ...params,
         profileId: params.profileId ? backendProfileId(params.profileId) : params.profileId
-      });
+      }));
     },
     getOcrTask(taskId) {
       return backendApi.getOcrTask(taskId).then(rememberProfile);
@@ -222,8 +287,14 @@ function createHybridUploadApi(options = {}) {
     updateOcrDraft(payload, config) {
       return backendApi.updateOcrDraft(payload, config);
     },
+    deleteOcrDraft(taskId, draftId, config) {
+      return backendApi.deleteOcrDraft(taskId, draftId, config).then(rememberProfile);
+    },
+    splitOcrDraft(taskId, draftId, config) {
+      return backendApi.splitOcrDraft(taskId, draftId, config).then(rememberProfile);
+    },
     listReports(profileId, params) {
-      return backendApi.listReports(backendProfileId(profileId), params);
+      return withRefreshedProfile(() => backendApi.listReports(backendProfileId(profileId), params));
     },
     getReportDetail(reportId) {
       return backendApi.getReportDetail(reportId);
@@ -232,27 +303,43 @@ function createHybridUploadApi(options = {}) {
       return backendApi.updateReport(reportId, payload, config);
     },
     createManualReport(profileId, payload, config) {
-      return backendApi.createManualReport(backendProfileId(profileId), payload, config);
+      return withRefreshedProfile(() => backendApi.createManualReport(backendProfileId(profileId), payload, config));
+    },
+    listManualTemplates(profileId) {
+      if (!hasBackendProfile()) return mockApi.listManualTemplates(profileId);
+      return withRefreshedProfile(() => backendApi.listManualTemplates(backendProfileId(profileId)));
+    },
+    saveManualTemplate(profileId, payload, config) {
+      if (!hasBackendProfile()) return mockApi.saveManualTemplate(profileId, payload, config);
+      return withRefreshedProfile(() => backendApi.saveManualTemplate(backendProfileId(profileId), payload, config));
+    },
+    archiveManualTemplate(profileId, metricKey, config) {
+      if (!hasBackendProfile()) return mockApi.archiveManualTemplate(profileId, metricKey, config);
+      return withRefreshedProfile(() => backendApi.archiveManualTemplate(backendProfileId(profileId), metricKey, config));
     },
     deleteReport(reportId, config) {
       return backendApi.deleteReport(reportId, config);
     },
     listMetricSnapshots(profileId, params) {
-      return backendApi.listMetricSnapshots(backendProfileId(profileId), params);
+      return withRefreshedProfile(() => backendApi.listMetricSnapshots(backendProfileId(profileId), params));
     },
-    getMetricHistory(profileId, metricKey) {
-      return backendApi.getMetricHistory(backendProfileId(profileId), metricKey);
+    listPendingMetricCandidates(profileId, params) {
+      if (!hasBackendProfile()) return mockApi.listPendingMetricCandidates(profileId, params);
+      return withRefreshedProfile(() => backendApi.listPendingMetricCandidates(backendProfileId(profileId), params));
+    },
+    getMetricHistory(profileId, metricKey, params) {
+      return withRefreshedProfile(() => backendApi.getMetricHistory(backendProfileId(profileId), metricKey, params));
     },
     setMetricPinned(profileId, metricKey, isPinned) {
-      return backendApi.setMetricPinned(backendProfileId(profileId), metricKey, isPinned);
+      return withRefreshedProfile(() => backendApi.setMetricPinned(backendProfileId(profileId), metricKey, isPinned));
     },
     listRecheckPlans(profileId) {
       if (!hasBackendProfile()) return mockApi.listRecheckPlans(profileId);
-      return backendApi.listRecheckPlans(backendProfileId(profileId));
+      return withRefreshedProfile(() => backendApi.listRecheckPlans(backendProfileId(profileId)));
     },
     createRecheckPlan(profileId, payload, config) {
       if (!hasBackendProfile()) return mockApi.createRecheckPlan(profileId, payload, config);
-      return backendApi.createRecheckPlan(backendProfileId(profileId), payload, config);
+      return withRefreshedProfile(() => backendApi.createRecheckPlan(backendProfileId(profileId), payload, config));
     },
     updateRecheckPlan(planId, payload, config) {
       if (!hasBackendProfile()) return mockApi.updateRecheckPlan(planId, payload, config);
@@ -265,6 +352,10 @@ function createHybridUploadApi(options = {}) {
     addRecheckTodo(planId, payload, config) {
       if (!hasBackendProfile()) return mockApi.addRecheckTodo(planId, payload, config);
       return backendApi.addRecheckTodo(planId, payload, config);
+    },
+    deleteRecheckTodo(planId, todoId, config) {
+      if (!hasBackendProfile()) return mockApi.deleteRecheckTodo(planId, todoId, config);
+      return backendApi.deleteRecheckTodo(planId, todoId, config);
     },
     completeRecheckPlan(planId, config) {
       if (!hasBackendProfile()) return mockApi.completeRecheckPlan(planId, config);
@@ -280,17 +371,23 @@ function createHybridUploadApi(options = {}) {
     },
     createExport(profileId, payload, config) {
       if (!hasBackendProfile()) return mockApi.createExport(profileId, payload, config);
-      return backendApi.createExport(backendProfileId(profileId), payload, config);
+      return withRefreshedProfile(() => backendApi.createExport(backendProfileId(profileId), payload, config));
     },
     getExport(exportId, config) {
       if (!hasBackendProfile()) return mockApi.getExport(exportId, config);
       return backendApi.getExport(exportId, config);
     },
     checkDuplicateReports(payload, config) {
-      return backendApi.checkDuplicateReports(toBackendDuplicatePayload(payload), config);
+      return withRefreshedProfile(() => backendApi.checkDuplicateReports(toBackendDuplicatePayload({
+        ...payload,
+        profileId: payload && payload.profileId ? backendProfileId(payload.profileId) : payload.profileId
+      }), config));
     },
     batchCreateReports(payload, config) {
-      return backendApi.batchCreateReports(toBackendBatchCreatePayload(payload), config);
+      return withRefreshedProfile(() => backendApi.batchCreateReports(toBackendBatchCreatePayload({
+        ...payload,
+        profileId: payload && payload.profileId ? backendProfileId(payload.profileId) : payload.profileId
+      }), config));
     }
   };
 }

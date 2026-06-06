@@ -1,10 +1,12 @@
 const assert = require('assert');
+const fs = require('fs');
 const { spawn, spawnSync } = require('child_process');
 const path = require('path');
 const automator = require('miniprogram-automator');
 
 const root = path.resolve(__dirname, '..');
 const cliPath = path.join(process.env.WECHAT_DEVTOOLS_DIR || 'D:\\WeChat-DevTools', 'cli.bat');
+const localAppData = process.env.WECHAT_DEVTOOLS_LOCALAPPDATA || path.join(root, '.wechat-localappdata');
 const devtoolsPort = Number(process.env.WECHAT_DEVTOOLS_PORT || 9420);
 const backendPort = Number(process.env.HEALTHHELPER_MEMORY_PORT || 18787);
 const backendBaseUrl = `http://127.0.0.1:${backendPort}`;
@@ -26,9 +28,14 @@ function withTimeout(promise, ms, label) {
 }
 
 function runDevToolsCli(args) {
+  fs.mkdirSync(localAppData, { recursive: true });
   const result = spawnSync('cmd.exe', ['/d', '/c', 'call', cliPath].concat(args), {
     cwd: root,
     stdio: 'ignore',
+    env: {
+      ...process.env,
+      LOCALAPPDATA: localAppData
+    },
     windowsHide: true,
     timeout: 15000
   });
@@ -39,6 +46,8 @@ function runDevToolsCli(args) {
 }
 
 async function connectDevTools() {
+  fs.mkdirSync(localAppData, { recursive: true });
+  process.env.LOCALAPPDATA = localAppData;
   try {
     return await withTimeout(
       automator.connect({ wsEndpoint: `ws://127.0.0.1:${devtoolsPort}` }),
@@ -46,7 +55,7 @@ async function connectDevTools() {
       'WeChat DevTools connect'
     );
   } catch (error) {
-    runDevToolsCli(['auto', '--project', root, '--trust-project', '--auto-port', String(devtoolsPort)]);
+    runDevToolsCli(['auto', '--project', root, '--trust-project', `--auto-port=${devtoolsPort}`]);
     await sleep(1500);
     return withTimeout(
       automator.connect({ wsEndpoint: `ws://127.0.0.1:${devtoolsPort}` }),
@@ -129,10 +138,23 @@ function stopProcessTree(child) {
       getApp().setCurrentProfileId('profile_mom');
     }, backendBaseUrl);
 
-    let page = await miniProgram.reLaunch('/pages/upload/pick?fixture=realcase');
+    let page = await miniProgram.reLaunch('/pages/home/index');
+    await page.waitFor(1000);
+    await page.callMethod('goRecord');
+    page = await waitForPath(miniProgram, 'pages/record/new', 8000);
+    assert.strictEqual(page.path, 'pages/record/new', 'home record action should open unified record entry');
+    await page.waitFor(1000);
+    const uploadEntry = await page.$('.entry-card');
+    assert.ok(uploadEntry, 'record entry should render the photo recognition card');
+    await uploadEntry.trigger('tap');
+    page = await waitForPath(miniProgram, 'pages/upload/pick', 8000);
+    if (page.path !== 'pages/upload/pick') {
+      const routeError = await miniProgram.evaluate(() => wx.getStorageSync('lastUploadRouteError') || '');
+      assert.strictEqual(page.path, 'pages/upload/pick', `record entry should open fixture upload picker: ${routeError}`);
+    }
     await page.waitFor(800);
     let data = await page.data();
-    assert.strictEqual(data.showFixtureEntry, true, 'fixture entry should be enabled for hybrid smoke');
+    assert.strictEqual(data.showFixtureEntry, false, 'fixture entry should stay hidden on the normal user upload path');
 
     const task = await page.callMethod('startFixtureOcr');
     assert.ok(task && task.id, 'fixture OCR should create a backend task');

@@ -14,6 +14,49 @@ const realcaseFixtureCaseIds = [
 ];
 const UPLOAD_DRAFT_KEY = 'uploadDraft';
 const MAX_UPLOAD_PHOTOS = 9;
+const MIN_OCR_PHOTO_MEGAPIXELS = 3;
+const MIN_OCR_PHOTO_SHORT_EDGE = 1600;
+const MAX_OCR_PHOTO_ASPECT_RATIO = 2.2;
+const OCR_RESULT_TABLE_GUIDANCE = '拍纸质报告时让结果表格居中、拍正、减少折痕反光；解释/建议区占画面太多时，建议裁到结果表后再识别。';
+
+function photoDimension(value) {
+  const number = Number(value) || 0;
+  return number > 0 ? Math.round(number) : 0;
+}
+
+function buildPhotoQualityWarning(photo) {
+  const width = photoDimension(photo.width);
+  const height = photoDimension(photo.height);
+  if (!width || !height) return '';
+  const megapixels = (width * height) / 1000000;
+  const shortEdge = Math.min(width, height);
+  if (megapixels < MIN_OCR_PHOTO_MEGAPIXELS || shortEdge < MIN_OCR_PHOTO_SHORT_EDGE) {
+    return `图片约 ${width}×${height}，小字表格可能漏行或串列；${OCR_RESULT_TABLE_GUIDANCE}`;
+  }
+  const ratio = width / height;
+  if (ratio > MAX_OCR_PHOTO_ASPECT_RATIO || ratio < (1 / MAX_OCR_PHOTO_ASPECT_RATIO)) {
+    return `图片比例较极端，请确认没有裁切到报告边缘；${OCR_RESULT_TABLE_GUIDANCE}`;
+  }
+  return '';
+}
+
+function normalizePhotoQuality(photo) {
+  const width = photoDimension(photo.width);
+  const height = photoDimension(photo.height);
+  const next = {
+    ...photo,
+    width,
+    height
+  };
+  return {
+    ...next,
+    qualityWarning: buildPhotoQualityWarning(next)
+  };
+}
+
+function qualityWarningCount(photos) {
+  return (photos || []).filter((photo) => photo.qualityWarning).length;
+}
 
 function readUploadDraft() {
   try {
@@ -28,8 +71,10 @@ function readUploadDraft() {
         tempFilePath: photo.tempFilePath || '',
         fileName: photo.fileName || `report-${index + 1}`,
         mimeType: photo.mimeType || '',
-        size: Number(photo.size) || 0
-      }));
+        size: Number(photo.size) || 0,
+        width: photoDimension(photo.width),
+        height: photoDimension(photo.height)
+      })).map(normalizePhotoQuality);
   } catch (error) {
     return [];
   }
@@ -42,7 +87,9 @@ function persistUploadDraft(photos) {
     tempFilePath: photo.tempFilePath || '',
     fileName: photo.fileName || `report-${photo.id}`,
     mimeType: photo.mimeType || '',
-    size: Number(photo.size) || 0
+    size: Number(photo.size) || 0,
+    width: photoDimension(photo.width),
+    height: photoDimension(photo.height)
   }));
   if (safePhotos.length === 0) {
     wx.removeStorageSync(UPLOAD_DRAFT_KEY);
@@ -74,7 +121,9 @@ function normalizeChosenFiles(files, existingPhotos) {
       tempFilePath: filePath,
       fileName: file.name || getPathName(filePath) || `report-${startId + index}`,
       mimeType: file.mimeType || inferMimeType(filePath, file.type),
-      size: Number(file.size) || 0
+      size: Number(file.size) || 0,
+      width: photoDimension(file.width),
+      height: photoDimension(file.height)
     };
   });
 }
@@ -84,18 +133,74 @@ function normalizeChooseImageFiles(result) {
   const files = result.tempFiles || [];
   return paths.map((path, index) => ({
     tempFilePath: path,
-    size: files[index] && files[index].size
+    size: files[index] && files[index].size,
+    width: files[index] && files[index].width,
+    height: files[index] && files[index].height
   }));
+}
+
+function enrichFileWithImageInfo(file) {
+  if (photoDimension(file.width) && photoDimension(file.height)) return Promise.resolve(file);
+  if (!wx.getImageInfo) return Promise.resolve(file);
+  const src = file.tempFilePath || file.path || '';
+  if (!src) return Promise.resolve(file);
+  return new Promise((resolve) => {
+    wx.getImageInfo({
+      src,
+      success: (info) => resolve({
+        ...file,
+        width: photoDimension(info.width),
+        height: photoDimension(info.height)
+      }),
+      fail: () => resolve(file)
+    });
+  });
+}
+
+function enrichFilesWithImageInfo(files) {
+  return Promise.all((files || []).map(enrichFileWithImageInfo));
 }
 
 function decoratePhotos(photos, selected) {
   return photos.map((photo) => {
     const selectedIndex = selected.indexOf(photo.id);
+    const normalized = normalizePhotoQuality(photo);
     return {
-      ...photo,
+      ...normalized,
       isSelected: selectedIndex >= 0,
       selectedOrder: selectedIndex + 1
     };
+  });
+}
+
+function compactPhotos(photos) {
+  const groupCounts = photos.reduce((counts, photo) => {
+    const group = Number(photo.group) || 0;
+    if (group) counts[group] = (counts[group] || 0) + 1;
+    return counts;
+  }, {});
+  return photos.map((photo, index) => {
+    const group = Number(photo.group) || 0;
+    return {
+      ...photo,
+      id: index + 1,
+      group: group && groupCounts[group] > 1 ? group : 0
+    };
+  });
+}
+
+function confirmQualityWarnings(photos) {
+  const count = qualityWarningCount(photos);
+  if (!count || !wx.showModal) return Promise.resolve(true);
+  return new Promise((resolve) => {
+    wx.showModal({
+      title: '图片质量可能影响识别',
+      content: `${count} 张图片分辨率、比例或拍摄构图可能影响 OCR。${OCR_RESULT_TABLE_GUIDANCE} 也可以继续识别后重点核对。`,
+      confirmText: '继续识别',
+      cancelText: '返回调整',
+      success: (res) => resolve(!!res.confirm),
+      fail: () => resolve(false)
+    });
   });
 }
 
@@ -202,6 +307,20 @@ function saveTaskForSmoke(task) {
   });
 }
 
+function navigateToTask(url, task) {
+  return new Promise((resolve) => {
+    wx.navigateTo({
+      url,
+      success: () => resolve(task),
+      fail: () => wx.redirectTo({
+        url,
+        success: () => resolve(task),
+        fail: () => resolve(task)
+      })
+    });
+  });
+}
+
 Page({
   data: {
     photos: decoratePhotos(initialPhotos, []),
@@ -211,7 +330,8 @@ Page({
     loading: false,
     showFixtureEntry: false,
     uploadError: '',
-    hasDraft: false
+    hasDraft: false,
+    qualityWarningCount: 0
   },
   onLoad(query = {}) {
     const draftPhotos = readUploadDraft();
@@ -219,16 +339,19 @@ Page({
       showFixtureEntry: query.fixture === 'realcase',
       photos: decoratePhotos(draftPhotos, []),
       reportCount: getReportCount(draftPhotos),
-      hasDraft: draftPhotos.length > 0
+      hasDraft: draftPhotos.length > 0,
+      qualityWarningCount: qualityWarningCount(draftPhotos)
     });
   },
   updatePhotos(photos, selected = this.data.selected) {
-    persistUploadDraft(photos);
+    const normalizedPhotos = (photos || []).map(normalizePhotoQuality);
+    persistUploadDraft(normalizedPhotos);
     this.setData({
       selected,
-      photos: decoratePhotos(photos, selected),
-      reportCount: getReportCount(photos),
-      hasDraft: photos.length > 0,
+      photos: decoratePhotos(normalizedPhotos, selected),
+      reportCount: getReportCount(normalizedPhotos),
+      hasDraft: normalizedPhotos.length > 0,
+      qualityWarningCount: qualityWarningCount(normalizedPhotos),
       uploadError: ''
     });
   },
@@ -283,7 +406,9 @@ Page({
           tempFilePath: photo.tempFilePath || '',
           fileName: photo.fileName || `report-${photo.id}`,
           mimeType: photo.mimeType || '',
-          size: photo.size || 0
+          size: photo.size || 0,
+          width: photo.width || 0,
+          height: photo.height || 0
         }));
       this.updatePhotos(nextPhotos, []);
       if (chosen.length > remain) {
@@ -295,7 +420,7 @@ Page({
         count: remain,
         mediaType: ['image'],
         sourceType: [sourceType],
-        success: (res) => onFiles(res.tempFiles || []),
+        success: (res) => enrichFilesWithImageInfo(res.tempFiles || []).then(onFiles),
         fail: (error) => {
           if (!error || !/cancel/i.test(error.errMsg || '')) {
             wx.showToast({ title: '\u9009\u62e9\u56fe\u7247\u5931\u8d25', icon: 'none' });
@@ -307,7 +432,7 @@ Page({
     wx.chooseImage({
       count: remain,
       sourceType: [sourceType],
-      success: (res) => onFiles(normalizeChooseImageFiles(res)),
+      success: (res) => enrichFilesWithImageInfo(normalizeChooseImageFiles(res)).then(onFiles),
       fail: (error) => {
         if (!error || !/cancel/i.test(error.errMsg || '')) {
           wx.showToast({ title: '\u9009\u62e9\u56fe\u7247\u5931\u8d25', icon: 'none' });
@@ -322,7 +447,7 @@ Page({
     this.chooseReportImages('album');
   },
   preview(event) {
-    const id = event.currentTarget.dataset.id;
+    const id = Number(event.currentTarget.dataset.id);
     const current = this.data.photos.find((photo) => photo.id === id);
     const urls = this.data.photos.map((photo) => photo.tempFilePath).filter(Boolean);
     if (current && current.tempFilePath && urls.length > 0) {
@@ -333,6 +458,14 @@ Page({
       return;
     }
     wx.showToast({ title: '\u6682\u65e0\u53ef\u9884\u89c8\u56fe\u7247', icon: 'none' });
+  },
+  removePhoto(event) {
+    if (this.data.loading) return;
+    const id = Number(event.currentTarget.dataset.id);
+    const photos = compactPhotos(this.data.photos.filter((photo) => Number(photo.id) !== id));
+    this.updatePhotos(photos, []);
+    if (photos.length === 0) this.setData({ grouping: false });
+    wx.showToast({ title: '\u5df2\u79fb\u9664', icon: 'none' });
   },
   startGrouping(event) {
     if (this.data.photos.length === 0) {
@@ -353,7 +486,7 @@ Page({
     });
   },
   toggleSelect(event) {
-    const id = event.currentTarget.dataset.id;
+    const id = Number(event.currentTarget.dataset.id);
     const selected = this.data.selected.slice();
     const index = selected.indexOf(id);
     if (index >= 0) selected.splice(index, 1);
@@ -391,42 +524,44 @@ Page({
       wx.showToast({ title: '\u8bf7\u5148\u9009\u62e9\u62a5\u544a\u56fe\u7247', icon: 'none' });
       return Promise.resolve(null);
     }
-    const app = getApp();
-    const profileId = app.getCurrentProfileId();
     const photos = this.data.photos.map((photo) => ({
       id: photo.id,
       group: photo.group || 0,
       tempFilePath: photo.tempFilePath || '',
       fileName: photo.fileName || `report-${photo.id}`,
       mimeType: photo.mimeType || '',
-      size: photo.size || 0
+      size: photo.size || 0,
+      width: photo.width || 0,
+      height: photo.height || 0,
+      qualityWarning: photo.qualityWarning || ''
     }));
 
-    wx.setStorageSync('uploadPhotos', photos);
-    this.setData({ loading: true, uploadError: '' });
+    return confirmQualityWarnings(photos).then((confirmed) => {
+      if (!confirmed) return null;
+      const app = getApp();
+      const profileId = app.getCurrentProfileId();
+      wx.setStorageSync('uploadPhotos', photos);
+      this.setData({ loading: true, uploadError: '' });
 
-    return preparePhotosForOcr(profileId, photos).then((uploadedPhotos) => api.createOcrTask({
-      profileId,
-      photos: toTaskPhotos(uploadedPhotos)
-    }, {
-      idempotencyKey: `ocr_${profileId}_${Date.now()}`
-    })).then((task) => {
-      const pending = wx.getStorageSync('pendingOcrTasks') || [];
-      const url = `/pages/upload/confirm?taskId=${task.id}&recognizing=1`;
-      wx.setStorageSync('pendingOcrTasks', [{
-        taskId: task.id,
+      return preparePhotosForOcr(profileId, photos).then((uploadedPhotos) => api.createOcrTask({
         profileId,
-        status: task.status,
-        photoCount: task.photoCount,
-        reportCount: task.reportCount,
-        createdAt: Date.now()
-      }].concat(pending.filter((item) => item.taskId !== task.id)));
-      clearUploadDraft();
-      wx.navigateTo({
-        url,
-        fail: () => wx.redirectTo({ url })
+        photos: toTaskPhotos(uploadedPhotos)
+      }, {
+        idempotencyKey: `ocr_${profileId}_${Date.now()}`
+      })).then((task) => {
+        const pending = wx.getStorageSync('pendingOcrTasks') || [];
+        const url = `/pages/upload/confirm?taskId=${task.id}&recognizing=1`;
+        wx.setStorageSync('pendingOcrTasks', [{
+          taskId: task.id,
+          profileId,
+          status: task.status,
+          photoCount: task.photoCount,
+          reportCount: task.reportCount,
+          createdAt: Date.now()
+        }].concat(pending.filter((item) => item.taskId !== task.id)));
+        clearUploadDraft();
+        return navigateToTask(url, task);
       });
-      return task;
     }).catch((error) => {
       persistUploadDraft(photos);
       this.setData({
@@ -462,11 +597,7 @@ Page({
         createdAt: Date.now()
       }].concat(pending.filter((item) => item.taskId !== task.id)));
       if (options.skipNavigate) return task;
-      wx.navigateTo({
-        url,
-        fail: () => wx.redirectTo({ url })
-      });
-      return task;
+      return navigateToTask(url, task);
     }).catch((error) => {
       this.setData({ loading: false });
       showApiErrorToast(error, '加载真实样例失败');
@@ -546,6 +677,39 @@ Page({
       wx.setStorageSync('lastEditSmokeReportId', next.reportId);
       return next;
     })));
+  },
+  runRealUploadSmokeForTest(options = {}) {
+    const files = Array.isArray(options.files) && options.files.length
+      ? options.files
+      : [{
+        base64: options.base64,
+        fileName: options.fileName,
+        mimeType: options.mimeType,
+        size: options.size
+      }];
+    if (!files.every((file) => file && file.base64)) return Promise.reject(new Error('missing base64 image'));
+    if (!wx.getFileSystemManager || !wx.env || !wx.env.USER_DATA_PATH) {
+      return Promise.reject(new Error('file system is unavailable'));
+    }
+    const now = Date.now();
+    const photos = files.slice(0, MAX_UPLOAD_PHOTOS).map((file, index) => {
+      const fileName = file.fileName || `real-upload-${now}-${index + 1}.jpg`;
+      const safeFileName = fileName.replace(/[^\w.\-]/g, '_');
+      const localPath = `${wx.env.USER_DATA_PATH}/${now}-${index + 1}-${safeFileName}`;
+      wx.getFileSystemManager().writeFileSync(localPath, file.base64, 'base64');
+      return {
+        id: index + 1,
+        group: 0,
+        tempFilePath: localPath,
+        fileName,
+        mimeType: file.mimeType || inferMimeType(fileName),
+        size: Number(file.size) || Math.ceil(file.base64.length * 0.75),
+        width: file.width || 0,
+        height: file.height || 0
+      };
+    });
+    this.updatePhotos(photos, []);
+    return this.startOcr();
   },
   openLastEditSmokeReportForTest() {
     const reportId = wx.getStorageSync('lastEditSmokeReportId');

@@ -1,5 +1,7 @@
 const { api } = require('../../utils/api');
 const { isNotFoundError, showApiErrorToast } = require('../../utils/error');
+const { formatReference } = require('../../utils/reference-range');
+const { markerText, metricReportMarkers } = require('../../utils/report-markers');
 
 function backToHealth() {
   wx.navigateBack({
@@ -24,7 +26,20 @@ Page({
   load() {
     this.setData({ loading: true });
     api.getReportDetail(this.reportId).then(({ report, groups }) => {
-      this.setData({ report, groups, findings: (report && report.findings) || [], loading: false });
+      const decoratedGroups = (groups || []).map((group) => ({
+        ...group,
+        items: (group.items || []).map((item) => {
+          const reportMarkers = metricReportMarkers(item);
+          return {
+            ...item,
+            referenceText: formatReference(item),
+            reportMarkers,
+            markerText: markerText(reportMarkers),
+            hasReportMarkers: reportMarkers.length > 0
+          };
+        })
+      }));
+      this.setData({ report, groups: decoratedGroups, findings: (report && report.findings) || [], loading: false });
     }).catch((error) => {
       this.setData({ loading: false });
       if (isNotFoundError(error)) {

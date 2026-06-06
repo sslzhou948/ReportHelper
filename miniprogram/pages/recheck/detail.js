@@ -3,6 +3,8 @@ const { daysBetween } = require('../../utils/date');
 const { isNotFoundError, showApiErrorFeedback, showApiErrorToast } = require('../../utils/error');
 const { todayString } = require('../../utils/recheck');
 
+const DEFAULT_REMINDER_DAYS = [3, 1, 0];
+
 function backToRecheck() {
   wx.navigateBack({
     fail: () => wx.switchTab({ url: '/pages/recheck/index' })
@@ -16,19 +18,40 @@ function daysToPlan(plan) {
 function buildReminderRows(plan) {
   const config = (plan && plan.reminderConfig) || {};
   const advanceDays = Array.isArray(config.advanceDays) ? config.advanceDays : [3, 1, 0];
-  const enabled = new Set(advanceDays.map(Number));
-  return [
-    { day: 3, label: '\u63d0\u524d 3 \u5929', checked: enabled.has(3) },
-    { day: 1, label: '\u63d0\u524d 1 \u5929', checked: enabled.has(1) },
-    { day: 0, label: '\u5f53\u5929\u4e0a\u5348', checked: enabled.has(0) }
-  ];
+  const enabled = new Set(advanceDays.map(Number).filter((day) => Number.isFinite(day) && day >= 0));
+  const days = Array.from(new Set(DEFAULT_REMINDER_DAYS.concat(Array.from(enabled)))).sort((left, right) => right - left);
+  return days.map((day) => ({
+    day,
+    label: day === 0 ? '\u5f53\u5929' : `\u63d0\u524d ${day} \u5929`,
+    checked: enabled.has(day),
+    isCustom: !DEFAULT_REMINDER_DAYS.includes(day)
+  }));
+}
+
+function getReminderTime(plan) {
+  const config = (plan && plan.reminderConfig) || {};
+  return plan && plan.timeOfDay ? plan.timeOfDay : (config.timeOfDay || '09:00');
+}
+
+function withTodoSwipeState(plan) {
+  if (!plan) return plan;
+  return {
+    ...plan,
+    todos: (plan.todos || []).map((todo) => ({
+      ...todo,
+      swipeOpen: !!todo.swipeOpen
+    }))
+  };
 }
 
 function applyPlan(page, plan, extra = {}) {
+  page.savedPlan = plan ? { ...plan } : null;
+  const viewPlan = withTodoSwipeState(plan);
   page.setData({
-    plan,
-    days: daysToPlan(plan),
-    reminderRows: buildReminderRows(plan),
+    plan: viewPlan,
+    days: daysToPlan(viewPlan),
+    reminderRows: buildReminderRows(viewPlan),
+    reminderTime: getReminderTime(viewPlan),
     ...extra
   });
 }
@@ -38,7 +61,50 @@ Page({
     plan: null,
     days: 0,
     reminderRows: [],
+    reminderTime: '09:00',
+    today: todayString(),
+    addingTodo: false,
+    todoDraft: '',
+    addingReminderDay: false,
+    reminderDayDraft: '',
     loading: false
+  },
+  setTodoSwipeOpen(todoId) {
+    if (!this.data.plan) return;
+    this.setData({
+      plan: {
+        ...this.data.plan,
+        todos: (this.data.plan.todos || []).map((todo) => ({
+          ...todo,
+          swipeOpen: todo.id === todoId
+        }))
+      }
+    });
+  },
+  closeTodoSwipe() {
+    this.setTodoSwipeOpen('');
+  },
+  onTodoTouchStart(event) {
+    const touch = event.touches && event.touches[0];
+    if (!touch) return;
+    this.todoTouch = {
+      id: event.currentTarget.dataset.id,
+      startX: touch.clientX,
+      startY: touch.clientY
+    };
+  },
+  onTodoTouchEnd(event) {
+    if (!this.todoTouch) return;
+    const touch = event.changedTouches && event.changedTouches[0];
+    if (!touch) {
+      this.todoTouch = null;
+      return;
+    }
+    const deltaX = touch.clientX - this.todoTouch.startX;
+    const deltaY = touch.clientY - this.todoTouch.startY;
+    const isHorizontal = Math.abs(deltaX) > 44 && Math.abs(deltaX) > Math.abs(deltaY) * 1.2;
+    if (isHorizontal) this.setTodoSwipeOpen(deltaX < 0 ? this.todoTouch.id : '');
+    this.todoTouch = null;
   },
   onLoad(query) {
     this.planId = query.planId;
@@ -76,108 +142,199 @@ Page({
   goBack() {
     wx.navigateBack();
   },
-  editField(event) {
+  onFieldInput(event) {
     if (!this.data.plan) return;
     const key = event.currentTarget.dataset.key;
-    const label = event.currentTarget.dataset.label || '\u5b57\u6bb5';
-    wx.showModal({
-      title: `\u7f16\u8f91${label}`,
-      editable: true,
-      placeholderText: key === 'date' ? todayString() : '\u8bf7\u8f93\u5165',
-      content: String(this.data.plan[key] || ''),
-      confirmText: '\u4fdd\u5b58',
-      success: (res) => {
-        if (!res.confirm) return;
-        const value = String(res.content || '').trim();
-        if (!value && key !== 'department') {
-          wx.showToast({ title: `\u8bf7\u8f93\u5165${label}`, icon: 'none' });
-          return;
-        }
-        if (key === 'date' && !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-          wx.showToast({ title: '\u8bf7\u8f93\u5165 YYYY-MM-DD', icon: 'none' });
-          return;
-        }
-        if (key === 'date' && value < todayString()) {
-          wx.showToast({ title: '\u590d\u67e5\u65e5\u671f\u4e0d\u80fd\u65e9\u4e8e\u4eca\u5929', icon: 'none' });
-          return;
-        }
-        api.updateRecheckPlan(this.data.plan.id, {
-          [key]: value
-        }, {
-          idempotencyKey: `recheck_edit_${this.data.plan.id}_${key}_${Date.now()}`
-        }).then((plan) => {
-          applyPlan(this, plan);
-          wx.showToast({ title: '\u5df2\u4fdd\u5b58', icon: 'success' });
-        }).catch((error) => {
-          if (isNotFoundError(error)) {
-            this.showPlanGone();
-            return;
-          }
-          showApiErrorFeedback(error, '\u4fdd\u5b58\u5931\u8d25');
-        });
+    this.setData({
+      plan: {
+        ...this.data.plan,
+        [key]: event.detail.value
       }
+    });
+  },
+  onFieldBlur(event) {
+    const key = event.currentTarget.dataset.key;
+    this.saveField(key, event.detail.value);
+  },
+  onDateChange(event) {
+    this.saveField('date', event.detail.value);
+  },
+  saveField(key, rawValue) {
+    if (!this.data.plan) return;
+    const value = String(rawValue || '').trim();
+    const labels = {
+      type: '\u68c0\u67e5\u7c7b\u578b',
+      date: '\u65e5\u671f',
+      hospital: '\u533b\u9662',
+      department: '\u79d1\u5ba4'
+    };
+    if (!value && key !== 'department') {
+      wx.showToast({ title: `\u8bf7\u586b\u5199${labels[key] || '\u5b57\u6bb5'}`, icon: 'none' });
+      applyPlan(this, this.savedPlan || this.data.plan);
+      return;
+    }
+    if (key === 'date' && value < todayString()) {
+      wx.showToast({ title: '\u590d\u67e5\u65e5\u671f\u4e0d\u80fd\u65e9\u4e8e\u4eca\u5929', icon: 'none' });
+      applyPlan(this, this.savedPlan || this.data.plan);
+      return;
+    }
+    const savedValue = this.savedPlan ? String(this.savedPlan[key] || '').trim() : '';
+    if (value === savedValue) return;
+    const previousPlan = this.savedPlan || this.data.plan;
+    const optimisticPlan = {
+      ...this.data.plan,
+      [key]: value
+    };
+    this.setData({
+      plan: optimisticPlan,
+      days: daysToPlan(optimisticPlan),
+      reminderRows: buildReminderRows(optimisticPlan)
+    });
+    api.updateRecheckPlan(this.data.plan.id, {
+      [key]: value
+    }, {
+      idempotencyKey: `recheck_edit_${this.data.plan.id}_${key}_${Date.now()}`
+    }).then((plan) => {
+      applyPlan(this, plan);
+      wx.showToast({ title: '\u5df2\u4fdd\u5b58', icon: 'success' });
+    }).catch((error) => {
+      if (isNotFoundError(error)) {
+        this.showPlanGone();
+        return;
+      }
+      applyPlan(this, previousPlan);
+      showApiErrorFeedback(error, '\u4fdd\u5b58\u5931\u8d25');
     });
   },
   addTodo() {
     if (!this.data.plan) return;
-    wx.showModal({
-      title: '\u6dfb\u52a0\u5f85\u529e',
-      editable: true,
-      placeholderText: '\u4f8b\u5982\uff1a\u51c6\u5907\u68c0\u67e5\u5355',
-      confirmText: '\u6dfb\u52a0',
-      success: (res) => {
-        if (!res.confirm) return;
-        const text = String(res.content || '').trim();
-        if (!text) {
-          wx.showToast({ title: '\u8bf7\u8f93\u5165\u5f85\u529e\u5185\u5bb9', icon: 'none' });
-          return;
-        }
-        api.addRecheckTodo(this.data.plan.id, {
-          text,
-          isDone: false,
-          isTemplate: false
-        }, {
-          idempotencyKey: `todo_${this.data.plan.id}_${Date.now()}`
-        }).then(() => {
-          wx.showToast({ title: '\u5df2\u6dfb\u52a0', icon: 'success' });
-          this.load();
-        }).catch(() => {
-          wx.showToast({ title: '\u6dfb\u52a0\u5f85\u529e\u5931\u8d25', icon: 'none' });
-        });
-      }
+    this.setData({ addingTodo: true, todoDraft: '' });
+  },
+  onTodoDraftInput(event) {
+    this.setData({ todoDraft: event.detail.value });
+  },
+  cancelTodoDraft() {
+    this.setData({ addingTodo: false, todoDraft: '' });
+  },
+  saveTodoDraft() {
+    if (!this.data.plan) return;
+    const text = String(this.data.todoDraft || '').trim();
+    if (!text) {
+      wx.showToast({ title: '\u8bf7\u8f93\u5165\u5f85\u529e\u5185\u5bb9', icon: 'none' });
+      return;
+    }
+    api.addRecheckTodo(this.data.plan.id, {
+      text,
+      isDone: false,
+      isTemplate: false
+    }, {
+      idempotencyKey: `todo_${this.data.plan.id}_${Date.now()}`
+    }).then((plan) => {
+      wx.showToast({ title: '\u5df2\u6dfb\u52a0', icon: 'success' });
+      applyPlan(this, plan, { addingTodo: false, todoDraft: '' });
+    }).catch((error) => {
+      showApiErrorToast(error, '\u6dfb\u52a0\u5f85\u529e\u5931\u8d25');
+    });
+  },
+  deleteTodo(event) {
+    if (!this.data.plan) return;
+    const todoId = event.currentTarget.dataset.id;
+    api.deleteRecheckTodo(this.data.plan.id, todoId, {
+      idempotencyKey: `delete_todo_${this.data.plan.id}_${todoId}`
+    }).then((plan) => {
+      wx.showToast({ title: '\u5df2\u5220\u9664', icon: 'success' });
+      applyPlan(this, plan);
+    }).catch((error) => {
+      showApiErrorToast(error, '\u5220\u9664\u5f85\u529e\u5931\u8d25');
     });
   },
   toggleReminder(event) {
     if (!this.data.plan) return;
     const day = Number(event.currentTarget.dataset.day);
     const checked = !!event.detail.value;
-    const currentConfig = this.data.plan.reminderConfig || {};
-    const currentDays = Array.isArray(currentConfig.advanceDays) ? currentConfig.advanceDays.map(Number) : [3, 1, 0];
-    const nextDays = currentDays
+    const nextDays = this.currentReminderDays()
       .filter((item) => item !== day)
       .concat(checked ? [day] : [])
       .sort((a, b) => b - a);
+    this.updateReminderDays(nextDays);
+  },
+  onReminderTimeChange(event) {
+    if (!this.data.plan) return;
+    const timeOfDay = event.detail.value || '09:00';
+    const nextConfig = {
+      ...(this.data.plan.reminderConfig || {}),
+      timeOfDay
+    };
+    const optimisticPlan = {
+      ...this.data.plan,
+      timeOfDay,
+      reminderConfig: nextConfig
+    };
+    applyPlan(this, optimisticPlan);
+    api.updateRecheckPlan(this.data.plan.id, {
+      timeOfDay,
+      reminderConfig: nextConfig
+    }, {
+      idempotencyKey: `recheck_reminder_time_${this.data.plan.id}_${Date.now()}`
+    }).then((plan) => {
+      applyPlan(this, plan);
+    }).catch((error) => {
+      showApiErrorToast(error, '\u66f4\u65b0\u63d0\u9192\u65f6\u95f4\u5931\u8d25');
+      this.load();
+    });
+  },
+  addReminderDay() {
+    this.setData({ addingReminderDay: true, reminderDayDraft: '' });
+  },
+  onReminderDayDraftInput(event) {
+    this.setData({ reminderDayDraft: event.detail.value });
+  },
+  cancelReminderDayDraft() {
+    this.setData({ addingReminderDay: false, reminderDayDraft: '' });
+  },
+  saveReminderDayDraft() {
+    if (!this.data.plan) return;
+    const day = Number(this.data.reminderDayDraft);
+    if (!Number.isInteger(day) || day < 0 || day > 365) {
+      wx.showToast({ title: '\u8bf7\u8f93\u5165 0-365 \u5929', icon: 'none' });
+      return;
+    }
+    this.updateReminderDays(Array.from(new Set(this.currentReminderDays().concat(day))).sort((left, right) => right - left), {
+      addingReminderDay: false,
+      reminderDayDraft: ''
+    });
+  },
+  deleteReminderDay(event) {
+    const day = Number(event.currentTarget.dataset.day);
+    this.updateReminderDays(this.currentReminderDays().filter((item) => item !== day));
+  },
+  currentReminderDays() {
+    const config = (this.data.plan && this.data.plan.reminderConfig) || {};
+    return (Array.isArray(config.advanceDays) ? config.advanceDays : [3, 1, 0])
+      .map(Number)
+      .filter((day) => Number.isInteger(day) && day >= 0);
+  },
+  updateReminderDays(advanceDays, extra = {}) {
+    if (!this.data.plan) return;
+    const currentConfig = this.data.plan.reminderConfig || {};
     const nextConfig = {
       ...currentConfig,
-      advanceDays: nextDays,
+      advanceDays,
+      timeOfDay: this.data.reminderTime,
       subscribeAccepted: !!currentConfig.subscribeAccepted
     };
     const optimisticPlan = {
       ...this.data.plan,
       reminderConfig: nextConfig
     };
-    applyPlan(this, optimisticPlan);
+    applyPlan(this, optimisticPlan, extra);
     api.updateRecheckPlan(this.data.plan.id, {
       reminderConfig: nextConfig
     }, {
-      idempotencyKey: `recheck_reminder_${this.data.plan.id}_${day}_${Date.now()}`
+      idempotencyKey: `recheck_reminder_days_${this.data.plan.id}_${Date.now()}`
     }).then((plan) => {
-      applyPlan(this, plan);
+      applyPlan(this, plan, extra);
     }).catch((error) => {
-      if (isNotFoundError(error)) {
-        this.showPlanGone();
-        return;
-      }
       showApiErrorToast(error, '\u66f4\u65b0\u63d0\u9192\u5931\u8d25');
       this.load();
     });

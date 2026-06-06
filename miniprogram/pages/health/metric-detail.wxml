@@ -24,17 +24,26 @@
     </view>
   </view>
 
-  <view wx:if="{{!hasTrendChart}}" class="pad mt-12">
-    <view class="notice">{{trendNotice}}</view>
-  </view>
-  <view wx:else class="pad mt-12">
+  <view class="pad mt-12">
     <view class="card card-pad">
       <view class="report-head">
         <view class="title">趋势</view>
-        <view class="tiny">← 滑动查看更早 →</view>
+        <view wx:if="{{hasTrendChart}}" class="tiny">← 滑动查看 →</view>
       </view>
-      <trend-chart history="{{history}}" />
-      <view class="tiny mt-12">参考范围可能因医院不同有差异，每次报告的参考值见下方历史记录</view>
+      <view class="range-row compact">
+        <view
+          wx:for="{{rangeOptions}}"
+          wx:key="key"
+          data-range="{{item.key}}"
+          bindtap="switchRange"
+          class="range-chip {{range === item.key ? 'active' : ''}}"
+        >{{item.label}}</view>
+      </view>
+      <view wx:if="{{!hasTrendChart}}" class="notice">{{trendNotice}}</view>
+      <block wx:else>
+        <trend-chart history="{{history}}" />
+        <view class="tiny mt-12">{{chartReferenceNotice}}</view>
+      </block>
     </view>
   </view>
 
