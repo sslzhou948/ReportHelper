@@ -4066,6 +4066,23 @@ asyncChecks.push(client.get('/api/profiles').then((data) => {
   assert.strictEqual(capturedRequest.timeout, DEFAULT_REQUEST_TIMEOUT_MS);
 }));
 
+let capturedSlashRequest = null;
+const slashClient = createApiClient({
+  baseUrl: 'https://api.example.test/',
+  storage: createMemoryStorage(),
+  request(config) {
+    capturedSlashRequest = config;
+    return Promise.resolve({
+      statusCode: 200,
+      data: { data: { ok: true } }
+    });
+  }
+});
+
+asyncChecks.push(slashClient.get('/api/health').then(() => {
+  assert.strictEqual(capturedSlashRequest.url, 'https://api.example.test/api/health');
+}));
+
 const refreshStorage = createMemoryStorage({
   token: 'expired_token',
   refreshToken: 'refresh_token_1',

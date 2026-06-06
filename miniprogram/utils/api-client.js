@@ -35,6 +35,10 @@ function createMemoryStorage(initial = {}) {
   };
 }
 
+function normalizeBaseUrl(baseUrl) {
+  return String(baseUrl || '').replace(/\/+$/, '');
+}
+
 function createWxStorage() {
   return {
     get(key) {
@@ -72,7 +76,7 @@ function redirectToLogin() {
 }
 
 function createApiClient(options = {}) {
-  const baseUrl = options.baseUrl || '';
+  const baseUrl = normalizeBaseUrl(options.baseUrl);
   const defaultTimeout = options.timeout || DEFAULT_REQUEST_TIMEOUT_MS;
   const storage = options.storage || (typeof wx !== 'undefined' ? createWxStorage() : createMemoryStorage());
   const request = options.request || ((config) => new Promise((resolve, reject) => {
