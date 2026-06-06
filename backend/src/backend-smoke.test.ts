@@ -372,6 +372,13 @@ assert.equal(healthResponse.statusCode, 200);
 assert.equal(healthResponse.json().data.ok, true);
 assert.equal(healthResponse.json().data.database.status, 'unchecked');
 
+const doubleSlashHealthResponse = await app.inject({
+  method: 'GET',
+  url: '//api/health'
+});
+assert.equal(doubleSlashHealthResponse.statusCode, 200);
+assert.equal(doubleSlashHealthResponse.json().data.ok, true);
+
 const unhealthyApp = buildApp({
   env,
   prisma: {
@@ -436,6 +443,11 @@ const prodNoTokenResponse = await prodApp.inject({
   url: '/api/profiles'
 });
 assert.equal(prodNoTokenResponse.statusCode, 401);
+const prodDoubleSlashNoTokenResponse = await prodApp.inject({
+  method: 'GET',
+  url: '//api/profiles'
+});
+assert.equal(prodDoubleSlashNoTokenResponse.statusCode, 401);
 const prodAccessToken = prodApp.jwt.sign({ sub: loginPayload.data.userId, typ: 'access' }, { expiresIn: '2h' });
 const prodProfilesResponse = await prodApp.inject({
   method: 'GET',
