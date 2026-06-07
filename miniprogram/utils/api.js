@@ -56,7 +56,10 @@ function createHybridStorage(options = {}) {
 function createBackendApi(client) {
   return {
     authWxLogin(payload, config) {
-      return client.post('/api/auth/wx-login', payload, config);
+      return client.post('/api/auth/wx-login', payload, {
+        ...config,
+        skipUnauthorizedRedirect: true
+      });
     },
     refreshAuth(payload) {
       return client.post('/api/auth/refresh', payload);

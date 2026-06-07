@@ -418,6 +418,29 @@ const productionWxSession = await resolveWxLoginSession({
 assert.equal(productionWxSession.wxOpenid, 'wx_openid_from_tencent');
 assert.equal(productionWxSession.wxUnionid, 'wx_unionid_from_tencent');
 
+await assert.rejects(resolveWxLoginSession({
+  ...env,
+  NODE_ENV: 'production'
+}, 'bad_wx_code', async () => ({
+  ok: true,
+  status: 200,
+  json: async () => ({
+    errcode: 40029,
+    errmsg: 'invalid code'
+  })
+})), /WECHAT_CODE2SESSION_FAILED:40029:invalid code/);
+
+const invalidJsonResponse = await app.inject({
+  method: 'POST',
+  url: '/api/auth/wx-login',
+  headers: {
+    'content-type': 'application/json'
+  },
+  payload: '{'
+});
+assert.equal(invalidJsonResponse.statusCode, 400);
+assert.equal(invalidJsonResponse.json().error.code, 'INVALID_JSON_BODY');
+
 const loginResponse = await app.inject({
   method: 'POST',
   url: '/api/auth/wx-login',
@@ -438,6 +461,26 @@ const prodApp = buildApp({
   },
   prisma: prisma as any
 });
+const savedFetch = globalThis.fetch;
+globalThis.fetch = async () => ({
+  ok: true,
+  status: 200,
+  json: async () => ({
+    errcode: 40029,
+    errmsg: 'invalid code'
+  })
+} as Response);
+const prodFailedLoginResponse = await prodApp.inject({
+  method: 'POST',
+  url: '/api/auth/wx-login',
+  payload: {
+    code: 'bad_wx_code'
+  }
+});
+globalThis.fetch = savedFetch;
+assert.equal(prodFailedLoginResponse.statusCode, 401);
+assert.equal(prodFailedLoginResponse.json().error.code, 'WX_LOGIN_FAILED');
+
 const prodNoTokenResponse = await prodApp.inject({
   method: 'GET',
   url: '/api/profiles'

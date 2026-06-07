@@ -25,7 +25,7 @@ const { requestWxLoginCode } = require('../miniprogram/utils/auth');
 const { buildSourcePreviewUrls, getStoredUploadPhotos } = require('../miniprogram/utils/source-preview');
 const { ApiError, DEFAULT_REQUEST_TIMEOUT_MS, createApiClient, createMemoryStorage, isTimeoutError } = require('../miniprogram/utils/api-client');
 const { getApiErrorMessage, getApiErrorToastTitle, getValidationErrorLines, isNotFoundError } = require('../miniprogram/utils/error');
-const { createApi } = require('../miniprogram/utils/api');
+const { createApi, createBackendApi } = require('../miniprogram/utils/api');
 const { clearAuthSession, hasAuthSession, shouldRequireLogin } = require('../miniprogram/utils/session');
 const { realcaseOcrDrafts } = require('../miniprogram/data/ocr-fixtures');
 const mock = require('../miniprogram/data/mock');
@@ -4101,6 +4101,24 @@ const slashClient = createApiClient({
 
 asyncChecks.push(slashClient.get('/api/health').then(() => {
   assert.strictEqual(capturedSlashRequest.url, 'https://api.example.test/api/health');
+}));
+
+const loginClientCalls = [];
+const backendApiForLogin = createBackendApi({
+  post(pathname, payload, config) {
+    loginClientCalls.push({ pathname, payload, config });
+    return Promise.resolve({ ok: true });
+  }
+});
+asyncChecks.push(backendApiForLogin.authWxLogin({ code: 'wx_code' }, { requestId: 'req_login' }).then(() => {
+  assert.deepStrictEqual(loginClientCalls, [{
+    pathname: '/api/auth/wx-login',
+    payload: { code: 'wx_code' },
+    config: {
+      requestId: 'req_login',
+      skipUnauthorizedRedirect: true
+    }
+  }]);
 }));
 
 const refreshStorage = createMemoryStorage({

@@ -70,11 +70,27 @@ export function buildApp({ env, prisma }: BuildAppOptions) {
 
   app.setErrorHandler((error, request, reply) => {
     const requestId = getRequestId(request);
-    request.log.error({ error, requestId }, 'request failed');
-    reply.status(500).send({
+    const fastifyError = error as {
+      code?: string;
+      statusCode?: number;
+    };
+    const statusCode = (
+      typeof fastifyError.statusCode === 'number' &&
+      fastifyError.statusCode >= 400 &&
+      fastifyError.statusCode < 600
+    ) ? fastifyError.statusCode : 500;
+    const clientError = statusCode < 500;
+    const errorCode = clientError
+      ? (fastifyError.code === 'FST_ERR_CTP_INVALID_JSON_BODY' ? 'INVALID_JSON_BODY' : 'BAD_REQUEST')
+      : 'INTERNAL_ERROR';
+    const message = clientError ? '请求参数无效' : '服务暂时不可用';
+    const logPayload = { error, requestId };
+    if (clientError) request.log.warn(logPayload, 'request rejected');
+    else request.log.error(logPayload, 'request failed');
+    reply.status(statusCode).send({
       error: {
-        code: 'INTERNAL_ERROR',
-        message: '服务暂时不可用'
+        code: errorCode,
+        message
       },
       requestId
     });

@@ -21,6 +21,10 @@ type FetchLike = (url: string) => Promise<{
   json: () => Promise<Record<string, unknown>>;
 }>;
 
+function wxLoginFailureMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error || 'unknown error');
+}
+
 export async function resolveWxLoginSession(env: Env, code: string, fetcher: FetchLike = fetch) {
   if (env.NODE_ENV !== 'production') {
     return {
@@ -39,7 +43,8 @@ export async function resolveWxLoginSession(env: Env, code: string, fetcher: Fet
   const payload = await response.json();
   const errcode = payload.errcode;
   if (!response.ok || errcode) {
-    throw new Error(`WECHAT_CODE2SESSION_FAILED:${errcode || response.status}`);
+    const errmsg = typeof payload.errmsg === 'string' ? payload.errmsg : '';
+    throw new Error(`WECHAT_CODE2SESSION_FAILED:${errcode || response.status}${errmsg ? `:${errmsg}` : ''}`);
   }
   if (!payload.openid || typeof payload.openid !== 'string') {
     throw new Error('WECHAT_CODE2SESSION_MISSING_OPENID');
@@ -81,10 +86,14 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     try {
       wxSession = await resolveWxLoginSession(app.env, parsed.data.code);
     } catch (error) {
+      request.log.warn({
+        requestId,
+        reason: wxLoginFailureMessage(error)
+      }, 'WeChat login failed');
       return reply.status(401).send({
         error: {
-          code: 'UNAUTHORIZED',
-          message: 'WeChat login failed'
+          code: 'WX_LOGIN_FAILED',
+          message: '微信登录失败，请重试'
         },
         requestId
       });
