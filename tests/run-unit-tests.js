@@ -3932,7 +3932,7 @@ sequentialChecks.push(async () => {
   }
 });
 
-asyncChecks.push((async () => {
+sequentialChecks.push(async () => {
   const pagePath = path.resolve(__dirname, '..', 'miniprogram', 'pages', 'upload', 'pick.js');
   const apiPath = path.resolve(__dirname, '..', 'miniprogram', 'utils', 'api.js');
   const pageModulePath = require.resolve(pagePath);
@@ -4015,7 +4015,7 @@ asyncChecks.push((async () => {
     global.getApp = savedGetApp;
     delete require.cache[pageModulePath];
   }
-})());
+});
 
 assert.strictEqual(realcaseOcrDrafts.length, 7, 'realcase OCR baseline should cover all provided images');
 assert.ok(realcaseOcrDrafts.some((draft) => (draft.metrics || []).some((metric) => metric.tone === 'high')), 'realcase baseline should include abnormal metrics');
@@ -4439,7 +4439,7 @@ asyncChecks.push(mockApi.getProfiles().then((profiles) => {
   assert.ok(profiles[0].id && profiles[0].realName, 'profile list items should match API contract');
 }));
 
-asyncChecks.push((async () => {
+sequentialChecks.push(async () => {
   const appPath = path.resolve(__dirname, '..', 'miniprogram', 'app.js');
   const appModulePath = require.resolve(appPath);
   const savedWx = global.wx;
@@ -4450,6 +4450,7 @@ asyncChecks.push((async () => {
     healthhelperApiMode: 'mock'
   };
   let navigatedTo = '';
+  let relaunchedTo = '';
   let appConfig = null;
   try {
     global.wx = {
@@ -4458,6 +4459,7 @@ asyncChecks.push((async () => {
       removeStorageSync: (key) => { delete storageState[key]; },
       getSystemInfoSync: () => ({ windowWidth: 375, statusBarHeight: 44 }),
       getMenuButtonBoundingClientRect: () => ({ bottom: 88 }),
+      showToast: () => {},
       navigateTo: ({ url }) => { navigatedTo = url; },
       reLaunch: ({ url }) => { relaunchedTo = url; }
     };
@@ -4496,12 +4498,35 @@ asyncChecks.push((async () => {
     assert.strictEqual(profileRequired, true, 'empty profile list should require profile creation');
     assert.strictEqual(navigatedTo, '');
     assert.strictEqual(relaunchedTo, '/pages/profile/onboard?state=noProfile');
+
+    storageState.healthhelperApiMode = 'backend';
+    storageState.token = 'expired_token';
+    storageState.refreshToken = 'expired_refresh';
+    storageState.userId = 'user_stale';
+    storageState.lastProfileId = 'stale_profile';
+    storageState.healthhelperBackendProfileId = 'stale_profile';
+    appConfig.globalData.currentProfileId = 'stale_profile';
+    relaunchedTo = '';
+    let unauthorized = false;
+    try {
+      await appConfig.ensureCurrentProfileId({
+        getProfiles: () => Promise.reject({ code: 'UNAUTHORIZED' })
+      });
+    } catch (error) {
+      unauthorized = error.code === 'UNAUTHORIZED';
+    }
+    assert.strictEqual(unauthorized, true, 'expired backend session should bubble the unauthorized error');
+    assert.strictEqual(relaunchedTo, '/pages/profile/onboard');
+    assert.strictEqual(storageState.token, undefined);
+    assert.strictEqual(storageState.refreshToken, undefined);
+    assert.strictEqual(storageState.lastProfileId, undefined);
+    assert.strictEqual(storageState.healthhelperBackendProfileId, undefined);
   } finally {
     global.wx = savedWx;
     global.App = savedApp;
     delete require.cache[appModulePath];
   }
-})());
+});
 asyncChecks.push(mockApi.authWxLogin({ code: 'code_1' }).then((session) => {
   assert.ok(session.token);
   assert.ok(session.refreshToken);

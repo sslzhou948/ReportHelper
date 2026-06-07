@@ -1,6 +1,7 @@
 const store = require('./utils/store');
 const { getRuntimeApiOptions } = require('./utils/api-config');
 const {
+  clearAuthSession,
   createAuthRequiredError,
   redirectToOnboard,
   shouldRequireLogin
@@ -88,6 +89,12 @@ App({
       const profileId = (matched || profiles[0]).id;
       if (profileId) this.setCurrentProfileId(profileId);
       return profileId;
+    }).catch((error) => {
+      if (error && ['AUTH_REQUIRED', 'UNAUTHORIZED'].includes(error.code)) {
+        clearAuthSession();
+        redirectToOnboard();
+      }
+      throw error;
     });
   },
 
