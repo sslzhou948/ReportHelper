@@ -1183,7 +1183,7 @@ function filterMetricsForReportContext(metrics: any[], originalType: string, lin
     metrics: metrics.filter((metric) => !isLikelyFalseInflammationMetricInBloodRoutine(metric)),
     warnings: [{
       code: 'OCR_SUSPECT_METRICS_SUPPRESSED',
-      message: `OCR 可能把血常规末尾行误识别为 ${suppressedNames}，已从自动指标中移除，请核对原图。`
+      message: `AI识别可能把血常规末尾行误识别为 ${suppressedNames}，已从自动指标中移除，请核对原图。`
     }]
   };
 }
@@ -1212,7 +1212,7 @@ function partialIndexedTableWarnings(originalType: string, lines: string[], metr
   if (missingCount < 4) return [];
   return [{
     code: 'OCR_PARTIAL_INDEXED_TABLE',
-    message: `OCR 原文显示这张血常规表至少编号到 ${maxIndex} 项，但当前只解析到 ${bloodRoutineMetricCount} 项，可能漏行或错行。请裁剪/重拍后重试，或人工核对补录。`
+    message: `AI识别原文显示这张血常规表至少编号到 ${maxIndex} 项，但当前只解析到 ${bloodRoutineMetricCount} 项，可能漏行或错行。请裁剪/重拍后重试，或人工核对补录。`
   }];
 }
 
@@ -1264,7 +1264,7 @@ export function draftFromRawOcr(rawText: string, group: RawOcrReportGroupRef) {
   if (!metrics.length && !findings.length && status !== 'not_report') {
     warnings.push({
       code: 'OCR_RAW_TEXT_UNSTRUCTURED',
-      message: 'OCR returned text, but no laboratory metric table could be parsed automatically.'
+      message: 'AI识别返回了文本，但未能自动解析出检验指标表。'
     });
     status = 'needs_manual_input';
   }

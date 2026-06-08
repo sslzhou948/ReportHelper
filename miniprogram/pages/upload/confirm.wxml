@@ -8,7 +8,7 @@
     <view wx:if="{{recognizing}}" class="sub">预计将识别为 {{reportCount}} 份报告，完成后会进入核对流程。</view>
     <view wx:else class="sub">共识别出 {{reportCount}} 份报告。请逐份查看详情核对，有冲突的请优先处理。</view>
     <view wx:if="{{!recognizing && taskStatus !== 'failed'}}" class="confirm-check-tip">
-      OCR 可能漏识别或识别错位，保存前请核对医院、日期、报告类型、指标结果和单位。
+      AI识别可能漏识别或识别错位，保存前请核对医院、日期、报告类型、指标结果和单位。
     </view>
     <view wx:if="{{profileNoticeText}}" class="profile-notice">{{profileNoticeText}}</view>
   </view>
@@ -50,7 +50,7 @@
   <view wx:if="{{!recognizing && taskStatus !== 'failed' && reportCount === 0}}" class="pad mt-12">
     <view class="card card-pad empty-report-card">
       <view class="failed-title">本次没有可保存的报告</view>
-      <view class="sub mt-8">已移除全部识别结果，或本次 OCR 未生成可核查报告。</view>
+      <view class="sub mt-8">已移除全部识别结果，或本次 AI识别未生成可核查报告。</view>
       <view class="failed-actions">
         <view class="btn secondary" bindtap="goHome">返回首页</view>
         <view class="btn" bindtap="reupload">重新上传</view>

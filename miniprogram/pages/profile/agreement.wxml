@@ -15,7 +15,7 @@
     </view>
     <view class="legal-card">
       <view class="legal-title">健康信息说明</view>
-      <view class="legal-body">识别结果可能受图片质量、报告格式和 OCR 能力影响。所有异常提示、趋势图和复查提醒仅用于辅助整理，应以医院正式报告和医生意见为准。</view>
+      <view class="legal-body">识别结果可能受图片质量、报告格式和 AI识别能力影响。所有异常提示、趋势图和复查提醒仅用于辅助整理，应以医院正式报告和医生意见为准。</view>
     </view>
     <view class="legal-card">
       <view class="legal-title">数据与账号</view>

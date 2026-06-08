@@ -125,7 +125,7 @@ function toDisplayReport(draft, index, uploadPhotos = []) {
     abnormal: abnormalCount ? `${abnormalCount} \u9879\u5f02\u5e38` : '',
     pendingText: pendingCount ? `${pendingCount} \u9879\u5f85\u786e\u8ba4\u5f52\u7c7b` : '',
     warningText: warningMessages[0] || '',
-    warningMoreText: warningMessages.length > 1 ? `另有 ${warningMessages.length - 1} 项 OCR 风险提示` : '',
+    warningMoreText: warningMessages.length > 1 ? `另有 ${warningMessages.length - 1} 项 AI识别风险提示` : '',
     manualText: needsManualInput ? manualReviewText(reportLike, missingBasicInfo) : '',
     inferredText: inferred ? '\u90e8\u5206\u57fa\u672c\u4fe1\u606f\u6765\u81ea\u540c\u6279\u63a8\u6d4b' : '',
     conflict: conflicts.length > 0,
@@ -139,7 +139,7 @@ function toDisplayReport(draft, index, uploadPhotos = []) {
     status: draft.status || '',
     reportLike,
     basicInfoIncomplete: missingBasicInfo,
-    reviewRequiredText: requiresDetailReview ? 'OCR 风险项请重点核对，确认无误后可直接保存。' : '',
+    reviewRequiredText: requiresDetailReview ? 'AI识别风险项请重点核对，确认无误后可直接保存。' : '',
     requiresDetailReview,
     needsManualInput
   };
@@ -285,7 +285,7 @@ Page({
       slowRecognition,
       recognitionTitle: isStaleRecognition ? '识别耗时较久' : (slowRecognition ? '识别时间比预期更久' : '正在识别报告'),
       recognitionMessage: slowRecognition
-        ? '真实 OCR 可能需要更长时间。你可以稍后从首页继续查看，也可以取消本次任务。'
+        ? '真实 AI识别可能需要更长时间。你可以稍后从首页继续查看，也可以取消本次任务。'
         : '系统正在读取图片内容，请保持网络通畅。',
       recognitionStatusText: slowRecognition
         ? (isStaleRecognition ? '当前状态：后台处理时间已超过预期，建议稍后查看；长时间无变化可取消后重新上传。' : '当前状态：仍在后台处理，完成后会自动进入确认')

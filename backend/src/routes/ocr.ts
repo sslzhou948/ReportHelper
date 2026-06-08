@@ -170,7 +170,7 @@ function applyBatchBasicInfoInference(drafts: OcrDraft[]) {
 
     warnings.push({
       code: 'BASIC_INFO_INFERRED_FROM_BATCH',
-      message: 'Some basic report fields were inferred from another report in the same OCR batch. Please review before saving.'
+      message: '同批 AI识别中部分报告基础信息来自其他报告推测，保存前请核对。'
     });
     return {
       ...draft,
@@ -470,7 +470,7 @@ export async function registerOcrRoutes(app: FastifyInstance) {
     if (uploadedPhotos.length !== uniquePhotoIds.length) {
       return failActiveOcrRunTask(taskId, {
         code: 'OCR_PHOTOS_UNAVAILABLE',
-        message: 'Some photos are unavailable for OCR retry'
+        message: '部分图片无法用于 AI识别重试'
       }, activeRunUpdatedAt);
     }
 
@@ -548,7 +548,7 @@ export async function registerOcrRoutes(app: FastifyInstance) {
             data: {
               status: 'failed',
               errorCode: warning?.code || 'OCR_EMPTY_RESULT',
-              errorMessage: warning?.message || 'OCR provider returned no report drafts'
+              errorMessage: warning?.message || 'AI识别服务未返回报告草稿'
             }
           });
           return tx.ocrTask.findUniqueOrThrow({
@@ -610,7 +610,7 @@ export async function registerOcrRoutes(app: FastifyInstance) {
       data: {
         status: 'failed',
         errorCode: 'OCR_TIMEOUT',
-        errorMessage: 'OCR task did not finish in the expected time. Please retry recognition.'
+        errorMessage: 'AI识别任务未在预期时间内完成，请重试识别。'
       },
       include: {
         drafts: {
@@ -681,7 +681,7 @@ export async function registerOcrRoutes(app: FastifyInstance) {
       : (originalConflicts.length ? 'needs_confirmation' : (originalMetrics.length || originalFindings.length ? 'needs_review' : 'needs_manual_input'));
     const splitWarning = {
       code: 'OCR_DRAFT_SPLIT_FROM_MULTIPAGE',
-      message: 'This report was split from a multi-page OCR draft. Please review each page before saving.'
+      message: '这份报告由多页 AI识别草稿拆分而来，保存前请逐页核对。'
     };
     const splitDrafts = sourcePhotoIds.map((photoId, index) => {
       const isFirstPage = index === 0;
@@ -770,7 +770,7 @@ export async function registerOcrRoutes(app: FastifyInstance) {
       return reply.status(400).send({
         error: {
           code: 'VALIDATION_FAILED',
-          message: 'OCR 任务参数无效',
+          message: 'AI识别任务参数无效',
           details: parsed.error.flatten()
         },
         requestId
@@ -805,7 +805,7 @@ export async function registerOcrRoutes(app: FastifyInstance) {
       return reply.status(403).send({
         error: {
           code: 'FORBIDDEN',
-          message: 'Fixture OCR is disabled in production'
+          message: '生产环境已关闭样例 AI识别入口'
         },
         requestId
       });
@@ -816,7 +816,7 @@ export async function registerOcrRoutes(app: FastifyInstance) {
       return reply.status(400).send({
         error: {
           code: 'PROFILE_REQUIRED',
-          message: 'Please create a profile before creating OCR tasks'
+          message: '请先创建档案后再发起 AI识别任务'
         },
         requestId
       });
@@ -845,7 +845,7 @@ export async function registerOcrRoutes(app: FastifyInstance) {
       return reply.status(400).send({
         error: {
           code: 'VALIDATION_FAILED',
-          message: 'OCR task requires photos or fixtureCaseIds'
+          message: 'AI识别任务需要图片或样例编号'
         },
         requestId
       });
@@ -872,7 +872,7 @@ export async function registerOcrRoutes(app: FastifyInstance) {
         return reply.status(400).send({
           error: {
             code: 'VALIDATION_FAILED',
-            message: 'Some photos are unavailable for OCR task creation'
+            message: '部分图片无法用于创建 AI识别任务'
           },
           requestId
         });
@@ -958,7 +958,7 @@ export async function registerOcrRoutes(app: FastifyInstance) {
       return reply.status(400).send({
         error: {
           code: 'VALIDATION_FAILED',
-          message: 'OCR task query is invalid',
+          message: 'AI识别任务查询参数无效',
           details: parsed.error.flatten()
         },
         requestId
@@ -1011,7 +1011,7 @@ export async function registerOcrRoutes(app: FastifyInstance) {
       return reply.status(404).send({
         error: {
           code: 'NOT_FOUND',
-          message: 'OCR 任务不存在'
+          message: 'AI识别任务不存在'
         },
         requestId
       });
@@ -1039,7 +1039,7 @@ export async function registerOcrRoutes(app: FastifyInstance) {
       return reply.status(404).send({
         error: {
           code: 'NOT_FOUND',
-          message: 'OCR task not found'
+          message: 'AI识别任务不存在'
         },
         requestId
       });
@@ -1049,7 +1049,7 @@ export async function registerOcrRoutes(app: FastifyInstance) {
       return reply.status(409).send({
         error: {
           code: 'CONFLICT',
-          message: 'Confirmed OCR task cannot be cancelled'
+          message: '已确认的 AI识别任务不能取消'
         },
         requestId
       });
@@ -1087,7 +1087,7 @@ export async function registerOcrRoutes(app: FastifyInstance) {
       return reply.status(400).send({
         error: {
           code: 'VALIDATION_FAILED',
-          message: 'OCR retry payload is invalid',
+          message: 'AI识别重试参数无效',
           details: parsed.error.flatten()
         },
         requestId
@@ -1103,7 +1103,7 @@ export async function registerOcrRoutes(app: FastifyInstance) {
       return reply.status(404).send({
         error: {
           code: 'NOT_FOUND',
-          message: 'OCR task not found'
+          message: 'AI识别任务不存在'
         },
         requestId
       });
@@ -1113,7 +1113,7 @@ export async function registerOcrRoutes(app: FastifyInstance) {
       return reply.status(409).send({
         error: {
           code: 'CONFLICT',
-          message: 'OCR task cannot be retried in its current status'
+          message: 'AI识别任务当前状态不能重试'
         },
         requestId
       });
@@ -1122,7 +1122,7 @@ export async function registerOcrRoutes(app: FastifyInstance) {
       return reply.status(409).send({
         error: {
           code: 'OCR_TASK_STILL_PROCESSING',
-          message: 'OCR task is still processing. Please wait for it to finish or cancel it before retrying.'
+          message: 'AI识别任务仍在处理中，请等待完成或取消后再重试。'
         },
         requestId
       });
@@ -1172,7 +1172,7 @@ export async function registerOcrRoutes(app: FastifyInstance) {
         return reply.status(404).send({
           error: {
             code: 'NOT_FOUND',
-            message: 'Profile not found for OCR retry'
+            message: '未找到用于 AI识别重试的档案'
           },
           requestId
         });
@@ -1197,7 +1197,7 @@ export async function registerOcrRoutes(app: FastifyInstance) {
       return reply.status(400).send({
         error: {
           code: 'VALIDATION_FAILED',
-          message: 'OCR 草稿参数无效',
+          message: 'AI识别草稿参数无效',
           details: parsed.error.flatten()
         },
         requestId
@@ -1213,7 +1213,7 @@ export async function registerOcrRoutes(app: FastifyInstance) {
       return reply.status(404).send({
         error: {
           code: 'NOT_FOUND',
-          message: 'OCR 草稿不存在'
+          message: 'AI识别草稿不存在'
         },
         requestId
       });
@@ -1247,7 +1247,7 @@ export async function registerOcrRoutes(app: FastifyInstance) {
       return reply.status(404).send({
         error: {
           code: 'NOT_FOUND',
-          message: 'OCR 草稿不存在'
+          message: 'AI识别草稿不存在'
         },
         requestId
       });
@@ -1269,7 +1269,7 @@ export async function registerOcrRoutes(app: FastifyInstance) {
       return reply.status(404).send({
         error: {
           code: 'NOT_FOUND',
-          message: 'OCR draft not found'
+          message: 'AI识别草稿不存在'
         },
         requestId
       });
@@ -1291,7 +1291,7 @@ export async function registerOcrRoutes(app: FastifyInstance) {
       return reply.status(404).send({
         error: {
           code: 'NOT_FOUND',
-          message: 'OCR draft not found'
+          message: 'AI识别草稿不存在'
         },
         requestId
       });
@@ -1301,8 +1301,8 @@ export async function registerOcrRoutes(app: FastifyInstance) {
         error: {
           code: updatedTask.error === 'NOT_SPLITTABLE' ? 'OCR_DRAFT_NOT_SPLITTABLE' : 'CONFLICT',
           message: updatedTask.error === 'NOT_SPLITTABLE'
-            ? 'Only multi-page OCR drafts can be split'
-            : 'OCR draft cannot be split in its current task status'
+            ? '只有多页 AI识别草稿可以拆分'
+            : 'AI识别草稿当前状态不能拆分'
         },
         requestId
       });
@@ -1321,7 +1321,7 @@ export async function registerOcrRoutes(app: FastifyInstance) {
       return reply.status(400).send({
         error: {
           code: 'VALIDATION_FAILED',
-          message: 'OCR 冲突参数无效',
+          message: 'AI识别冲突参数无效',
           details: parsed.error.flatten()
         },
         requestId
@@ -1337,7 +1337,7 @@ export async function registerOcrRoutes(app: FastifyInstance) {
       return reply.status(404).send({
         error: {
           code: 'NOT_FOUND',
-          message: 'OCR 草稿不存在'
+          message: 'AI识别草稿不存在'
         },
         requestId
       });

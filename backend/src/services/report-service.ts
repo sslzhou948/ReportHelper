@@ -67,7 +67,7 @@ export class UnresolvedDraftConflictsError extends Error {
   statusCode = 409;
 
   constructor(public conflicts: Array<{ draftId: string; conflicts: JsonObject[] }>) {
-    super('OCR 结果仍有未处理冲突，请先完成校准后再保存');
+    super('AI识别结果仍有未处理冲突，请先完成校准后再保存');
   }
 }
 
@@ -76,7 +76,7 @@ export class UnreviewedOcrDraftsError extends Error {
   statusCode = 409;
 
   constructor(public drafts: Array<{ draftId: string; status: string; reason: string }>) {
-    super('OCR reports still need review or manual completion before saving');
+    super('AI识别报告仍需核对或手动补全后再保存');
   }
 }
 

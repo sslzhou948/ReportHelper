@@ -920,7 +920,7 @@ function createMockApi() {
         return Promise.reject(new ApiError({
           code: 'CONFLICT',
           statusCode: 409,
-          message: 'OCR task cannot be retried in its current status'
+          message: 'AI识别任务当前状态不能重试'
         }));
       }
       task.status = 'queued';
@@ -1013,16 +1013,16 @@ function createMockApi() {
 
     splitOcrDraft(taskId, draftId) {
       const task = ocrTasks[taskId];
-      if (!task) return Promise.reject(new ApiError({ code: 'NOT_FOUND', statusCode: 404, message: 'OCR draft not found' }));
+      if (!task) return Promise.reject(new ApiError({ code: 'NOT_FOUND', statusCode: 404, message: 'AI识别草稿不存在' }));
       const index = (task.drafts || []).findIndex((draft) => draft.draftId === draftId);
-      if (index < 0) return Promise.reject(new ApiError({ code: 'NOT_FOUND', statusCode: 404, message: 'OCR draft not found' }));
+      if (index < 0) return Promise.reject(new ApiError({ code: 'NOT_FOUND', statusCode: 404, message: 'AI识别草稿不存在' }));
       if (['confirmed', 'cancelled'].includes(task.status)) {
-        return Promise.reject(new ApiError({ code: 'CONFLICT', statusCode: 409, message: 'OCR draft cannot be split in its current task status' }));
+        return Promise.reject(new ApiError({ code: 'CONFLICT', statusCode: 409, message: 'AI识别草稿当前状态不能拆分' }));
       }
       const draft = task.drafts[index];
       const sourcePhotoIds = (draft.sourcePhotoIds || []).filter(Boolean);
       if (sourcePhotoIds.length < 2) {
-        return Promise.reject(new ApiError({ code: 'OCR_DRAFT_NOT_SPLITTABLE', statusCode: 409, message: 'Only multi-page OCR drafts can be split' }));
+        return Promise.reject(new ApiError({ code: 'OCR_DRAFT_NOT_SPLITTABLE', statusCode: 409, message: '只有多页 AI识别草稿可以拆分' }));
       }
       const originalMetrics = draft.metrics || [];
       const originalFindings = draft.findings || [];
@@ -1032,7 +1032,7 @@ function createMockApi() {
         : (originalConflicts.length ? 'needs_confirmation' : (originalMetrics.length || originalFindings.length ? 'needs_review' : 'needs_manual_input'));
       const splitWarning = {
         code: 'OCR_DRAFT_SPLIT_FROM_MULTIPAGE',
-        message: 'This report was split from a multi-page OCR draft. Please review each page before saving.'
+        message: '这份报告由多页 AI识别草稿拆分而来，保存前请逐页核对。'
       };
       const splitDrafts = sourcePhotoIds.map((photoId, photoIndex) => ({
         ...clone(draft),
@@ -1086,7 +1086,7 @@ function createMockApi() {
       if (task && !['needs_confirmation', 'ready_to_save', 'confirmed'].includes(task.status)) {
         return Promise.reject({
           code: 'UNREVIEWED_OCR_DRAFTS',
-          message: 'OCR reports still need review or manual completion before saving',
+          message: 'AI识别报告仍需核对或手动补全后再保存',
           details: {
             drafts: [{
               draftId: '',
@@ -1129,7 +1129,7 @@ function createMockApi() {
       if (!drafts.length || blockedDrafts.length) {
         return Promise.reject({
           code: 'UNREVIEWED_OCR_DRAFTS',
-          message: 'OCR reports still need review or manual completion before saving',
+          message: 'AI识别报告仍需核对或手动补全后再保存',
           details: {
             drafts: blockedDrafts.length
               ? blockedDrafts

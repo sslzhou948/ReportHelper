@@ -209,6 +209,20 @@ const backendRawOcrParserTs = fs.readFileSync(path.join(root, 'backend', 'src', 
 const backendReportServiceTs = fs.readFileSync(path.join(root, 'backend', 'src', 'services', 'report-service.ts'), 'utf8');
 const backendUploadRouteTs = fs.readFileSync(path.join(root, 'backend', 'src', 'routes', 'uploads.ts'), 'utf8');
 const backendUploadStorageTs = fs.readFileSync(path.join(root, 'backend', 'src', 'services', 'upload-storage.ts'), 'utf8');
+const userFacingOcrCopySources = [
+  ['upload pick wxml', uploadPickWxml],
+  ['upload confirm wxml', uploadConfirmWxml],
+  ['upload edit detail wxml', uploadEditDetailWxml],
+  ['upload conflict wxml', uploadConflictWxml],
+  ['profile agreement wxml', profileAgreementWxml],
+  ['profile privacy wxml', profilePrivacyWxml]
+];
+for (const [name, source] of userFacingOcrCopySources) {
+  assert.ok(!source.includes('OCR'), `${name} must call OCR AI识别 in user-facing copy`);
+}
+assert.ok(!uploadPickJs.includes('影响 OCR') && !uploadConfirmJs.includes('OCR 风险') && !uploadConfirmJs.includes('真实 OCR'), 'upload flow runtime copy must call OCR AI识别');
+assert.ok(!apiMockJs.includes('OCR draft') && !apiMockJs.includes('OCR reports still need review'), 'mock API user-facing OCR messages must use AI识别 wording');
+assert.ok(!backendReportServiceTs.includes('OCR 结果') && !backendReportServiceTs.includes('OCR reports still need review'), 'backend report save errors must use AI识别 wording');
 assert.ok(backendOcrProviderTs.includes('OcrProviderInput') && backendOcrProviderTs.includes('OcrProviderResult') && backendOcrProviderTs.includes('recognizePhotos'), 'backend OCR provider boundary must expose stable real-photo input and output types');
 assert.ok(backendOcrProviderTs.includes('partialText') && backendOcrProviderTs.includes('OCR_OUTPUT_TRUNCATED') && backendOcrProviderTs.includes('仅保留部分识别文本'), 'commercial OCR must preserve partial truncated output as a review-gated draft');
 assert.ok(backendOcrProviderTs.includes('禁止输出医学解释') && backendOcrProviderTs.includes('不要合并相邻项目') && backendOcrProviderTs.includes('项目简称/代码'), 'commercial OCR prompt must favor raw-text recall over generated medical explanations');
@@ -396,7 +410,7 @@ assert.ok(profileOnboardWxml.includes('agreement-row') && profileOnboardWxml.inc
 assert.ok(!profileOnboardWxml.includes('bindtap="toggleAgree">\n      <view class="choice-icon'), 'onboard agreement must not be presented as a large choice card');
 assert.ok(profileOnboardWxss.includes('.checkbox') && !profileOnboardWxss.includes('.choice-icon.muted'), 'onboard agreement checkbox must use compact checkbox styling');
 assert.ok(profileAgreementWxml.includes('\u4e0d\u63d0\u4f9b\u8bca\u65ad'), 'agreement must state the product is not a diagnosis service');
-assert.ok(profilePrivacyWxml.includes('OCR') && profilePrivacyWxml.includes('\u7b2c\u4e09\u65b9\u670d\u52a1'), 'privacy policy must disclose OCR and third-party service handling');
+assert.ok(profilePrivacyWxml.includes('AI识别') && profilePrivacyWxml.includes('\u7b2c\u4e09\u65b9\u670d\u52a1'), 'privacy policy must disclose AI recognition and third-party service handling');
 assert.ok(homeIndexJs.includes('isProfileRequiredError(error)'), 'home must treat empty profile as a create-profile transition');
 assert.ok(healthIndexJs.includes('isProfileRequiredError(error)'), 'health must treat empty profile as a create-profile transition');
 assert.ok(fs.readFileSync(path.join(miniprogramRoot, 'pages', 'recheck', 'index.js'), 'utf8').includes('isProfileRequiredError(error)'), 'recheck must treat empty profile as a create-profile transition');

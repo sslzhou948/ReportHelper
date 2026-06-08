@@ -19,7 +19,7 @@
     </view>
     <view class="legal-card">
       <view class="legal-title">第三方服务</view>
-      <view class="legal-body">微信登录、图片上传和 OCR 识别可能依赖微信或经授权的服务提供方。正式上线前会在本政策中列明具体服务名称、用途和数据范围。</view>
+      <view class="legal-body">微信登录、图片上传和 AI识别可能依赖微信或经授权的服务提供方。正式上线前会在本政策中列明具体服务名称、用途和数据范围。</view>
     </view>
     <view class="legal-card">
       <view class="legal-title">用户权利</view>

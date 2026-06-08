@@ -621,7 +621,7 @@ function suppressSuspectMetricsForReportContext(metrics: any[]) {
     metrics: metrics.filter((metric) => !isLikelyNonAnalyteMetricInBloodRoutine(metric)),
     warnings: [{
       code: 'OCR_SUSPECT_METRICS_SUPPRESSED',
-      message: `OCR 可能把血常规报告中的非指标文本误识别为 ${suppressedNames || '非本报告指标'}，已从自动指标中移除，请核对原图。`
+      message: `AI识别可能把血常规报告中的非指标文本误识别为 ${suppressedNames || '非本报告指标'}，已从自动指标中移除，请核对原图。`
     }]
   };
 }
@@ -1065,7 +1065,7 @@ function normalizeDraft(raw: any, group: OcrProviderReportGroup): OcrDraft {
   if (rawMetricMerge.addedCount > 0 || rawMetricMerge.correctedCount > 0) {
     warnings.push({
       code: 'OCR_RAW_TEXT_METRIC_SUPPLEMENT_USED',
-      message: `已从 OCR 原文补齐 ${rawMetricMerge.addedCount} 个缺失指标、校正 ${rawMetricMerge.correctedCount} 个指标字段，请对照原图核查。`
+      message: `已从 AI识别原文补齐 ${rawMetricMerge.addedCount} 个缺失指标、校正 ${rawMetricMerge.correctedCount} 个指标字段，请对照原图核查。`
     });
   }
   if (groupPhotoIds.length > 1 && groupPhotoIds.some((photoId) => !rawSourcePhotoIds.includes(photoId))) {
@@ -1213,7 +1213,7 @@ function withFallbackUsedWarning(fallbackDraft: OcrDraft, primaryDraft: OcrDraft
     ...fallbackDraft,
     warnings: mergeDraftWarnings(fallbackDraft.warnings, [{
       code: 'OCR_PROVIDER_FALLBACK_USED',
-      message: `Primary OCR provider returned a risky draft (${draftWarningCodes(primaryDraft).join(', ') || primaryDraft.status}); GPT vision fallback was used for this report group.`
+      message: `首轮 AI识别返回了风险较高的草稿（${draftWarningCodes(primaryDraft).join(', ') || primaryDraft.status}），已使用 GPT 视觉兜底处理这组报告。`
     }])
   };
 }
@@ -1254,7 +1254,7 @@ function withFallbackBasicInfoMerged(primaryDraft: OcrDraft, fallbackDraft: OcrD
     basicInfo,
     warnings: mergeDraftWarnings(primaryDraft.warnings, [{
       code: 'OCR_PROVIDER_FALLBACK_USED',
-      message: 'GPT vision fallback filled missing core report metadata while preserving the primary OCR metric table.'
+      message: 'GPT 视觉兜底已补齐缺失的报告基础信息，并保留首轮 AI识别的指标表。'
     }])
   };
 }
@@ -1431,7 +1431,7 @@ export function toOcrProviderFailure(error: unknown): OcrProviderFailure {
   }
   return {
     code: 'OCR_PROVIDER_FAILED',
-    message: error instanceof Error ? error.message : 'OCR provider failed',
+    message: error instanceof Error ? error.message : 'AI识别服务调用失败',
     retryable: false
   };
 }
@@ -1464,7 +1464,7 @@ async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: numbe
     });
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
-      throw new OcrApiError('OCR_TIMEOUT', 408, `OCR request timed out after ${Math.ceil(timeoutMs / 1000)} seconds.`, true);
+      throw new OcrApiError('OCR_TIMEOUT', 408, `AI识别请求超过 ${Math.ceil(timeoutMs / 1000)} 秒未完成。`, true);
     }
     throw error;
   } finally {
@@ -1727,7 +1727,7 @@ class FixtureOcrProvider implements OcrProvider {
       drafts: [],
       warnings: [{
         code: 'REAL_OCR_PROVIDER_NOT_CONFIGURED',
-        message: 'Real OCR provider is not configured in this environment.'
+        message: '当前环境未配置真实 AI识别服务。'
       }]
     };
   }
@@ -1745,10 +1745,10 @@ class GptVisionOcrProvider implements OcrProvider {
 
   async recognizePhotos(input: OcrProviderInput): Promise<OcrProviderResult> {
     if (!this.env.OPENAI_API_KEY) {
-      return warning('OPENAI_API_KEY_MISSING', 'OPENAI_API_KEY is required for GPT vision OCR.');
+      return warning('OPENAI_API_KEY_MISSING', 'GPT 视觉 AI识别需要配置 OPENAI_API_KEY。');
     }
     if (!input.groups.length) {
-      return warning('OCR_EMPTY_RESULT', 'No uploaded report photos were provided.');
+      return warning('OCR_EMPTY_RESULT', '未提供可用于 AI识别的报告图片。');
     }
 
     const content: any[] = [{
@@ -1795,7 +1795,7 @@ class GptVisionOcrProvider implements OcrProvider {
       });
       for (const photo of group.photos) {
         if (!photo.localPath) {
-          return warning('LOCAL_IMAGE_PATH_MISSING', 'Local image path is required for GPT vision OCR in development.');
+          return warning('LOCAL_IMAGE_PATH_MISSING', '开发环境 GPT 视觉 AI识别需要本地图片路径。');
         }
         const bytes = await fs.readFile(photo.localPath);
         content.push({
@@ -1842,7 +1842,7 @@ class GptVisionOcrProvider implements OcrProvider {
     for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
       const outputText = await this.requestStructuredOcr(content);
       if (!outputText) {
-        lastError = new OcrApiError('OCR_EMPTY_RESULT', 200, 'GPT vision OCR returned no structured text.', attempt < maxRetries);
+        lastError = new OcrApiError('OCR_EMPTY_RESULT', 200, 'GPT 视觉 AI识别未返回结构化文本。', attempt < maxRetries);
       } else {
         try {
           const parsed = parseJsonOutput(outputText);
@@ -1852,7 +1852,7 @@ class GptVisionOcrProvider implements OcrProvider {
           lastError = new OcrApiError(
             'OCR_PROVIDER_BAD_RESPONSE',
             502,
-            error instanceof Error ? error.message : 'GPT vision OCR returned malformed JSON.',
+            error instanceof Error ? error.message : 'GPT 视觉 AI识别返回的 JSON 格式无效。',
             attempt < maxRetries
           );
         }
@@ -1861,7 +1861,7 @@ class GptVisionOcrProvider implements OcrProvider {
       if (attempt >= maxRetries) break;
       await delay((this.env.OCR_RETRY_BASE_MS ?? 250) * Math.max(1, attempt + 1));
     }
-    throw lastError || new OcrApiError('OCR_PROVIDER_BAD_RESPONSE', 502, 'GPT vision OCR returned malformed JSON.', false);
+    throw lastError || new OcrApiError('OCR_PROVIDER_BAD_RESPONSE', 502, 'GPT 视觉 AI识别返回的 JSON 格式无效。', false);
   }
 
   private async requestStructuredOcr(content: any[]) {
@@ -2003,7 +2003,7 @@ class CommercialOcrProvider implements OcrProvider {
         provider: 'commercial_ocr',
         schemaVersion: 'ocr_draft_v1',
         drafts: [],
-        warnings: [{ code: 'COMMERCIAL_OCR_API_KEY_MISSING', message: 'OPENAI_API_KEY is required for commercial OCR.' }]
+        warnings: [{ code: 'COMMERCIAL_OCR_API_KEY_MISSING', message: '商业 AI识别需要配置 OPENAI_API_KEY。' }]
       };
     }
     if (!input.groups.length) {
@@ -2011,7 +2011,7 @@ class CommercialOcrProvider implements OcrProvider {
         provider: 'commercial_ocr',
         schemaVersion: 'ocr_draft_v1',
         drafts: [],
-        warnings: [{ code: 'OCR_EMPTY_RESULT', message: 'No uploaded report photos were provided.' }]
+        warnings: [{ code: 'OCR_EMPTY_RESULT', message: '未提供可用于 AI识别的报告图片。' }]
       };
     }
 
@@ -2051,7 +2051,7 @@ class CommercialOcrProvider implements OcrProvider {
       })) {
         draftWarnings.push({
           code: 'OCR_PROVIDER_FALLBACK_UNAVAILABLE',
-          message: '当前仅使用首轮 OCR，未启用 GPT 视觉兜底；这份结果存在结构化风险，请对照原图核查后再保存。'
+          message: '当前仅使用首轮 AI识别，未启用 GPT 视觉兜底；这份结果存在结构化风险，请对照原图核查后再保存。'
         });
       }
       drafts.push({
@@ -2082,7 +2082,7 @@ class CommercialOcrProvider implements OcrProvider {
     const imageContent: any[] = [];
     for (const photo of group.photos) {
       if (!photo.localPath) {
-        throw new OcrApiError('LOCAL_IMAGE_PATH_MISSING', 400, 'Local image path is required for commercial OCR in development.');
+        throw new OcrApiError('LOCAL_IMAGE_PATH_MISSING', 400, '开发环境商业 AI识别需要本地图片路径。');
       }
       const bytes = await fs.readFile(photo.localPath);
       imageContent.push({
@@ -2107,7 +2107,7 @@ class CommercialOcrProvider implements OcrProvider {
           warnings: fallbackUsed
             ? [{
               code: 'OCR_PROMPT_FALLBACK_USED',
-              message: '首次 OCR 提示词未返回文本，已使用兼容提示词重新识别。请对照原图核查。'
+              message: '首次 AI识别提示词未返回文本，已使用兼容提示词重新识别。请对照原图核查。'
             }]
             : [] as Array<{ code: string; message: string }>
         };
@@ -2122,7 +2122,7 @@ class CommercialOcrProvider implements OcrProvider {
             rawText: error.partialText || '',
             warnings: [{
               code: 'OCR_OUTPUT_TRUNCATED',
-              message: 'OCR 输出被截断，仅保留部分识别文本。请对照原图逐项核查，必要时重新上传更清晰图片。'
+              message: 'AI识别输出被截断，仅保留部分识别文本。请对照原图逐项核查，必要时重新上传更清晰图片。'
             }]
           };
         }
@@ -2159,11 +2159,11 @@ class CommercialOcrProvider implements OcrProvider {
       }
       if (chatCompletionFinishReason(payload) === 'length') {
         const partialText = extractChatCompletionText(payload);
-        throw new OcrApiError('OCR_OUTPUT_TRUNCATED', 200, 'Commercial OCR output was truncated before all report text was returned.', true, undefined, partialText);
+        throw new OcrApiError('OCR_OUTPUT_TRUNCATED', 200, '商业 AI识别输出在返回全部报告文本前被截断。', true, undefined, partialText);
       }
       const text = extractChatCompletionText(payload);
       if (!text.trim()) {
-        throw new OcrApiError('OCR_EMPTY_RESULT', 200, 'Commercial OCR returned no text.', false);
+        throw new OcrApiError('OCR_EMPTY_RESULT', 200, '商业 AI识别未返回文本。', false);
       }
       return text;
     });
@@ -2212,7 +2212,7 @@ class ProviderFallbackOcrProvider implements OcrProvider {
         ...primaryResult,
         warnings: mergeDraftWarnings(primaryResult.warnings, [{
           code: 'OCR_PROVIDER_FALLBACK_FAILED',
-          message: `GPT vision fallback failed after primary OCR produced risky drafts: ${failure.code} ${failure.message}`.trim()
+          message: `首轮 AI识别产生风险草稿后，GPT 视觉兜底失败：${failure.code} ${failure.message}`.trim()
         }])
       };
     }
@@ -2236,7 +2236,7 @@ class ProviderFallbackOcrProvider implements OcrProvider {
         ...entry.draft,
         warnings: mergeDraftWarnings(entry.draft.warnings, [{
           code: 'OCR_PROVIDER_FALLBACK_NOT_USED',
-          message: 'GPT vision fallback did not produce a better structured draft; primary OCR draft was kept for manual review.'
+          message: 'GPT 视觉兜底未生成更好的结构化草稿，已保留首轮 AI识别草稿供人工核对。'
         }])
       };
     });
@@ -2247,8 +2247,8 @@ class ProviderFallbackOcrProvider implements OcrProvider {
       warnings: mergeDraftWarnings(primaryResult.warnings, fallbackResult.warnings, [{
         code: replacedCount + mergedCount > 0 ? 'OCR_PROVIDER_FALLBACK_USED' : 'OCR_PROVIDER_FALLBACK_NOT_USED',
         message: replacedCount + mergedCount > 0
-          ? `GPT vision fallback improved ${replacedCount + mergedCount} risky OCR draft(s) (${replacedCount} replaced, ${mergedCount} metadata merged).`
-          : 'GPT vision fallback was attempted, but no draft was better than the primary OCR result.'
+          ? `GPT 视觉兜底优化了 ${replacedCount + mergedCount} 份高风险 AI识别草稿（替换 ${replacedCount} 份，合并基础信息 ${mergedCount} 份）。`
+          : '已尝试 GPT 视觉兜底，但没有草稿优于首轮 AI识别结果。'
       }])
     };
   }

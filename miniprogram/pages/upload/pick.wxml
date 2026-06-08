@@ -11,7 +11,7 @@
         <view class="tiny">优先上传医院 App、公众号或网页里的线上结果截图。纸质报告翻拍时让结果表格居中、拍正，减少折痕反光；解释/建议区占画面太多时，建议裁到结果表后再识别。</view>
       </view>
       <view wx:if="{{hasDraft && photos.length > 0}}" class="draft-hint">已恢复上次未完成的上传草稿。</view>
-      <view wx:if="{{qualityWarningCount > 0}}" class="photo-quality-warning">{{qualityWarningCount}} 张图片可能影响 OCR，建议重拍清晰正面图或识别后重点核对。</view>
+      <view wx:if="{{qualityWarningCount > 0}}" class="photo-quality-warning">{{qualityWarningCount}} 张图片可能影响 AI识别，建议重拍清晰正面图或识别后重点核对。</view>
       <view wx:if="{{uploadError}}" class="upload-error">{{uploadError}}</view>
     </view>
     <view class="pad mt-12">
@@ -47,7 +47,7 @@
       <view wx:if="{{showFixtureEntry}}" class="fixture-entry">
         <view>
           <view class="body strong">真实样例识别结果</view>
-          <view class="tiny mt-8">绕过上传和 OCR，直接进入 7 份真实报告的确认流程。</view>
+          <view class="tiny mt-8">绕过上传和 AI识别，直接进入 7 份真实报告的确认流程。</view>
         </view>
         <view class="fixture-btn {{loading ? 'disabled' : ''}}" bindtap="startFixtureOcr">载入</view>
       </view>

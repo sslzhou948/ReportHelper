@@ -465,7 +465,7 @@ export async function registerReportRoutes(app: FastifyInstance) {
       });
       if (!task) {
         return reply.status(404).send({
-          error: { code: 'NOT_FOUND', message: 'OCR task not found' },
+          error: { code: 'NOT_FOUND', message: 'AI识别任务不存在' },
           requestId
         });
       }
@@ -552,7 +552,7 @@ export async function registerReportRoutes(app: FastifyInstance) {
       }
       if (error instanceof Error && error.message === 'OCR_TASK_NOT_FOUND') {
         return reply.status(404).send({
-          error: { code: 'NOT_FOUND', message: 'OCR task not found' },
+          error: { code: 'NOT_FOUND', message: 'AI识别任务不存在' },
           requestId
         });
       }

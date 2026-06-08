@@ -6,7 +6,7 @@
   </view>
   <view class="pad mt-12">
     <view class="sub">同一报告内有 {{conflictCount}} 项结果被重复识别，请逐项确认保留值。</view>
-    <view wx:if="{{autoIgnoredCount}}" class="tiny mt-8">已自动忽略 {{autoIgnoredCount}} 项无法定位到指标的 OCR 冲突。</view>
+    <view wx:if="{{autoIgnoredCount}}" class="tiny mt-8">已自动忽略 {{autoIgnoredCount}} 项无法定位到指标的 AI识别冲突。</view>
   </view>
   <view class="section-title">{{reportTitle}}</view>
   <view class="pad">
