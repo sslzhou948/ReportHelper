@@ -4086,6 +4086,33 @@ asyncChecks.push(client.get('/api/profiles').then((data) => {
   assert.strictEqual(capturedRequest.timeout, DEFAULT_REQUEST_TIMEOUT_MS);
 }));
 
+const requestShapeCalls = [];
+const requestShapeClient = createApiClient({
+  baseUrl: 'https://api.example.test',
+  storage: createMemoryStorage({ token: 'token_1' }),
+  createRequestId: () => `req_shape_${requestShapeCalls.length + 1}`,
+  request(config) {
+    requestShapeCalls.push(config);
+    return Promise.resolve({
+      statusCode: 200,
+      data: { data: { ok: true } }
+    });
+  }
+});
+asyncChecks.push(requestShapeClient.delete('/api/reports/report_1', {
+  idempotencyKey: 'delete_report_report_1'
+}).then(() => requestShapeClient.post('/api/profiles', {
+  realName: 'Alice'
+})).then(() => {
+  assert.strictEqual(requestShapeCalls[0].method, 'DELETE');
+  assert.strictEqual(Object.prototype.hasOwnProperty.call(requestShapeCalls[0], 'data'), false);
+  assert.strictEqual(requestShapeCalls[0].header['Content-Type'], undefined);
+  assert.strictEqual(requestShapeCalls[0].header['Idempotency-Key'], 'delete_report_report_1');
+  assert.strictEqual(requestShapeCalls[1].method, 'POST');
+  assert.deepStrictEqual(requestShapeCalls[1].data, { realName: 'Alice' });
+  assert.strictEqual(requestShapeCalls[1].header['Content-Type'], 'application/json');
+}));
+
 let capturedSlashRequest = null;
 const slashClient = createApiClient({
   baseUrl: 'https://api.example.test/',

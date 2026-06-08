@@ -121,8 +121,9 @@ function createApiClient(options = {}) {
     const requestId = config.requestId || createId();
     const requestTimeout = config.timeout === undefined ? defaultTimeout : config.timeout;
     const token = storage.get('token');
+    const hasBody = data !== undefined;
     const headers = {
-      'Content-Type': 'application/json',
+      ...(hasBody ? { 'Content-Type': 'application/json' } : {}),
       'X-Request-Id': requestId,
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(config.idempotencyKey ? { 'Idempotency-Key': config.idempotencyKey } : {}),
@@ -134,7 +135,7 @@ function createApiClient(options = {}) {
       response = await request({
         url: `${baseUrl}${path}`,
         method,
-        data,
+        ...(hasBody ? { data } : {}),
         header: headers,
         timeout: requestTimeout
       });
