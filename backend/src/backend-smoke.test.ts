@@ -441,6 +441,16 @@ const invalidJsonResponse = await app.inject({
 assert.equal(invalidJsonResponse.statusCode, 400);
 assert.equal(invalidJsonResponse.json().error.code, 'INVALID_JSON_BODY');
 
+const emptyJsonDeleteResponse = await app.inject({
+  method: 'DELETE',
+  url: '/api/reports/nonexistent-report',
+  headers: {
+    'content-type': 'application/json'
+  }
+});
+assert.equal(emptyJsonDeleteResponse.statusCode, 404);
+assert.equal(emptyJsonDeleteResponse.json().error.code, 'NOT_FOUND');
+
 const loginResponse = await app.inject({
   method: 'POST',
   url: '/api/auth/wx-login',

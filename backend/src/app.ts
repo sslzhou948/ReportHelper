@@ -56,6 +56,16 @@ export function buildApp({ env, prisma }: BuildAppOptions) {
     bodyLimit: REQUEST_BODY_LIMIT_BYTES,
     rewriteUrl: (request) => normalizeIncomingUrl(request.url)
   });
+  const defaultJsonParser = app.getDefaultJsonParser('error', 'ignore');
+
+  app.removeContentTypeParser('application/json');
+  app.addContentTypeParser<string>('application/json', { parseAs: 'string', bodyLimit: REQUEST_BODY_LIMIT_BYTES }, (request, body, done) => {
+    if (!body.length) {
+      done(null, {});
+      return;
+    }
+    defaultJsonParser(request, body, done);
+  });
 
   app.decorate('prisma', prisma);
   app.decorate('env', env);
