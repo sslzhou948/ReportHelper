@@ -120,41 +120,34 @@
   right: 10rpx;
 }
 
+.photo-delete,
 .clip {
   position: absolute;
-  right: 10rpx;
-  bottom: 10rpx;
-  width: 62rpx;
-  height: 62rpx;
-  border-radius: 31rpx;
-  background: #D9822B;
-  border: 4rpx solid #FFFFFF;
-  box-shadow: 0 6rpx 16rpx rgba(120, 70, 28, 0.28);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2;
-}
-
-.clip-icon {
-  width: 42rpx;
-  height: 42rpx;
-  display: block;
-}
-
-.photo-delete {
-  position: absolute;
   right: 8rpx;
-  top: 8rpx;
   width: 44rpx;
   height: 44rpx;
   border-radius: 22rpx;
   background: rgba(255, 255, 255, 0.94);
-  color: var(--ink-3);
   box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.15);
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.clip {
+  bottom: 8rpx;
+  z-index: 2;
+}
+
+.clip-icon {
+  width: 31rpx;
+  height: 31rpx;
+  display: block;
+}
+
+.photo-delete {
+  top: 8rpx;
+  color: var(--ink-3);
   font-size: 26rpx;
   font-weight: 800;
   z-index: 3;
