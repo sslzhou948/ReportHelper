@@ -4121,6 +4121,31 @@ asyncChecks.push(backendApiForLogin.authWxLogin({ code: 'wx_code' }, { requestId
   }]);
 }));
 
+const metricPathCalls = [];
+const backendApiForMetricPath = createBackendApi({
+  get(pathname) {
+    metricPathCalls.push({ method: 'GET', pathname });
+    return Promise.resolve({});
+  },
+  patch(pathname, payload) {
+    metricPathCalls.push({ method: 'PATCH', pathname, payload });
+    return Promise.resolve({});
+  }
+});
+asyncChecks.push(Promise.all([
+  backendApiForMetricPath.getMetricHistory('profile_1', 'manual drug/level', {}),
+  backendApiForMetricPath.setMetricPinned('profile_1', 'manual drug/level', true)
+]).then(() => {
+  assert.deepStrictEqual(metricPathCalls, [{
+    method: 'GET',
+    pathname: '/api/profiles/profile_1/metrics/manual%20drug%2Flevel/history'
+  }, {
+    method: 'PATCH',
+    pathname: '/api/profiles/profile_1/metrics/manual%20drug%2Flevel/pin',
+    payload: { isPinned: true }
+  }]);
+}));
+
 const refreshStorage = createMemoryStorage({
   token: 'expired_token',
   refreshToken: 'refresh_token_1',

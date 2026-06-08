@@ -122,10 +122,10 @@ function createBackendApi(client) {
       return client.get(`/api/profiles/${profileId}/metrics/pending-candidates${toQuery(params)}`);
     },
     getMetricHistory(profileId, metricKey, params = {}) {
-      return client.get(`/api/profiles/${profileId}/metrics/${metricKey}/history${toQuery(params)}`);
+      return client.get(`/api/profiles/${profileId}/metrics/${encodeURIComponent(metricKey)}/history${toQuery(params)}`);
     },
     setMetricPinned(profileId, metricKey, isPinned) {
-      return client.patch(`/api/profiles/${profileId}/metrics/${metricKey}/pin`, { isPinned });
+      return client.patch(`/api/profiles/${profileId}/metrics/${encodeURIComponent(metricKey)}/pin`, { isPinned });
     },
     listRecheckPlans(profileId) {
       return client.get(`/api/profiles/${profileId}/recheck-plans`);

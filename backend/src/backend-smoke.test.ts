@@ -4027,6 +4027,9 @@ const pinResponse = await app.inject({
 });
 assert.equal(pinResponse.statusCode, 200);
 assert.equal(pinResponse.json().data.isPinned, true);
+const pinnedSnapshotRow = prisma.userMetricSnapshots.find((snapshot) => snapshot.profileId === profileId && snapshot.metricKey === 'acth');
+assert.ok(pinnedSnapshotRow);
+assert.ok(pinnedSnapshotRow.lastDate instanceof Date, 'pinned metric snapshots should persist dates as Date values');
 
 const secondTaskResponse = await app.inject({
   method: 'POST',

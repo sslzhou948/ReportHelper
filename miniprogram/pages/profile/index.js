@@ -56,7 +56,7 @@ Page({
     const mode = wx.getStorageSync('healthhelperApiMode') || 'mock';
     const baseUrl = wx.getStorageSync('healthhelperBackendBaseUrl') || DEFAULT_BACKEND_BASE_URL;
     this.setData({
-      devRuntimeVisible: envVersion !== 'release',
+      devRuntimeVisible: envVersion === 'develop',
       devApiMode: mode,
       devBackendBaseUrl: baseUrl,
       devBackendProfileId: wx.getStorageSync('healthhelperBackendProfileId') || ''

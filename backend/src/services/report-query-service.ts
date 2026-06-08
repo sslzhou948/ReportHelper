@@ -856,6 +856,24 @@ export async function setMetricPinned(prisma: PrismaClient, profileId: string, u
   if (!snapshot) {
     return null;
   }
+  const lastDate = new Date(`${snapshot.lastDate}T00:00:00.000Z`);
+  const snapshotData = {
+    profileId: snapshot.profileId,
+    metricKey: snapshot.metricKey,
+    metricName: snapshot.metricName,
+    category: snapshot.category,
+    categoryCn: snapshot.categoryCn,
+    valueType: snapshot.valueType,
+    lastValueNumeric: snapshot.lastValueNumeric,
+    lastValueQualitative: snapshot.lastValueQualitative,
+    unit: snapshot.unit,
+    lastDate,
+    lastReportId: snapshot.lastReportId,
+    lastTone: snapshot.lastTone,
+    trendDirection: snapshot.trendDirection,
+    trendLabel: snapshot.trendLabel,
+    measureCount: snapshot.measureCount
+  };
 
   await prisma.userMetricSnapshot.upsert({
     where: {
@@ -865,11 +883,11 @@ export async function setMetricPinned(prisma: PrismaClient, profileId: string, u
       }
     },
     update: {
-      ...snapshot,
+      ...snapshotData,
       isPinned
     },
     create: {
-      ...snapshot,
+      ...snapshotData,
       isPinned
     }
   });

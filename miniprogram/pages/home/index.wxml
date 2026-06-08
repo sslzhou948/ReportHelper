@@ -1,4 +1,5 @@
-﻿<view class="page page-tab">
+﻿<view class="page page-tab home-page">
+  <view class="home-top-fill"></view>
   <view class="banner home-banner" style="padding-top: {{layout.homeBannerPaddingTop}}rpx; min-height: {{layout.homeBannerMinHeight}}rpx;">
     <view class="home-head">
       <view class="profile-chip" bindtap="openSwitcher">
