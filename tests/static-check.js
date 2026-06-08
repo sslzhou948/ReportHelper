@@ -160,6 +160,8 @@ for (const file of jsFiles) {
 const homeWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'home', 'index.wxml'), 'utf8');
 const homeIndexJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'home', 'index.js'), 'utf8');
 const homeWxss = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'home', 'index.wxss'), 'utf8');
+const homeJson = readJson(path.join(miniprogramRoot, 'pages', 'home', 'index.json'));
+const onboardJson = readJson(path.join(miniprogramRoot, 'pages', 'profile', 'onboard.json'));
 const healthWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'health', 'index.wxml'), 'utf8');
 const healthWxss = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'health', 'index.wxss'), 'utf8');
 const recordNewJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'record', 'new.js'), 'utf8');
@@ -265,6 +267,9 @@ assert.ok(homeIndexJs.includes('HOME_RECENT_REPORT_LIMIT = 6') && homeIndexJs.in
 assert.ok(homeWxml.includes('{{alertSummaryText}}') && homeIndexJs.includes('formatAlertSummary(alertMetrics)'), 'home alert summary must be generated from the capped alert list');
 assert.ok(apiConfigJs.includes("envVersion === 'release'") && apiConfigJs.includes("PRODUCTION_API_MODE = 'backend'"), 'production miniprogram builds must force backend API mode');
 assert.ok(homeWxml.includes('scroll-x class="metric-scroll"') && homeWxss.includes('overflow-x: hidden'), 'home pinned metrics must stay as a single-row carousel without widening the page');
+assert.ok(app.window.backgroundColorTop === '#EDEAE4' && app.window.backgroundColorBottom === '#EDEAE4', 'global window overscroll background must match the app surface instead of the default white');
+assert.ok(homeJson.backgroundColorTop === '#5A7A5A' && onboardJson.backgroundColorTop === '#5A7A5A', 'green hero pages must use page window background colors for iOS overscroll');
+assert.ok(!homeWxml.includes('home-top-fill') && !homeWxss.includes('home-top-fill'), 'home must not fake the iOS overscroll background with a fixed DOM layer');
 assert.ok(healthWxml.includes('scroll-x class="chips"') && healthWxss.includes('overflow-x: hidden'), 'health filter chips must stay as a single-row carousel without widening the page');
 assert.ok(recordNewJs.includes('/pages/upload/pick') && recordNewJs.includes('/pages/profile/custom-metrics?mode=select'), 'record entry must split only into photo recognition and manual entry');
 assert.ok(!recordNewWxml.includes('为{{profile.relation') && recordNewWxml.includes('新增健康记录'), 'record entry title must not repeat the archive relation');

@@ -32,7 +32,9 @@
   "window": {
     "navigationStyle": "custom",
     "backgroundTextStyle": "dark",
-    "backgroundColor": "#EDEAE4"
+    "backgroundColor": "#EDEAE4",
+    "backgroundColorTop": "#EDEAE4",
+    "backgroundColorBottom": "#EDEAE4"
   },
   "tabBar": {
     "custom": false,

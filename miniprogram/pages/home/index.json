@@ -1,4 +1,7 @@
 {
+  "backgroundColor": "#5A7A5A",
+  "backgroundColorTop": "#5A7A5A",
+  "backgroundColorBottom": "#EDEAE4",
   "usingComponents": {
     "profile-switcher": "/components/profile-switcher/profile-switcher",
     "hh-pill": "/components/pill/pill",
