@@ -6,7 +6,6 @@
   </view>
   <block wx:if="{{!grouping}}">
     <view class="pad mt-12">
-      <view class="sub">默认每张图识别为一份报告；同一份报告跨页拍摄时，点图片右下角的合并图标，把多张图分到同一组。</view>
       <view class="ocr-quality-tip">
         <view class="tip-title">提高识别率</view>
         <view class="tiny">优先上传医院 App、公众号或网页里的线上结果截图。纸质报告翻拍时让结果表格居中、拍正，减少折痕反光；解释/建议区占画面太多时，建议裁到结果表后再识别。</view>
@@ -40,7 +39,7 @@
       </view>
     </view>
     <view class="pad mt-12">
-      <view wx:if="{{photos.length > 0}}" class="tiny">点图片可放大预览；点右下角合并图标后，按顺序选择同一份报告的多张图片，系统会合并为 1 份报告识别。</view>
+      <view wx:if="{{photos.length > 0}}" class="tiny">点图片可放大预览；同一份报告跨页拍摄时，点右下角合并图标，按顺序选择多张图片，系统会合并为 1 份报告识别。</view>
       <view wx:else class="empty-upload">
         <view class="body strong">还没有选择报告图片</view>
         <view class="tiny mt-8">请先拍照或从相册选择检查报告，再开始识别。</view>

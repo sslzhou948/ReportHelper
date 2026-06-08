@@ -244,6 +244,7 @@ assert.ok(uploadPickJs.includes('OCR_RESULT_TABLE_GUIDANCE') && uploadPickJs.inc
 assert.ok(uploadPickWxml.includes('结果表格居中') && uploadPickWxml.includes('裁到结果表'), 'upload pick visible guidance must recommend table-centered photos for paper reports');
 assert.ok(uploadPickWxml.includes('/assets/upload/group-link.png') && uploadPickWxml.includes('clip-icon'), 'upload pick multi-page grouping must use a visible image icon instead of an ambiguous character');
 assert.ok(uploadPickWxml.includes('同一份报告跨页拍摄') && uploadPickWxml.includes('合并为 1 份报告识别') && !uploadPickWxml.includes('曲别针') && !uploadPickWxml.includes('⌘'), 'upload pick grouping copy must clearly explain multi-page report grouping');
+assert.ok(!uploadPickWxml.includes('默认每张图识别为一份报告') && !uploadPickWxml.includes('把多张图分到同一组'), 'upload pick grouping guidance must not duplicate the lower photo-grid hint');
 assert.ok(uploadPickJs.includes('wx.showModal'), 'upload pick must confirm leaving with an unfinished draft');
 assert.ok(uploadPickJs.includes('splitGroup(event)'), 'upload pick must allow cancelling an existing photo merge');
 assert.ok(uploadPickJs.includes('removePhoto(event)') && uploadPickWxml.includes('catchtap="removePhoto"'), 'upload pick must allow removing a mistakenly selected photo');
