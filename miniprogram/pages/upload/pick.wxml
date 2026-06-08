@@ -6,7 +6,7 @@
   </view>
   <block wx:if="{{!grouping}}">
     <view class="pad mt-12">
-      <view class="sub">默认每张图为独立报告。同一份报告的多页，点曲别针建立关联。</view>
+      <view class="sub">默认每张图识别为一份报告；同一份报告跨页拍摄时，点图片右下角的合并图标，把多张图分到同一组。</view>
       <view class="ocr-quality-tip">
         <view class="tip-title">提高识别率</view>
         <view class="tiny">优先上传医院 App、公众号或网页里的线上结果截图。纸质报告翻拍时让结果表格居中、拍正，减少折痕反光；解释/建议区占画面太多时，建议裁到结果表后再识别。</view>
@@ -31,14 +31,16 @@
           <view class="photo-delete" data-id="{{item.id}}" catchtap="removePhoto">×</view>
           <view wx:if="{{item.qualityWarning}}" class="quality-badge">!</view>
           <view class="photo-index">第 {{item.id}} 张</view>
-          <view class="clip" data-id="{{item.id}}" catchtap="startGrouping">⌘</view>
+          <view class="clip" data-id="{{item.id}}" catchtap="startGrouping">
+            <image class="clip-icon" src="/assets/upload/group-link.png" mode="aspectFit" />
+          </view>
           <view wx:if="{{item.group}}" class="split" data-group="{{item.group}}" catchtap="splitGroup">拆</view>
         </view>
         <view class="photo add" bindtap="chooseAlbum">+</view>
       </view>
     </view>
     <view class="pad mt-12">
-      <view wx:if="{{photos.length > 0}}" class="tiny">点击图片放大预览；点曲别针，再点其他图，建立“同一份报告”关联。</view>
+      <view wx:if="{{photos.length > 0}}" class="tiny">点图片可放大预览；点右下角合并图标后，按顺序选择同一份报告的多张图片，系统会合并为 1 份报告识别。</view>
       <view wx:else class="empty-upload">
         <view class="body strong">还没有选择报告图片</view>
         <view class="tiny mt-8">请先拍照或从相册选择检查报告，再开始识别。</view>
@@ -54,7 +56,7 @@
   </block>
   <block wx:else>
     <view class="pad mt-12">
-      <view class="notice">正在建立关联：按拍摄顺序点击属于同一份报告的图片</view>
+      <view class="notice">正在分组：按拍摄顺序选择同一份报告的多张图片，完成后会合并识别。</view>
     </view>
     <view class="pad mt-16">
       <view class="photo-grid">

@@ -242,6 +242,8 @@ assert.ok(uploadPickJs.includes('wx.getImageInfo') && uploadPickJs.includes('enr
 assert.ok(uploadPickJs.includes('confirmQualityWarnings(photos)') && uploadPickJs.includes('confirmText:') && uploadPickJs.includes('继续识别'), 'upload pick must confirm before spending OCR on low-quality photos');
 assert.ok(uploadPickJs.includes('OCR_RESULT_TABLE_GUIDANCE') && uploadPickJs.includes('结果表格居中') && uploadPickJs.includes('解释/建议区'), 'upload pick quality guidance must warn about table framing and explanatory-section interference');
 assert.ok(uploadPickWxml.includes('结果表格居中') && uploadPickWxml.includes('裁到结果表'), 'upload pick visible guidance must recommend table-centered photos for paper reports');
+assert.ok(uploadPickWxml.includes('/assets/upload/group-link.png') && uploadPickWxml.includes('clip-icon'), 'upload pick multi-page grouping must use a visible image icon instead of an ambiguous character');
+assert.ok(uploadPickWxml.includes('同一份报告跨页拍摄') && uploadPickWxml.includes('合并为 1 份报告识别') && !uploadPickWxml.includes('曲别针') && !uploadPickWxml.includes('⌘'), 'upload pick grouping copy must clearly explain multi-page report grouping');
 assert.ok(uploadPickJs.includes('wx.showModal'), 'upload pick must confirm leaving with an unfinished draft');
 assert.ok(uploadPickJs.includes('splitGroup(event)'), 'upload pick must allow cancelling an existing photo merge');
 assert.ok(uploadPickJs.includes('removePhoto(event)') && uploadPickWxml.includes('catchtap="removePhoto"'), 'upload pick must allow removing a mistakenly selected photo');
