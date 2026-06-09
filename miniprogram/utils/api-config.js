@@ -1,7 +1,7 @@
 const DEFAULT_BACKEND_BASE_URL = 'http://127.0.0.1:8787';
 const DEFAULT_LOCAL_API_MODE = 'mock';
 const PRODUCTION_API_MODE = 'backend';
-const DEPLOYED_BACKEND_BASE_URL = 'https://api.your-domain.com';
+const DEPLOYED_BACKEND_BASE_URL = 'https://health.ads8260.win:8260/';
 
 function canUseWxStorage() {
   return typeof wx !== 'undefined' && wx.getStorageSync;

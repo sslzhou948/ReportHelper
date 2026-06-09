@@ -1,52 +1,16 @@
 <view class="page onboard-page">
   <view wx:if="{{state === 'guest'}}" class="guest-state">
-    <view class="guest-hero">
-      <view class="guest-title">
-        <view>把检查报告</view>
-        <view>整理成清楚的病例夹</view>
-      </view>
-      <view class="guest-copy">让纸质报告随身可查，自动沉淀指标趋势和复查待办。</view>
-      <view class="record-stack">
-        <view class="record-card back"></view>
-        <view class="record-card front">
-          <view class="record-line short"></view>
-          <view class="record-line mid"></view>
-          <view class="record-metric">
-            <view>▲ 白细胞数目</view>
-            <view class="record-pill">偏高</view>
-          </view>
-          <view class="record-line"></view>
-        </view>
-      </view>
-    </view>
-
-    <view class="guest-features">
-      <view class="feature-card">
-        <view class="feature-icon">扫</view>
-        <view>
-          <view class="feature-title">纸质报告电子化</view>
-          <view class="feature-copy">拍照上传，随身查看</view>
-        </view>
-      </view>
-      <view class="feature-card">
-        <view class="feature-icon">趋</view>
-        <view>
-          <view class="feature-title">自动统计指标</view>
-          <view class="feature-copy">观察趋势，辅助康复</view>
-        </view>
-      </view>
-      <view class="feature-card wide">
-        <view class="feature-icon">复</view>
-        <view>
-          <view class="feature-title">复查计划与待办提醒</view>
-          <view class="feature-copy">下一次检查、准备事项和注意事项放进清单</view>
-        </view>
-      </view>
+    <view class="guest-visual">
+      <image class="guest-visual-image" src="/assets/onboarding/login-hero-option1.jpg" mode="widthFix" />
     </view>
 
     <view class="guest-login-card card card-pad">
-      <view class="body strong">登录后开始使用病例夹</view>
-      <view class="sub mt-8">安全保存检查报告、健康指标和复查计划。</view>
+      <view class="login-card-mark">
+        <image class="login-card-emblem" src="/assets/onboarding/login-card-emblem.png" mode="aspectFit" />
+      </view>
+      <view class="login-card-title">登录后开启智能复查档案</view>
+      <view class="login-card-copy">安全保存检查报告、健康指标和复查计划</view>
+      <view class="login-card-divider"></view>
       <view class="agreement-row" bindtap="toggleAgree">
         <view class="checkbox {{agreementClass}}">{{agreed ? '✓' : ''}}</view>
         <view class="agreement-copy">
@@ -58,7 +22,6 @@
       </view>
       <view class="btn mt-12 {{loggingIn ? 'disabled' : ''}}" bindtap="login">{{loggingIn ? '登录中...' : '微信登录并继续'}}</view>
     </view>
-    <view class="guest-muted tiny">登录后展示你的报告、指标趋势和复查提醒</view>
   </view>
 
   <view wx:elif="{{state === 'noProfile'}}" class="profile-state">
