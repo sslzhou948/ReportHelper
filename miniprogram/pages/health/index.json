@@ -1,7 +1,8 @@
 {
+  "backgroundColor": "#5A7A5A",
+  "backgroundColorTop": "#5A7A5A",
+  "backgroundColorBottom": "#EDEAE4",
   "usingComponents": {
-    "metric-row": "/components/metric-row/metric-row",
-    "hh-pill": "/components/pill/pill",
     "network-banner": "/components/network-banner/network-banner",
     "loading-slow-banner": "/components/loading-slow-banner/loading-slow-banner"
   }

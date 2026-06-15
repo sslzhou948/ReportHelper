@@ -66,7 +66,7 @@ assert.ok(homeWxml.includes('layout.homeBannerPaddingTop'), 'home banner must us
 assert.ok(homeWxml.includes('layout.homeBannerMinHeight'), 'home banner must use dynamic min-height');
 assert.ok(homeWxss.includes('padding-right: 188rpx'), 'home head must reserve right-side capsule area');
 assert.ok(homeWxss.includes('width: 100%'), 'home cards must define full-width layout');
-assert.ok(homeWxss.includes('min-height: 149rpx'), 'upload CTA must keep source-matched refreshed height');
+assert.ok(homeWxss.includes('min-height: 128rpx'), 'home action cards must keep the approved compact refreshed height');
 assert.ok(homeWxss.includes('.metric-sparkline'), 'home metric cards must include dynamic compact trend visuals');
 assert.ok(!homeWxml.includes('<button class="upload-cta"'), 'home upload CTA must avoid native button layout');
 assert.ok(!homeWxml.includes('<button class="card card-pad recheck-card"'), 'home recheck card must avoid native button layout');
@@ -77,12 +77,12 @@ for (const file of wxmlFiles) {
 
 const homeUpload = getRule(homeWxss, '.upload-cta');
 assertDecl(homeUpload, 'width: 100%', 'home upload card must fill content width');
-assertDecl(homeUpload, 'min-height: 149rpx', 'home upload card must stay source-matched refreshed size');
+assertDecl(homeUpload, 'min-height: 128rpx', 'home upload card must stay at the approved compact action height');
 assertDecl(homeUpload, 'text-align: left', 'home upload content must be left aligned');
 
 const homeRecheck = getRule(homeWxss, '.recheck-card');
 assertDecl(homeRecheck, 'width: 100%', 'home recheck card must fill content width');
-assertDecl(homeRecheck, 'min-height: 149rpx', 'home recheck card must stay source-matched refreshed size');
+assertDecl(homeRecheck, 'min-height: 128rpx', 'home recheck card must match the upload action height');
 
 const metricCard = getRule(homeWxss, '.metric-card');
 assertDecl(metricCard, 'width: 227rpx', 'home metric card width must match refreshed reference');

@@ -94,6 +94,9 @@ Use the platform Chinese system stack already present in `miniprogram/app.wxss`:
 | Dense row padding | `24` to `28` | Lists and forms |
 | Section gap | `28` to `36` | Between cards and sections |
 | In-card row min height | `96` | Form and list rows |
+| Report/list row min height | `120` | Report summaries and cross-tab list rows; keep consistent across tab dashboards |
+| Dense metric row min height | `72` | Multi-column metric rows where values, units, and status indicators share one row |
+| Home action card height | `128` | Add record and next recheck cards; keep both CTAs aligned and below hero scale |
 | Primary button height | `88` to `96` | Bottom CTAs |
 | Icon disc | `72` to `104` | Context-specific icon containers |
 | Pill radius | `18` to `24` | Status tags and filters |

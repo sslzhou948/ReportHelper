@@ -162,6 +162,7 @@ const homeIndexJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'home', 
 const homeWxss = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'home', 'index.wxss'), 'utf8');
 const homeJson = readJson(path.join(miniprogramRoot, 'pages', 'home', 'index.json'));
 const onboardJson = readJson(path.join(miniprogramRoot, 'pages', 'profile', 'onboard.json'));
+const healthJson = readJson(path.join(miniprogramRoot, 'pages', 'health', 'index.json'));
 const healthWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'health', 'index.wxml'), 'utf8');
 const healthWxss = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'health', 'index.wxss'), 'utf8');
 const recordNewJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'record', 'new.js'), 'utf8');
@@ -285,9 +286,11 @@ assert.ok(homeWxml.includes('{{alertSummaryText}}') && homeIndexJs.includes('for
 assert.ok(apiConfigJs.includes("envVersion === 'release'") && apiConfigJs.includes("PRODUCTION_API_MODE = 'backend'"), 'production miniprogram builds must force backend API mode');
 assert.ok(homeWxml.includes('scroll-x class="metric-scroll"') && homeWxss.includes('overflow-x: hidden'), 'home pinned metrics must stay as a single-row carousel without widening the page');
 assert.ok(app.window.backgroundColorTop === '#EDEAE4' && app.window.backgroundColorBottom === '#EDEAE4', 'global window overscroll background must match the app surface instead of the default white');
-assert.ok(homeJson.backgroundColorTop === '#5A7A5A' && onboardJson.backgroundColorTop === '#5A7A5A', 'green hero pages must use page window background colors for iOS overscroll');
+assert.ok(homeJson.backgroundColorTop === '#5A7A5A' && healthJson.backgroundColorTop === '#5A7A5A' && onboardJson.backgroundColorTop === '#5A7A5A', 'green hero pages must use page window background colors for iOS overscroll');
 assert.ok(!homeWxml.includes('home-top-fill') && !homeWxss.includes('home-top-fill'), 'home must not fake the iOS overscroll background with a fixed DOM layer');
-assert.ok(healthWxml.includes('scroll-x class="chips"') && healthWxss.includes('overflow-x: hidden'), 'health filter chips must stay as a single-row carousel without widening the page');
+assert.ok(healthWxml.includes('scroll-x class="health-chips"') && healthWxss.includes('.health-chips') && healthWxss.includes('overflow-x: hidden'), 'health filter chips must stay as a single-row carousel without widening the page');
+assert.ok(healthIndexJs.includes("const DEFAULT_RANGE = '30d'"), 'health range order must not change the default query window');
+assert.ok(healthIndexJs.indexOf("{ key: 'all', label: '全部' }") < healthIndexJs.indexOf("{ key: '30d', label: '近30天', days: 30 }"), 'health range chips must place 全部 at the left edge');
 assert.ok(recordNewJs.includes('/pages/upload/pick') && recordNewJs.includes('/pages/profile/custom-metrics?mode=select'), 'record entry must split only into photo recognition and manual entry');
 assert.ok(!recordNewWxml.includes('为{{profile.relation') && recordNewWxml.includes('新增健康记录'), 'record entry title must not repeat the archive relation');
 assert.ok(profileIndexJs.includes('/pages/profile/custom-metrics?mode=manage') && profileIndexWxml.includes('维护手动录入模板') && !profileIndexWxml.includes('我的检查项目'), 'profile page must name the custom metric area by its manual-entry function');

@@ -1,87 +1,117 @@
-﻿<view class="page page-tab">
-  <view class="nav">
-    <view class="nav-side left"></view>
-    <view class="nav-title">健康数据</view>
-    <view class="nav-side right" bindtap="goRecord">新增</view>
+<view class="page page-tab health-ref-page">
+  <view class="health-hero" style="--safe-top: {{layout.homeBannerPaddingTop}}rpx;">
+    <view class="health-nav">
+      <view class="health-title">健康数据</view>
+    </view>
+    <view class="health-search" bindtap="goSearch">
+      <image class="search-icon" src="/assets/ui-refresh/search-soft.png" mode="aspectFit" />
+      <view class="search-text">搜索指标 / 报告 / 医院</view>
+    </view>
   </view>
 
   <network-banner offline="{{networkOffline}}" bind:retry="retryAfterNetwork" />
   <loading-slow-banner visible="{{loadingSlow}}" bind:retry="retrySlowLoading" bind:cancel="cancelSlowLoading" />
 
-  <view class="pad mt-12">
-    <view class="search" bindtap="goSearch">搜索指标 / 报告 / 医院</view>
-  </view>
-
-  <view class="pad mt-12">
-    <view class="segmented">
-      <view class="segment-item {{view === 'metric' ? 'active' : ''}}" data-view="metric" bindtap="switchView">
-        按指标<view class="tiny">{{metricCount}} 个指标</view>
+  <view class="health-controls">
+    <view class="health-segmented">
+      <view class="health-segment metric-segment {{view === 'metric' ? 'active' : ''}}" data-view="metric" bindtap="switchView">
+        <view class="segment-label">按指标</view>
+        <view class="segment-sub">{{metricCount}} 个指标</view>
       </view>
-      <view class="segment-item {{view === 'time' ? 'active' : ''}}" data-view="time" bindtap="switchView">
-        按时间<view class="tiny">{{reportCount}} 份报告</view>
+      <view class="health-segment time-segment {{view === 'time' ? 'active' : ''}}" data-view="time" bindtap="switchView">
+        <view class="segment-label">按时间</view>
+        <view class="segment-sub">{{reportCount}} 份报告</view>
       </view>
     </view>
-    <view class="range-row">
+
+    <view class="health-range-row">
       <view
         wx:for="{{rangeOptions}}"
         wx:key="key"
         data-range="{{item.key}}"
         bindtap="switchRange"
-        class="range-chip {{range === item.key ? 'active' : ''}}"
+        class="health-range-chip {{range === item.key ? 'active' : ''}}"
       >{{item.label}}</view>
     </view>
-    <view class="data-scope-hint">
-      <text wx:if="{{view === 'metric'}}">按指标合并同名异常：{{abnormalCount}} 个异常指标。</text>
-      <text wx:else>按报告异常条目计数：{{reportAbnormalTotal}} 项，和按指标可能不同。</text>
-    </view>
+
   </view>
 
   <block wx:if="{{view === 'metric'}}">
-    <scroll-view scroll-x class="chips">
-      <view wx:for="{{chips}}" wx:key="*this" data-filter="{{item}}" bindtap="switchFilter" class="chip {{filter === item ? 'active' : ''}}">
-        {{item}}<text wx:if="{{item === '异常指标'}}" class="badge">{{abnormalCount}}</text>
+    <scroll-view scroll-x class="health-chips" enhanced="{{true}}" show-scrollbar="{{false}}">
+      <view wx:for="{{chips}}" wx:key="*this" data-filter="{{item}}" bindtap="switchFilter" class="health-chip {{filter === item ? 'active' : ''}}">
+        <text>{{item}}</text>
+        <text wx:if="{{item === '异常指标'}}" class="chip-badge">{{abnormalCount}}</text>
       </view>
     </scroll-view>
+    <view class="health-scope-hint health-scope-hint-below">按指标合并同名异常：{{abnormalCount}} 个异常指标。</view>
 
-    <view wx:for="{{groupedMetrics}}" wx:key="category" class="pad mt-12">
-      <view class="card">
-        <view class="topic-head row">
-          <view class="topic-title">{{item.categoryCn}}</view>
-          <view class="tiny">{{item.items.length}} 项</view>
-          <hh-pill wx:if="{{item.abnormalCount > 0}}" tone="high">{{item.abnormalCount}} 个异常指标</hh-pill>
-          <hh-pill wx:else tone="primary">全部正常</hh-pill>
-          <view class="flex"></view>
-          <view class="tiny">最近 {{item.latestDate}}</view>
+    <view wx:if="{{groupedMetrics.length === 0}}" class="health-pad empty-wrap">
+      <view class="health-empty-card" bindtap="goRecord">
+        <view class="empty-title">还没有健康指标</view>
+        <view class="empty-sub">新增第一份报告后，这里会按指标归类展示。</view>
+      </view>
+    </view>
+
+    <view wx:for="{{groupedMetrics}}" wx:key="category" wx:for-index="groupIndex" class="health-pad metric-group-wrap">
+      <view class="metric-group-card">
+        <view class="metric-group-head">
+          <image class="group-icon" src="{{item.icon}}" mode="aspectFit" />
+          <view class="group-title">{{item.categoryCn}}</view>
+          <view class="group-count">{{item.items.length}} 项</view>
+          <view wx:if="{{item.abnormalCount > 0}}" class="group-abnormal">{{item.abnormalCount}} 个异常指标</view>
+          <view wx:else class="group-normal">全部正常</view>
+          <view class="group-spacer"></view>
+          <view class="group-date">最近 {{item.displayLatestDate}}</view>
         </view>
-        <metric-row
+
+        <view
           wx:for="{{item.items}}"
+          wx:for-item="metric"
           wx:key="metricKey"
-          metric="{{item}}"
-          bind:metrictap="goMetric"
-        />
+          class="metric-data-row {{metric.lastTone}}"
+          data-key="{{metric.metricKey}}"
+          bindtap="goMetric"
+        >
+          <image wx:if="{{metric.isAbnormal}}" class="metric-warning" src="/assets/ui-refresh/health-warning.png" mode="aspectFit" />
+          <view class="metric-name {{metric.isAbnormal ? 'with-warning' : ''}}">{{metric.metricName}}</view>
+          <view class="metric-value {{metric.lastTone}}">{{metric.displayValue}}</view>
+          <view class="metric-unit">{{metric.unit}}</view>
+          <view wx:if="{{metric.isAbnormal}}" class="metric-trend-up">↑</view>
+          <view wx:else class="metric-dot"></view>
+          <view class="metric-chevron">›</view>
+        </view>
       </view>
     </view>
   </block>
 
   <block wx:else>
-    <view wx:for="{{reportsByMonth}}" wx:key="month">
-      <view class="section-title">
-        <view>{{item.title}}</view>
-        <view class="tiny">{{item.items.length}} 份</view>
+    <view class="health-scope-hint health-scope-hint-below">按报告异常条目计数：{{reportAbnormalTotal}} 项，和按指标可能不同。</view>
+
+    <view wx:if="{{reportsByMonth.length === 0}}" class="health-pad empty-wrap">
+      <view class="health-empty-card" bindtap="goRecord">
+        <view class="empty-title">还没有检查报告</view>
+        <view class="empty-sub">新增健康记录后，这里会按月份汇总。</view>
       </view>
-      <view class="pad">
-        <view class="card">
-          <view wx:for="{{item.items}}" wx:key="id" class="row" data-id="{{item.id}}" bindtap="goReport">
-            <view class="date-block">
-              <view class="date-day">{{item.dayText}}</view>
-              <view class="date-month">{{item.monthText}}</view>
+    </view>
+
+    <view wx:for="{{reportsByMonth}}" wx:key="month" class="report-month-section">
+      <view class="report-month-head">
+        <view class="report-month-title">{{item.title}}</view>
+        <view class="report-month-count">{{item.items.length}} 份</view>
+      </view>
+      <view class="health-pad">
+        <view class="report-month-card">
+          <view wx:for="{{item.items}}" wx:for-item="report" wx:key="id" class="report-data-row" data-id="{{report.id}}" bindtap="goReport">
+            <view class="report-date-block">
+              <view class="report-day">{{report.dayText}}</view>
+              <view class="report-month">{{report.monthText}}</view>
             </view>
-            <view class="flex">
-              <view class="body strong">{{item.type}}</view>
-              <view class="tiny">{{item.hospital}}</view>
+            <view class="report-main">
+              <view class="report-title">{{report.type}}</view>
+              <view class="report-hospital">{{report.hospital}}</view>
             </view>
-            <hh-pill wx:if="{{item.abnormalCount > 0}}" tone="high">{{item.abnormalCount}} 项异常</hh-pill>
-            <view class="arrow">›</view>
+            <view class="report-status {{report.statusTone}}">{{report.statusText}}</view>
+            <view class="report-chevron">›</view>
           </view>
         </view>
       </view>

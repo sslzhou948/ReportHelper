@@ -20,15 +20,49 @@ const DEFAULT_CHIPS = [
   '\u80be\u529f\u80fd',
   '\u80bf\u7624\u6807\u5fd7\u7269'
 ];
+const DEFAULT_RANGE = '30d';
 const RANGE_OPTIONS = [
+  { key: 'all', label: '全部' },
   { key: '30d', label: '近30天', days: 30 },
   { key: '90d', label: '近90天', days: 90 },
-  { key: '1y', label: '近1年', days: 365 },
-  { key: 'all', label: '全部' }
+  { key: '1y', label: '近1年', days: 365 }
 ];
+const DEFAULT_LAYOUT = {
+  homeBannerPaddingTop: 172,
+  homeBannerMinHeight: 312
+};
+const CATEGORY_ICONS = {
+  blood_routine: '/assets/ui-refresh/health-icon-blood.png',
+  liver_function: '/assets/ui-refresh/health-icon-liver.png',
+  kidney_function: '/assets/ui-refresh/health-icon-kidney.png',
+  tumor_marker: '/assets/ui-refresh/health-icon-tumor.png',
+  tumor_markers: '/assets/ui-refresh/health-icon-tumor.png'
+};
 
 function isAbnormalTone(tone) {
   return ['high', 'low', 'abnormal', 'positive'].includes(String(tone || ''));
+}
+
+function categoryIcon(category) {
+  return CATEGORY_ICONS[category] || '/assets/ui-refresh/health-icon-default.png';
+}
+
+function displayMetricValue(item) {
+  if (item.valueType === 'qualitative') return item.lastValueQualitative || '-';
+  if (item.valueType === 'text') return item.lastValueText || item.lastValueQualitative || '-';
+  return item.lastValueNumeric === undefined || item.lastValueNumeric === null ? '-' : String(item.lastValueNumeric);
+}
+
+function formatLatestDate(date) {
+  return date ? formatMonthDay(date) : '暂无';
+}
+
+function decorateMetric(item) {
+  return {
+    ...item,
+    displayValue: displayMetricValue(item),
+    isAbnormal: isAbnormalTone(item.lastTone)
+  };
 }
 
 function groupMetrics(metrics) {
@@ -44,15 +78,19 @@ function groupMetrics(metrics) {
         items: []
       };
     }
-    acc[key].items.push({
+    acc[key].items.push(decorateMetric({
       ...item,
       category: categoryInfo.category,
       categoryCn: categoryInfo.categoryCn
-    });
+    }));
     if (isAbnormalTone(item.lastTone)) acc[key].abnormalCount += 1;
     if (new Date(item.lastDate) > new Date(acc[key].latestDate)) acc[key].latestDate = item.lastDate;
     return acc;
-  }, {}));
+  }, {})).map((group) => ({
+    ...group,
+    icon: categoryIcon(group.category),
+    displayLatestDate: formatLatestDate(group.latestDate)
+  }));
 }
 
 function filterMetrics(metrics, filter) {
@@ -74,15 +112,19 @@ function buildReportsByMonth(reports) {
     acc[month].items.push({
       ...report,
       displayDate: formatMonthDay(report.reportDate),
-      dayText: String(Number(report.reportDate.slice(8, 10))),
-      monthText: `${Number(report.reportDate.slice(5, 7))}\u6708`
+      dayText: report.reportDate.slice(8, 10),
+      monthText: `${Number(report.reportDate.slice(5, 7))}\u6708`,
+      statusText: Number(report.abnormalCount) > 0 ? `${Number(report.abnormalCount)} 项异常` : '全部正常',
+      statusTone: Number(report.abnormalCount) > 0 ? 'high' : 'primary'
     });
     return acc;
   }, {}));
 }
 
 function rangeQuery(rangeKey) {
-  const option = RANGE_OPTIONS.find((item) => item.key === rangeKey) || RANGE_OPTIONS[0];
+  const option = RANGE_OPTIONS.find((item) => item.key === rangeKey)
+    || RANGE_OPTIONS.find((item) => item.key === DEFAULT_RANGE)
+    || RANGE_OPTIONS[0];
   const today = formatDate(new Date());
   if (!option.days) return {};
   return {
@@ -92,15 +134,17 @@ function rangeQuery(rangeKey) {
 }
 
 function rangeLabel(rangeKey) {
-  const option = RANGE_OPTIONS.find((item) => item.key === rangeKey) || RANGE_OPTIONS[0];
+  const option = RANGE_OPTIONS.find((item) => item.key === rangeKey)
+    || RANGE_OPTIONS.find((item) => item.key === DEFAULT_RANGE)
+    || RANGE_OPTIONS[0];
   return option.label;
 }
 
 Page({
   data: {
     view: 'metric',
-    range: '30d',
-    rangeLabel: rangeLabel('30d'),
+    range: DEFAULT_RANGE,
+    rangeLabel: rangeLabel(DEFAULT_RANGE),
     rangeOptions: RANGE_OPTIONS,
     filter: FILTER_ALL,
     metricCount: 0,
@@ -111,17 +155,22 @@ Page({
     groupedMetrics: [],
     reportsByMonth: [],
     chips: DEFAULT_CHIPS,
+    layout: DEFAULT_LAYOUT,
     networkOffline: false,
     loading: false,
     loadingSlow: false
   },
 
   onLoad(query = {}) {
-    this.setData({ view: query.view || 'metric' });
+    this.setData({
+      view: query.view || 'metric',
+      layout: getApp().getLayout ? getApp().getLayout() : DEFAULT_LAYOUT
+    });
   },
 
   onShow() {
     bindNetworkStatus(this);
+    this.setData({ layout: getApp().getLayout ? getApp().getLayout() : DEFAULT_LAYOUT });
     const savedRange = wx.getStorageSync('healthDataRange');
     if (savedRange && savedRange !== this.data.range) {
       this.setData({ range: savedRange, rangeLabel: rangeLabel(savedRange) });
