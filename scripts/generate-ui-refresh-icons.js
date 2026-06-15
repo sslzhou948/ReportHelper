@@ -147,6 +147,15 @@ function createCanvas(width, height) {
     }
   }
 
+  function arc(cx, cy, rx, ry, start, end, widthValue, color) {
+    const span = Math.abs(end - start);
+    const steps = Math.max(8, Math.ceil(span * Math.max(rx, ry) * SCALE));
+    for (let i = 0; i <= steps; i += 1) {
+      const t = start + (end - start) * (i / steps);
+      fillCircle(cx + Math.cos(t) * rx, cy + Math.sin(t) * ry, widthValue / 2, color);
+    }
+  }
+
   function downsample() {
     const pixels = new Uint8ClampedArray(width * height * 4);
     for (let y = 0; y < height; y += 1) {
@@ -172,7 +181,7 @@ function createCanvas(width, height) {
     return pixels;
   }
 
-  return { fillCircle, fillEllipse, fillPolygon, fillRect, fillRoundedRect, line, downsample };
+  return { arc, fillCircle, fillEllipse, fillPolygon, fillRect, fillRoundedRect, line, downsample };
 }
 
 const green = hexToRgb('#5A7A5A');
@@ -187,6 +196,28 @@ function drawIcon(name, painter, size = 72) {
   const draw = createCanvas(size, size);
   painter(draw, size);
   writePng(path.join(outDir, name), size, size, draw.downsample());
+}
+
+function strokeRoundRect(draw, x, y, widthValue, heightValue, radius, widthStroke, color) {
+  draw.line(x + radius, y, x + widthValue - radius, y, widthStroke, color);
+  draw.line(x + radius, y + heightValue, x + widthValue - radius, y + heightValue, widthStroke, color);
+  draw.line(x, y + radius, x, y + heightValue - radius, widthStroke, color);
+  draw.line(x + widthValue, y + radius, x + widthValue, y + heightValue - radius, widthStroke, color);
+  draw.arc(x + radius, y + radius, radius, radius, Math.PI, Math.PI * 1.5, widthStroke, color);
+  draw.arc(x + widthValue - radius, y + radius, radius, radius, Math.PI * 1.5, Math.PI * 2, widthStroke, color);
+  draw.arc(x + widthValue - radius, y + heightValue - radius, radius, radius, 0, Math.PI * 0.5, widthStroke, color);
+  draw.arc(x + radius, y + heightValue - radius, radius, radius, Math.PI * 0.5, Math.PI, widthStroke, color);
+}
+
+function strokeCircle(draw, cx, cy, radius, widthStroke, color) {
+  draw.arc(cx, cy, radius, radius, 0, Math.PI * 2, widthStroke, color);
+}
+
+function drawFoldedPaper(draw, x, y, widthValue, heightValue, color) {
+  strokeRoundRect(draw, x, y, widthValue, heightValue, 5, 4, color);
+  draw.line(x + widthValue - 13, y, x + widthValue, y + 13, 4, color);
+  draw.line(x + widthValue - 13, y, x + widthValue - 13, y + 13, 4, color);
+  draw.line(x + widthValue - 13, y + 13, x + widthValue, y + 13, 4, color);
 }
 
 function drawSearch() {
@@ -206,6 +237,110 @@ function categoryBase(draw) {
 }
 
 drawSearch();
+
+drawIcon('profile-avatar-line.png', (draw) => {
+  const avatarBg = hexToRgb('#DCE7DB');
+  draw.fillCircle(60, 60, 56, avatarBg);
+  strokeCircle(draw, 60, 44, 20, 5, green);
+  draw.arc(60, 88, 40, 34, Math.PI * 1.03, Math.PI * 1.97, 5, green);
+  draw.fillCircle(84, 80, 10, green);
+  draw.fillCircle(97, 80, 10, green);
+  draw.fillPolygon([[74, 83], [107, 83], [91, 102]], green);
+  draw.fillCircle(84, 80, 5, avatarBg);
+  draw.fillCircle(97, 80, 5, avatarBg);
+  draw.fillPolygon([[81, 84], [100, 84], [91, 95]], avatarBg);
+}, 120);
+
+drawIcon('profile-folder.png', (draw) => {
+  draw.line(10, 22, 25, 22, 4, green);
+  draw.line(25, 22, 30, 28, 4, green);
+  draw.line(30, 28, 54, 28, 4, green);
+  strokeRoundRect(draw, 9, 23, 48, 34, 4, 4, green);
+  draw.line(9, 33, 57, 33, 4, green);
+}, 64);
+
+drawIcon('profile-stack.png', (draw) => {
+  draw.line(32, 10, 55, 22, 4, green);
+  draw.line(55, 22, 32, 34, 4, green);
+  draw.line(32, 34, 9, 22, 4, green);
+  draw.line(9, 22, 32, 10, 4, green);
+  draw.line(13, 33, 32, 43, 4, green);
+  draw.line(32, 43, 51, 33, 4, green);
+  draw.line(13, 44, 32, 54, 4, green);
+  draw.line(32, 54, 51, 44, 4, green);
+}, 64);
+
+drawIcon('profile-export.png', (draw) => {
+  strokeRoundRect(draw, 11, 19, 42, 36, 4, 4, green);
+  draw.line(32, 7, 32, 35, 5, green);
+  draw.line(21, 23, 32, 35, 5, green);
+  draw.line(43, 23, 32, 35, 5, green);
+  draw.line(20, 50, 44, 50, 4, green);
+}, 64);
+
+drawIcon('profile-archive.png', (draw) => {
+  drawFoldedPaper(draw, 14, 10, 36, 44, green);
+  draw.line(22, 26, 40, 26, 4, green);
+  draw.line(22, 36, 36, 36, 4, green);
+  draw.line(39, 45, 52, 54, 4, green);
+  draw.line(51, 42, 52, 54, 4, green);
+}, 64);
+
+drawIcon('profile-template.png', (draw) => {
+  strokeRoundRect(draw, 11, 14, 38, 38, 5, 4, green);
+  draw.line(21, 43, 42, 22, 5, green);
+  draw.line(38, 18, 46, 26, 5, green);
+  draw.line(17, 48, 28, 45, 4, green);
+}, 64);
+
+drawIcon('profile-trash.png', (draw) => {
+  const danger = hexToRgb('#D84D43');
+  draw.line(20, 17, 44, 17, 5, danger);
+  draw.line(25, 11, 39, 11, 4, danger);
+  strokeRoundRect(draw, 18, 22, 28, 34, 3, 4, danger);
+  draw.line(27, 29, 27, 49, 3, danger);
+  draw.line(37, 29, 37, 49, 3, danger);
+}, 64);
+
+drawIcon('profile-guide.png', (draw) => {
+  strokeRoundRect(draw, 9, 14, 23, 38, 4, 4, green);
+  strokeRoundRect(draw, 32, 14, 23, 38, 4, 4, green);
+  draw.line(32, 19, 32, 55, 4, green);
+  draw.line(16, 24, 25, 24, 3, green);
+  draw.line(39, 24, 48, 24, 3, green);
+}, 64);
+
+drawIcon('profile-help.png', (draw) => {
+  strokeCircle(draw, 32, 32, 24, 4, green);
+  draw.arc(32, 27, 10, 9, Math.PI * 1.03, Math.PI * 2.15, 4, green);
+  draw.line(39, 32, 32, 39, 4, green);
+  draw.fillCircle(32, 47, 3, green);
+}, 64);
+
+drawIcon('profile-feedback.png', (draw) => {
+  strokeRoundRect(draw, 13, 13, 38, 33, 8, 4, green);
+  draw.line(24, 46, 17, 55, 4, green);
+  draw.line(24, 46, 33, 46, 4, green);
+  draw.fillCircle(24, 29, 2.5, green);
+  draw.fillCircle(32, 29, 2.5, green);
+  draw.fillCircle(40, 29, 2.5, green);
+}, 64);
+
+drawIcon('profile-info.png', (draw) => {
+  strokeCircle(draw, 32, 32, 24, 4, green);
+  draw.fillCircle(32, 21, 3, green);
+  draw.line(32, 30, 32, 45, 5, green);
+}, 64);
+
+drawIcon('profile-logout.png', (draw) => {
+  const danger = hexToRgb('#D84D43');
+  draw.line(13, 11, 36, 11, 4, danger);
+  draw.line(13, 11, 13, 53, 4, danger);
+  draw.line(13, 53, 36, 53, 4, danger);
+  draw.line(30, 32, 53, 32, 5, danger);
+  draw.line(43, 21, 54, 32, 5, danger);
+  draw.line(43, 43, 54, 32, 5, danger);
+}, 64);
 
 drawIcon('recheck-icon.png', (draw) => {
   draw.fillCircle(44, 44, 39, softGreen);

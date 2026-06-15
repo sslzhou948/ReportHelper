@@ -1,94 +1,175 @@
-﻿<view class="page page-tab">
-  <view class="nav">
-    <view class="nav-side left"></view>
-    <view class="nav-title">我的</view>
-    <view class="nav-side right"></view>
+<view class="page page-tab profile-ref-page">
+  <view class="profile-hero" style="--safe-top: {{layout.homeBannerPaddingTop}}rpx;">
+    <view class="profile-nav">
+      <view class="profile-title">我的</view>
+    </view>
   </view>
-  <network-banner offline="{{networkOffline}}" bind:retry="retryAfterNetwork" />
-  <loading-slow-banner visible="{{loadingSlow}}" bind:retry="retrySlowLoading" bind:cancel="cancelSlowLoading" />
-  <view class="pad mt-12">
-    <view class="card card-pad">
-      <view class="profile-card-head">
-        <view class="avatar-large">{{profile.avatarText}}</view>
-        <view class="flex">
-          <view class="title">{{profile.realName}}</view>
-          <view class="sub">{{profile.summary}}</view>
-          <view class="tiny">当前档案：{{profile.relation}}</view>
+
+  <view class="profile-shell">
+    <network-banner offline="{{networkOffline}}" bind:retry="retryAfterNetwork" />
+    <loading-slow-banner visible="{{loadingSlow}}" bind:retry="retrySlowLoading" bind:cancel="cancelSlowLoading" />
+
+    <view class="profile-pad profile-card-wrap">
+      <view class="profile-card">
+        <view class="profile-card-head">
+          <image class="profile-avatar" src="/assets/ui-refresh/profile-avatar-line.png" mode="aspectFit" />
+          <view class="profile-main">
+            <view class="profile-name">{{profile.realName}}</view>
+            <view class="profile-summary">{{profile.summary}}</view>
+            <view class="profile-relation">当前档案：{{profile.relation}}</view>
+          </view>
+          <view class="profile-edit" bindtap="goArchive">
+            <text>编辑</text>
+            <text class="profile-edit-chevron">›</text>
+          </view>
         </view>
-        <view class="mini-btn" bindtap="goArchive">编辑</view>
-      </view>
-      <view class="stats">
-        <view><view class="stat-num">{{reportsCount}}</view><view class="tiny">报告</view></view>
-        <view><view class="stat-num">{{metricsCount}}</view><view class="tiny">指标</view></view>
-        <view><view class="stat-num">{{recheckCount}}</view><view class="tiny">复查</view></view>
-      </view>
-    </view>
-  </view>
-
-  <view class="section-title">档案</view>
-  <view class="pad">
-    <view class="card">
-      <view class="row" bindtap="goArchive"><view class="flex">我的档案</view><view class="tiny">当前档案：{{profile.relation}}（{{profile.realName}}）</view><view class="arrow">›</view></view>
-      <view class="row" bindtap="openSwitcher"><view class="flex">档案管理</view><view class="tiny">{{profiles.length}} 份档案</view><view class="arrow">›</view></view>
-    </view>
-  </view>
-
-  <view class="section-title">数据</view>
-  <view class="pad">
-    <view class="card">
-      <view class="row" data-title="数据导出" bindtap="showStatic"><view class="flex">数据导出</view><view class="tiny">报告与指标记录</view><view class="arrow">›</view></view>
-      <view class="row" data-title="报告归档管理" bindtap="showStatic"><view class="flex">报告归档管理</view><view class="tiny">{{reportsCount}} 份报告</view><view class="arrow">›</view></view>
-      <view class="row" data-title="维护手动录入模板" bindtap="showStatic"><view class="flex">维护手动录入模板</view><view class="tiny">自定义项目和参考值</view><view class="arrow">›</view></view>
-      <view class="row danger" data-title="清空当前档案数据" bindtap="showStatic"><view class="flex">清空当前档案数据</view><view class="arrow">›</view></view>
-    </view>
-  </view>
-
-  <view class="section-title">工具</view>
-  <view class="pad">
-    <view class="card">
-      <view class="row" data-title="使用指南" bindtap="showStatic"><view class="flex">使用指南</view><view class="arrow">›</view></view>
-      <view class="row" data-title="指标说明" bindtap="showStatic"><view class="flex">指标说明</view><view class="arrow">›</view></view>
-    </view>
-  </view>
-
-  <view wx:if="{{devRuntimeVisible}}" class="section-title">开发调试</view>
-  <view wx:if="{{devRuntimeVisible}}" class="pad">
-    <view class="card card-pad dev-card">
-      <view class="dev-head">
-        <view>
-          <view class="dev-title">数据模式</view>
-          <view class="tiny">当前：{{devApiMode}} · {{devBackendStatus}}</view>
+        <view class="profile-stats">
+          <view class="profile-stat">
+            <view class="profile-stat-num">{{reportsCount}}</view>
+            <view class="profile-stat-label">报告</view>
+          </view>
+          <view class="profile-stat">
+            <view class="profile-stat-num">{{metricsCount}}</view>
+            <view class="profile-stat-label">指标</view>
+          </view>
+          <view class="profile-stat">
+            <view class="profile-stat-num">{{recheckCount}}</view>
+            <view class="profile-stat-label">复查</view>
+          </view>
         </view>
-        <view class="dev-status {{devBackendStatus === '已连接' ? 'ok' : ''}}">{{devBackendStatus}}</view>
       </view>
-      <view class="dev-segment">
-        <view class="dev-option {{devApiMode === 'mock' ? 'active' : ''}}" data-mode="mock" bindtap="setDevApiMode">Mock</view>
-        <view class="dev-option {{devApiMode === 'hybrid-upload' ? 'active' : ''}}" data-mode="hybrid-upload" bindtap="setDevApiMode">真实上传</view>
-        <view class="dev-option {{devApiMode === 'backend' ? 'active' : ''}}" data-mode="backend" bindtap="setDevApiMode">全后端</view>
+    </view>
+
+    <view class="profile-section">
+      <view class="profile-section-title">档案</view>
+      <view class="profile-pad">
+        <view class="profile-menu-card">
+          <view class="profile-menu-row" bindtap="goArchive">
+            <image class="profile-menu-icon" src="/assets/ui-refresh/profile-folder.png" mode="aspectFit" />
+            <view class="profile-menu-label">我的档案</view>
+            <view class="profile-menu-value">当前档案：{{profile.relation}}（{{profile.realName}}）</view>
+            <view class="profile-chevron">›</view>
+          </view>
+          <view class="profile-menu-row" bindtap="openSwitcher">
+            <image class="profile-menu-icon" src="/assets/ui-refresh/profile-stack.png" mode="aspectFit" />
+            <view class="profile-menu-label">档案管理</view>
+            <view class="profile-menu-value">{{profiles.length}} 份档案</view>
+            <view class="profile-chevron">›</view>
+          </view>
+        </view>
       </view>
-      <view class="row compact" bindtap="chooseDevBackendBaseUrl">
-        <view class="flex">后端地址</view>
-        <view class="tiny dev-url">{{devBackendBaseUrl}}</view>
-        <view class="arrow">›</view>
+    </view>
+
+    <view class="profile-section">
+      <view class="profile-section-title">数据</view>
+      <view class="profile-pad">
+        <view class="profile-menu-card">
+          <view class="profile-menu-row" data-title="数据导出" bindtap="showStatic">
+            <image class="profile-menu-icon" src="/assets/ui-refresh/profile-export.png" mode="aspectFit" />
+            <view class="profile-menu-label">数据导出</view>
+            <view class="profile-menu-value">报告与指标记录</view>
+            <view class="profile-chevron">›</view>
+          </view>
+          <view class="profile-menu-row" data-title="报告归档管理" bindtap="showStatic">
+            <image class="profile-menu-icon" src="/assets/ui-refresh/profile-archive.png" mode="aspectFit" />
+            <view class="profile-menu-label">报告归档管理</view>
+            <view class="profile-menu-value">{{reportsCount}} 份报告</view>
+            <view class="profile-chevron">›</view>
+          </view>
+          <view class="profile-menu-row" data-title="维护手动录入模板" bindtap="showStatic">
+            <image class="profile-menu-icon" src="/assets/ui-refresh/profile-template.png" mode="aspectFit" />
+            <view class="profile-menu-label">维护手动录入模板</view>
+            <view class="profile-menu-value">自定义项目和参考值</view>
+            <view class="profile-chevron">›</view>
+          </view>
+          <view class="profile-menu-row danger" data-title="清空当前档案数据" bindtap="showStatic">
+            <image class="profile-menu-icon" src="/assets/ui-refresh/profile-trash.png" mode="aspectFit" />
+            <view class="profile-menu-label">清空当前档案数据</view>
+            <view class="profile-menu-value"></view>
+            <view class="profile-chevron">›</view>
+          </view>
+        </view>
       </view>
-      <view class="row compact" bindtap="connectDevBackend">
-        <view class="flex">重新连接后端</view>
-        <view class="tiny">{{devBackendProfileId ? '已绑定测试档案' : '未绑定测试档案'}}</view>
-        <view class="arrow">›</view>
+    </view>
+
+    <view class="profile-section">
+      <view class="profile-section-title">工具</view>
+      <view class="profile-pad">
+        <view class="profile-menu-card">
+          <view class="profile-menu-row" data-title="使用指南" bindtap="showStatic">
+            <image class="profile-menu-icon" src="/assets/ui-refresh/profile-guide.png" mode="aspectFit" />
+            <view class="profile-menu-label">使用指南</view>
+            <view class="profile-menu-value"></view>
+            <view class="profile-chevron">›</view>
+          </view>
+          <view class="profile-menu-row" data-title="指标说明" bindtap="showStatic">
+            <image class="profile-menu-icon" src="/assets/ui-refresh/profile-help.png" mode="aspectFit" />
+            <view class="profile-menu-label">指标说明</view>
+            <view class="profile-menu-value"></view>
+            <view class="profile-chevron">›</view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="profile-section">
+      <view class="profile-section-title">关于</view>
+      <view class="profile-pad">
+        <view class="profile-menu-card">
+          <view class="profile-menu-row" data-title="意见反馈" bindtap="showStatic">
+            <image class="profile-menu-icon" src="/assets/ui-refresh/profile-feedback.png" mode="aspectFit" />
+            <view class="profile-menu-label">意见反馈</view>
+            <view class="profile-menu-value"></view>
+            <view class="profile-chevron">›</view>
+          </view>
+          <view class="profile-menu-row" data-title="关于我们 v1.0.0" bindtap="showStatic">
+            <image class="profile-menu-icon" src="/assets/ui-refresh/profile-info.png" mode="aspectFit" />
+            <view class="profile-menu-label">关于我们</view>
+            <view class="profile-menu-value">v1.0.0</view>
+            <view class="profile-chevron">›</view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="profile-pad profile-logout-wrap">
+      <view class="profile-logout-card" bindtap="logout">
+        <image class="profile-logout-icon" src="/assets/ui-refresh/profile-logout.png" mode="aspectFit" />
+        <view>退出登录</view>
+      </view>
+    </view>
+
+    <view wx:if="{{devRuntimeVisible}}" class="profile-section dev-section">
+      <view class="profile-section-title">开发调试</view>
+      <view class="profile-pad">
+        <view class="profile-dev-card">
+          <view class="dev-head">
+            <view>
+              <view class="dev-title">数据模式</view>
+              <view class="dev-sub">当前：{{devApiMode}} · {{devBackendStatus}}</view>
+            </view>
+            <view class="dev-status {{devBackendStatus === '已连接' ? 'ok' : ''}}">{{devBackendStatus}}</view>
+          </view>
+          <view class="dev-segment">
+            <view class="dev-option {{devApiMode === 'mock' ? 'active' : ''}}" data-mode="mock" bindtap="setDevApiMode">Mock</view>
+            <view class="dev-option {{devApiMode === 'hybrid-upload' ? 'active' : ''}}" data-mode="hybrid-upload" bindtap="setDevApiMode">真实上传</view>
+            <view class="dev-option {{devApiMode === 'backend' ? 'active' : ''}}" data-mode="backend" bindtap="setDevApiMode">全后端</view>
+          </view>
+          <view class="dev-row" bindtap="chooseDevBackendBaseUrl">
+            <view class="dev-label">后端地址</view>
+            <view class="dev-value">{{devBackendBaseUrl}}</view>
+            <view class="profile-chevron">›</view>
+          </view>
+          <view class="dev-row" bindtap="connectDevBackend">
+            <view class="dev-label">重新连接后端</view>
+            <view class="dev-value">{{devBackendProfileId ? '已绑定测试档案' : '未绑定测试档案'}}</view>
+            <view class="profile-chevron">›</view>
+          </view>
+        </view>
       </view>
     </view>
   </view>
 
-  <view class="section-title">关于</view>
-  <view class="pad">
-    <view class="card">
-      <view class="row" data-title="意见反馈" bindtap="showStatic"><view class="flex">意见反馈</view><view class="arrow">›</view></view>
-      <view class="row" data-title="关于我们 v1.0.0" bindtap="showStatic"><view class="flex">关于我们</view><view class="tiny">v1.0.0</view><view class="arrow">›</view></view>
-    </view>
-  </view>
-  <view class="pad mt-16">
-    <view class="btn secondary logout" bindtap="logout">退出登录</view>
-  </view>
   <profile-switcher
     visible="{{switcherVisible}}"
     profiles="{{profiles}}"

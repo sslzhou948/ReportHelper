@@ -15,6 +15,7 @@ const homeWxml = read('miniprogram/pages/home/index.wxml');
 const recheckWxss = read('miniprogram/pages/recheck/index.wxss');
 const recheckWxml = read('miniprogram/pages/recheck/index.wxml');
 const profileWxss = read('miniprogram/pages/profile/index.wxss');
+const profileWxml = read('miniprogram/pages/profile/index.wxml');
 const metricDetailWxml = read('miniprogram/pages/health/metric-detail.wxml');
 const metricDetailWxss = read('miniprogram/pages/health/metric-detail.wxss');
 const trendChartWxml = read('miniprogram/components/trend-chart/trend-chart.wxml');
@@ -146,13 +147,47 @@ const sectionAction = getRule(homeWxss, '.section-action');
 assertDecl(sectionAction, 'margin-left: auto', 'home section actions must be right aligned');
 assertDecl(sectionAction, 'text-align: right', 'home section actions must align text to the right');
 
+assert.ok(profileWxml.includes('class="page page-tab profile-ref-page"'), 'profile page must use the refreshed page shell');
+assert.ok(profileWxml.includes('class="profile-hero"'), 'profile page must use the green refreshed hero');
+assert.ok(profileWxml.includes('/assets/ui-refresh/profile-avatar-line.png'), 'profile card must use the refreshed profile avatar asset');
+assert.ok(profileWxml.includes('/assets/ui-refresh/profile-folder.png'), 'profile menu must use refreshed line icons');
+assert.ok(profileWxml.includes('/assets/ui-refresh/profile-logout.png'), 'profile logout must use the refreshed logout asset');
+assert.ok(!profileWxml.includes('<view class="nav">'), 'profile page must not use the legacy white sticky nav');
+
+const profileHero = getRule(profileWxss, '.profile-hero');
+assertDecl(profileHero, 'height: 250rpx', 'profile hero must match the refreshed compact green header height');
+assertDecl(profileHero, 'padding: calc(var(--safe-top) - 98rpx) 36rpx 0', 'profile hero must respect capsule-safe top spacing');
+
+const profileShell = getRule(profileWxss, '.profile-shell');
+assertDecl(profileShell, 'margin-top: -56rpx', 'profile warm content shell must overlap the green header');
+assertDecl(profileShell, 'border-top-left-radius: 58rpx', 'profile content shell must keep the large rounded top edge');
+
 const profileHead = getRule(profileWxss, '.profile-card-head');
 assertDecl(profileHead, 'align-items: flex-start', 'profile card controls must align to the card top edge');
+assertDecl(profileHead, 'gap: 30rpx', 'profile card must keep the reference avatar/text spacing');
 
-const profileMiniButton = getRule(profileWxss, '.mini-btn');
-assertDecl(profileMiniButton, 'align-self: flex-start', 'profile edit button must sit at the top-right of the profile card');
-assertDecl(profileMiniButton, 'height: 56rpx', 'profile edit button must stay compact');
-assertDecl(profileMiniButton, 'display: flex', 'profile edit button text must be vertically centered');
+const profileEdit = getRule(profileWxss, '.profile-edit');
+assertDecl(profileEdit, 'align-self: flex-start', 'profile edit action must sit at the top-right of the profile card');
+assertDecl(profileEdit, 'height: 60rpx', 'profile edit action must stay compact');
+assertDecl(profileEdit, 'display: flex', 'profile edit action text must be vertically centered');
+
+const profileMenuRow = getRule(profileWxss, '.profile-menu-row');
+assertDecl(profileMenuRow, 'min-height: 88rpx', 'profile menu rows must keep a compact stable settings rhythm');
+assertDecl(profileMenuRow, 'display: flex', 'profile menu rows must align icon, label, value, and chevron');
+
+const profileSectionTitle = getRule(profileWxss, '.profile-section-title');
+assertDecl(profileSectionTitle, 'font-weight: 800', 'profile section titles must align with refreshed page title hierarchy');
+
+const profileMenuLabel = getRule(profileWxss, '.profile-menu-label');
+assertDecl(profileMenuLabel, 'font-weight: 400', 'profile menu labels must use normal body weight');
+
+const profileMenuValue = getRule(profileWxss, '.profile-menu-value');
+assertDecl(profileMenuValue, 'font-weight: 400', 'profile menu secondary values must use normal body weight');
+assertDecl(profileMenuValue, 'text-align: right', 'profile menu secondary values must align to the right');
+assertDecl(profileMenuValue, 'text-overflow: ellipsis', 'profile menu secondary values must not break the card');
+
+const profileLogout = getRule(profileWxss, '.profile-logout-card');
+assertDecl(profileLogout, 'height: 96rpx', 'profile logout action must align with the refreshed button rhythm');
 
 assert.ok(metricDetailWxml.includes('class="pin-action'), 'metric detail follow control must be a readable text action');
 assert.ok(metricDetailWxml.includes('已关注'), 'metric detail follow control must expose current state as text');

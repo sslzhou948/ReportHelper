@@ -9,6 +9,10 @@ const { bindNetworkStatus, refreshNetworkStatus } = require('../../utils/network
 const { isProfileRequiredError } = require('../../utils/profile');
 const { DEFAULT_BACKEND_BASE_URL } = require('../../utils/api-config');
 
+const DEFAULT_LAYOUT = {
+  homeBannerPaddingTop: 172,
+  homeBannerMinHeight: 312
+};
 const ROUTE_MAP = {
   '\u6570\u636e\u5bfc\u51fa': '/pages/profile/export',
   '\u62a5\u544a\u5f52\u6863\u7ba1\u7406': '/pages/profile/reports-archive',
@@ -33,12 +37,14 @@ Page({
     devBackendBaseUrl: DEFAULT_BACKEND_BASE_URL,
     devBackendProfileId: '',
     devBackendStatus: '未检测',
+    layout: DEFAULT_LAYOUT,
     networkOffline: false,
     loading: false,
     loadingSlow: false
   },
   onShow() {
     bindNetworkStatus(this);
+    this.setData({ layout: getApp().getLayout ? getApp().getLayout() : DEFAULT_LAYOUT });
     this.refreshDevRuntime();
     this.load();
   },
