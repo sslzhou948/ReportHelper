@@ -1,19 +1,21 @@
-﻿<view class="page page-tab">
-  <view class="banner home-banner" style="padding-top: {{layout.homeBannerPaddingTop}}rpx; min-height: {{layout.homeBannerMinHeight}}rpx;">
+<view class="page page-tab home-ref-page">
+  <view class="home-ref-hero" style="--safe-top: {{layout.homeBannerPaddingTop}}rpx; --layout-banner-min: {{layout.homeBannerMinHeight}}rpx;">
+    <image class="hero-leaves" src="/assets/ui-refresh/hero-leaves.png" mode="aspectFit" />
     <view class="home-head">
       <view class="profile-chip" bindtap="openSwitcher">
-        <view class="avatar">{{profile.avatarText}}</view>
-        <text>{{profile.relation}} · {{profile.realName}}</text>
-        <text>⌄</text>
+        <image class="avatar-img" src="/assets/ui-refresh/avatar-mom.png" mode="aspectFill" />
+        <text class="profile-label">{{profile.relation}} · {{profile.realName}}</text>
+        <text class="chip-chevron">›</text>
       </view>
     </view>
     <view class="greeting">{{greetingText}}</view>
+    <view class="hero-summary">最近30天 · {{alertMetrics.length}}项需关注 · {{reports.length}}份报告</view>
   </view>
 
   <network-banner offline="{{networkOffline}}" bind:retry="retryAfterNetwork" />
   <loading-slow-banner visible="{{loadingSlow}}" bind:retry="retrySlowLoading" bind:cancel="cancelSlowLoading" />
 
-  <view wx:if="{{pendingOcrTask}}" class="pad mt-12">
+  <view wx:if="{{pendingOcrTask}}" class="pad pending-wrap">
     <view class="ocr-card" bindtap="goOcrTask">
       <view class="ocr-icon">识</view>
       <view class="flex">
@@ -24,9 +26,9 @@
     </view>
   </view>
 
-  <view class="pad home-main-card mt-12">
+  <view class="pad home-main-card">
     <view class="upload-cta" bindtap="goRecord">
-      <view class="upload-icon">＋</view>
+      <image class="upload-icon-img" src="/assets/ui-refresh/plus-soft.png" mode="aspectFit" />
       <view class="flex">
         <view class="upload-title">新增健康记录</view>
         <view class="upload-sub">拍照识别 / 手动录入</view>
@@ -35,53 +37,66 @@
     </view>
   </view>
 
-  <view wx:if="{{nextPlan}}" class="pad home-main-card mt-12">
-    <view class="card card-pad recheck-card" bindtap="goRecheck">
-      <view class="recheck-icon">复</view>
+  <view wx:if="{{nextPlan}}" class="pad recheck-wrap">
+    <view class="recheck-card" bindtap="goRecheck">
+      <image class="recheck-icon-img" src="/assets/ui-refresh/recheck-icon.png" mode="aspectFit" />
       <view class="flex">
-        <view class="body strong">距下次复查还有 {{daysToNext}} 天</view>
-        <view class="sub">{{nextPlan.date}} · {{nextPlan.hospital}} · {{nextPlan.type}}</view>
+        <view class="recheck-title">距下次复查还有 <text>{{daysToNext}}</text> 天</view>
+        <view class="recheck-sub">{{nextPlan.date}} · {{nextPlan.hospital}} · {{nextPlan.type}}</view>
       </view>
       <view class="arrow">›</view>
     </view>
   </view>
 
-  <view class="section-title">
+  <view class="section-title metric-section">
     <view>关注指标</view>
     <view class="section-action" bindtap="goPinnedManage">管理 ›</view>
   </view>
   <scroll-view scroll-x class="metric-scroll">
     <view wx:for="{{pinnedMetrics}}" wx:key="metricKey" class="metric-card" data-key="{{item.metricKey}}" bindtap="goMetric">
-      <view class="sub">{{item.metricName}}</view>
+      <view class="metric-name">{{item.metricName}}</view>
       <view class="metric-value {{item.lastTone}}">
         <text wx:if="{{item.valueType === 'qualitative'}}">{{item.lastValueQualitative}}</text>
         <text wx:else>{{item.lastValueNumeric}}</text>
-        <text wx:if="{{item.unit}}" class="metric-unit">{{item.unit}}</text>
       </view>
-      <view class="mini-spark {{item.lastTone}}">
-        <view></view><view></view><view></view><view></view><view></view>
+      <view wx:if="{{item.unit}}" class="metric-unit">{{item.unit}}</view>
+      <view class="metric-sparkline {{item.sparkline.tone}}">
+        <view
+          wx:for="{{item.sparkline.segments}}"
+          wx:for-item="segment"
+          wx:key="id"
+          class="metric-spark-segment {{segment.tone}}"
+          style="left: {{segment.left}}rpx; top: {{segment.top}}rpx; width: {{segment.width}}rpx; transform: rotate({{segment.angle}}deg);"
+        ></view>
+        <view
+          wx:for="{{item.sparkline.points}}"
+          wx:for-item="point"
+          wx:key="id"
+          class="metric-spark-point {{point.tone}}"
+          style="left: {{point.left}}rpx; top: {{point.top}}rpx;"
+        ></view>
       </view>
-      <view class="tiny">{{item.lastDate}} · {{item.trendLabel}}</view>
     </view>
     <view wx:if="{{pinnedMetrics.length === 0}}" class="metric-card empty-metric" bindtap="goPinnedManage">
-      <view class="body strong">暂无关注指标</view>
+      <view class="metric-name">暂无关注指标</view>
       <view class="tiny mt-8">上传报告后，可把常看的指标加入关注</view>
     </view>
   </scroll-view>
 
-  <view class="section-title">
+  <view class="section-title report-section">
     <view>最近报告</view>
     <view class="section-action" bindtap="goHealthTime">查看全部 ›</view>
   </view>
   <view class="pad">
-    <view class="card">
-      <view wx:for="{{reports}}" wx:key="id" class="row" data-id="{{item.id}}" bindtap="goReport">
-        <view class="report-type" title="{{item.fullHospital}}">{{item.displayHospital}}</view>
+    <view class="report-list">
+      <view wx:for="{{reports}}" wx:key="id" class="report-row" data-id="{{item.id}}" bindtap="goReport">
+        <image class="report-icon-img" src="/assets/ui-refresh/report-doc.png" mode="aspectFit" />
         <view class="report-main">
-          <view class="body strong report-title" title="{{item.fullType}}">{{item.fullType}}</view>
-          <view class="tiny">{{item.displayDate}}</view>
+          <view class="report-title" title="{{item.fullType}}">{{item.fullType}}</view>
+          <view class="report-sub">{{item.displayDate}} · {{item.displayHospital}}</view>
         </view>
-        <view wx:if="{{item.abnormalCount > 0}}" class="abnormal">{{item.abnormalCount}} 项异常</view>
+        <view wx:if="{{item.abnormalCount > 0}}" class="abnormal">{{item.abnormalCount}}项异常</view>
+        <view wx:else class="normal-pill">正常</view>
         <view class="arrow">›</view>
       </view>
       <view wx:if="{{reports.length === 0}}" class="empty-report" bindtap="goRecord">
@@ -91,7 +106,7 @@
     </view>
   </view>
 
-  <view wx:if="{{alertMetrics.length > 0}}" class="section-title">
+  <view wx:if="{{alertMetrics.length > 0}}" class="section-title alert-section">
     <view>健康提醒</view>
     <view class="section-action" bindtap="goHealthTime">查看全部 ›</view>
   </view>

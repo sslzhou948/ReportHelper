@@ -66,8 +66,8 @@ assert.ok(homeWxml.includes('layout.homeBannerPaddingTop'), 'home banner must us
 assert.ok(homeWxml.includes('layout.homeBannerMinHeight'), 'home banner must use dynamic min-height');
 assert.ok(homeWxss.includes('padding-right: 188rpx'), 'home head must reserve right-side capsule area');
 assert.ok(homeWxss.includes('width: 100%'), 'home cards must define full-width layout');
-assert.ok(homeWxss.includes('min-height: 128rpx'), 'upload CTA must keep stable normal-mode height');
-assert.ok(homeWxss.includes('.mini-spark'), 'home metric cards must include compact trend visuals');
+assert.ok(homeWxss.includes('min-height: 149rpx'), 'upload CTA must keep source-matched refreshed height');
+assert.ok(homeWxss.includes('.metric-sparkline'), 'home metric cards must include dynamic compact trend visuals');
 assert.ok(!homeWxml.includes('<button class="upload-cta"'), 'home upload CTA must avoid native button layout');
 assert.ok(!homeWxml.includes('<button class="card card-pad recheck-card"'), 'home recheck card must avoid native button layout');
 
@@ -77,20 +77,25 @@ for (const file of wxmlFiles) {
 
 const homeUpload = getRule(homeWxss, '.upload-cta');
 assertDecl(homeUpload, 'width: 100%', 'home upload card must fill content width');
-assertDecl(homeUpload, 'min-height: 128rpx', 'home upload card must stay normal sized');
+assertDecl(homeUpload, 'min-height: 149rpx', 'home upload card must stay source-matched refreshed size');
 assertDecl(homeUpload, 'text-align: left', 'home upload content must be left aligned');
 
 const homeRecheck = getRule(homeWxss, '.recheck-card');
 assertDecl(homeRecheck, 'width: 100%', 'home recheck card must fill content width');
-assertDecl(homeRecheck, 'min-height: 128rpx', 'home recheck card must stay normal sized');
+assertDecl(homeRecheck, 'min-height: 149rpx', 'home recheck card must stay source-matched refreshed size');
 
 const metricCard = getRule(homeWxss, '.metric-card');
-assertDecl(metricCard, 'width: 296rpx', 'home metric card width must match 148px baseline');
+assertDecl(metricCard, 'width: 227rpx', 'home metric card width must match refreshed reference');
 assertDecl(metricCard, 'white-space: normal', 'home metric card text must wrap inside the fixed card');
 
-const reportType = getRule(homeWxss, '.report-type');
-assertDecl(reportType, 'width: 112rpx', 'home report type pill must align as a fixed four-character label');
-assertDecl(reportType, 'text-overflow: ellipsis', 'home report type must truncate instead of wrapping vertically');
+const metricSparkline = getRule(homeWxss, '.metric-sparkline');
+assertDecl(metricSparkline, 'width: 186rpx', 'home sparkline must keep a fixed drawing slot');
+assertDecl(metricSparkline, 'height: 44rpx', 'home sparkline must keep a fixed drawing slot height');
+assertDecl(metricSparkline, 'overflow: hidden', 'home sparkline must not escape the metric card');
+
+const reportRow = getRule(homeWxss, '.report-row');
+assertDecl(reportRow, 'display: flex', 'home report row must keep icon, text, status, and arrow aligned');
+assertDecl(reportRow, 'align-items: center', 'home report row content must stay vertically centered');
 
 const reportMain = getRule(homeWxss, '.report-main');
 assertDecl(reportMain, 'flex: 1', 'home report main text must take remaining row width');

@@ -12,6 +12,16 @@ const { isProfileRequiredError } = require('../../utils/profile');
 const ACTIVE_OCR_STATUSES = ['queued', 'processing', 'needs_confirmation', 'ready_to_save', 'failed'];
 const HOME_RECENT_REPORT_LIMIT = 6;
 const HOME_ALERT_METRIC_LIMIT = 5;
+const HOME_SPARKLINE_RANGE_DAYS = 365;
+const HOME_SPARKLINE_POINT_LIMIT = 6;
+const HOME_SPARKLINE = {
+  width: 186,
+  height: 44,
+  left: 12,
+  right: 12,
+  top: 9,
+  bottom: 9
+};
 
 function isAbnormalTone(tone) {
   return ['high', 'low', 'abnormal', 'positive'].includes(String(tone || ''));
@@ -22,6 +32,105 @@ function recentAlertQuery() {
   return {
     since: addDays(today, -29),
     until: today
+  };
+}
+
+function homeSparklineQuery() {
+  const today = formatDate(new Date());
+  return {
+    since: addDays(today, -(HOME_SPARKLINE_RANGE_DAYS - 1)),
+    until: today
+  };
+}
+
+function toNumberOrNull(value) {
+  if (value === '' || value === null || value === undefined) return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+function pointTone(row, fallbackTone) {
+  return row.tone || row.lastTone || fallbackTone || 'ok';
+}
+
+function buildHomeSparkline(history, snapshot) {
+  const rows = (history || [])
+    .filter((row) => row.valueType !== 'qualitative' && row.valueType !== 'text')
+    .map((row) => ({
+      ...row,
+      numericValue: toNumberOrNull(row.valueNumeric)
+    }))
+    .filter((row) => row.numericValue !== null)
+    .sort((left, right) => new Date(left.reportDate || 0) - new Date(right.reportDate || 0))
+    .slice(-HOME_SPARKLINE_POINT_LIMIT);
+
+  if (rows.length < 2) {
+    const fallbackValue = toNumberOrNull(snapshot && snapshot.lastValueNumeric);
+    if (fallbackValue === null) {
+      return { tone: snapshot && snapshot.lastTone || 'ok', segments: [], points: [] };
+    }
+    rows.splice(0, rows.length, {
+      reportDate: `${snapshot && snapshot.lastDate || ''}-start`,
+      numericValue: fallbackValue,
+      tone: snapshot && snapshot.lastTone
+    }, {
+      reportDate: snapshot && snapshot.lastDate || 'latest',
+      numericValue: fallbackValue,
+      tone: snapshot && snapshot.lastTone
+    });
+  }
+
+  const values = rows.map((row) => row.numericValue);
+  let min = Math.min(...values);
+  let max = Math.max(...values);
+  const padding = Math.max((max - min) * 0.22, max === min ? Math.max(Math.abs(max) * 0.1, 1) : 0.2);
+  min -= padding;
+  max += padding;
+
+  const span = max - min || 1;
+  const plotWidth = HOME_SPARKLINE.width - HOME_SPARKLINE.left - HOME_SPARKLINE.right;
+  const plotHeight = HOME_SPARKLINE.height - HOME_SPARKLINE.top - HOME_SPARKLINE.bottom;
+  const fallbackTone = snapshot && snapshot.lastTone || 'ok';
+  const points = rows.map((row, index) => {
+    const x = rows.length > 1
+      ? HOME_SPARKLINE.left + plotWidth * index / (rows.length - 1)
+      : HOME_SPARKLINE.left + plotWidth;
+    const y = HOME_SPARKLINE.top + (max - row.numericValue) / span * plotHeight;
+    return {
+      id: `${index}`,
+      x: Number(x.toFixed(1)),
+      y: Number(y.toFixed(1)),
+      tone: pointTone(row, fallbackTone),
+      isLatest: index === rows.length - 1
+    };
+  });
+
+  const segments = [];
+  for (let i = 1; i < points.length; i += 1) {
+    const from = points[i - 1];
+    const to = points[i];
+    const dx = to.x - from.x;
+    const dy = to.y - from.y;
+    segments.push({
+      id: `${i}`,
+      left: from.x,
+      top: from.y,
+      width: Number(Math.sqrt(dx * dx + dy * dy).toFixed(1)),
+      angle: Number((Math.atan2(dy, dx) * 180 / Math.PI).toFixed(1)),
+      tone: to.tone
+    });
+  }
+
+  const latest = points[points.length - 1];
+  return {
+    tone: latest ? latest.tone : fallbackTone,
+    segments,
+    points: latest ? [{
+      id: 'latest',
+      left: latest.x,
+      top: latest.y,
+      tone: latest.tone
+    }] : []
   };
 }
 
@@ -204,7 +313,27 @@ Page({
       api.listMetricSnapshots(profileId, recentAlertQuery()),
       api.listRecheckPlans(profileId),
       this.loadPendingOcrTask(profileId)
-    ])).then(([profile, profiles, reports, snapshots, recentSnapshots, recheck, pendingOcrTask]) => {
+    ]).then((results) => ({ profileId, results }))).then(({ profileId, results }) => {
+      const [profile, profiles, reports, snapshots, recentSnapshots, recheck, pendingOcrTask] = results;
+      const pinnedMetricRows = snapshots.filter((item) => item.isPinned).slice(0, 8);
+      const sparklineQuery = homeSparklineQuery();
+      return Promise.all(pinnedMetricRows.map((metric) => (
+        api.getMetricHistory(profileId, metric.metricKey, sparklineQuery)
+          .then((result) => result && result.history || [])
+          .catch(() => [])
+      ))).then((sparklineRows) => ({
+        profile,
+        profiles,
+        reports,
+        recentSnapshots,
+        recheck,
+        pendingOcrTask,
+        pinnedMetrics: pinnedMetricRows.map((metric, index) => ({
+          ...metric,
+          sparkline: buildHomeSparkline(sparklineRows[index], metric)
+        }))
+      }));
+    }).then(({ profile, profiles, reports, recentSnapshots, recheck, pendingOcrTask, pinnedMetrics }) => {
       if (!finishSlowLoading(this, loadingToken)) return;
       const nextPlan = recheck.nextPlan || null;
       const alertMetrics = recentSnapshots.filter((item) => isAbnormalTone(item.lastTone)).slice(0, HOME_ALERT_METRIC_LIMIT);
@@ -219,7 +348,7 @@ Page({
           fullHospital: report.hospital || '待确认医院',
           displayDate: formatMonthDay(report.reportDate)
         })),
-        pinnedMetrics: snapshots.filter((item) => item.isPinned).slice(0, 8),
+        pinnedMetrics,
         alertMetrics,
         alertSummaryText: formatAlertSummary(alertMetrics),
         nextPlan,
