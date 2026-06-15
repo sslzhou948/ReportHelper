@@ -12,6 +12,8 @@ function read(file) {
 const appWxss = read('miniprogram/app.wxss');
 const homeWxss = read('miniprogram/pages/home/index.wxss');
 const homeWxml = read('miniprogram/pages/home/index.wxml');
+const recheckWxss = read('miniprogram/pages/recheck/index.wxss');
+const recheckWxml = read('miniprogram/pages/recheck/index.wxml');
 const profileWxss = read('miniprogram/pages/profile/index.wxss');
 const metricDetailWxml = read('miniprogram/pages/health/metric-detail.wxml');
 const metricDetailWxss = read('miniprogram/pages/health/metric-detail.wxss');
@@ -105,6 +107,40 @@ assert.ok(!homeWxss.includes('.ocr-status-entry'), 'home OCR status must not use
 const ocrCard = getRule(homeWxss, '.ocr-card');
 assertDecl(ocrCard, 'width: 100%', 'home OCR status card must use the available content width');
 assertDecl(ocrCard, 'display: flex', 'home OCR status card must keep icon, text, and action aligned');
+
+assert.ok(recheckWxml.includes('/assets/ui-refresh/recheck-calendar-large.png'), 'recheck next plan must use the refreshed calendar asset');
+assert.ok(recheckWxml.includes('/assets/ui-refresh/recheck-add-circle.png'), 'recheck add-todo row must use the refreshed add asset');
+assert.ok(recheckWxml.includes('class="plan-actions"'), 'recheck next plan must expose the two-action footer');
+assert.ok(!recheckWxml.includes('recheck-new-action'), 'recheck top bar must not place actions near the WeChat capsule');
+assert.ok(recheckWxml.includes('class="btn secondary" bindtap="goNew"'), 'recheck next card must keep add-plan as the secondary action');
+assert.ok(!recheckWxml.includes('add-plan-link'), 'recheck future-plan header must not carry an extra add-plan chip');
+
+const recheckHero = getRule(recheckWxss, '.recheck-hero');
+assertDecl(recheckHero, 'padding: calc(var(--safe-top) - 98rpx) 36rpx 0', 'recheck hero must respect capsule-safe top spacing');
+
+const nextCard = getRule(recheckWxss, '.next-card');
+assertDecl(nextCard, 'padding: 28rpx 28rpx 20rpx', 'recheck next card must keep compact reference inner spacing');
+
+const todoRow = getRule(recheckWxss, '.todo-row');
+assertDecl(todoRow, 'min-height: 106rpx', 'recheck todo rows must keep a stable visual rhythm');
+assertDecl(todoRow, 'align-items: center', 'recheck todo rows must vertically center checkbox, label, and status');
+
+const todoSwipe = getRule(recheckWxss, '.todo-swipe');
+assert.ok(!todoSwipe.includes('border-bottom'), 'recheck todo dividers must not be duplicated on the swipe wrapper');
+
+const todoSwipeContent = getRule(recheckWxss, '.todo-swipe-content');
+assertDecl(todoSwipeContent, 'border-bottom: 1rpx solid #EEE8E0', 'recheck todo rows must keep one visible soft divider');
+assert.ok(!recheckWxss.includes('.todo-row::after'), 'recheck todo dividers must not use pseudo-lines that can visually double');
+
+const futureRow = getRule(recheckWxss, '.future-row');
+assertDecl(futureRow, 'min-height: 120rpx', 'recheck future plan rows must align with refreshed list row height');
+
+const dateBlock = getRule(recheckWxss, '.date-block');
+assertDecl(dateBlock, 'background: #F0EEEB', 'recheck future date block must match health time-view gray date style');
+assertDecl(dateBlock, 'color: #2D2925', 'recheck future date text must use the health time-view date color');
+
+const recheckPlanActions = getRule(recheckWxss, '.plan-actions');
+assertDecl(recheckPlanActions, 'grid-template-columns: 1fr 1fr', 'recheck next card must keep two equal action buttons');
 
 const sectionAction = getRule(homeWxss, '.section-action');
 assertDecl(sectionAction, 'margin-left: auto', 'home section actions must be right aligned');

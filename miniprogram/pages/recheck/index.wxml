@@ -1,71 +1,109 @@
-﻿<view class="page page-tab">
-  <view class="nav">
-    <view class="nav-side left"></view>
-    <view class="nav-title">复查计划</view>
-    <view class="nav-side right" bindtap="goNew">+ 新增</view>
+<view class="page page-tab recheck-ref-page" bindtap="closeTodoSwipe">
+  <view class="recheck-hero" style="--safe-top: {{layout.homeBannerPaddingTop}}rpx;">
+    <view class="recheck-nav">
+      <view class="recheck-title">复查计划</view>
+    </view>
   </view>
+
   <network-banner offline="{{networkOffline}}" bind:retry="retryAfterNetwork" />
   <loading-slow-banner visible="{{loadingSlow}}" bind:retry="retrySlowLoading" bind:cancel="cancelSlowLoading" />
+
   <block wx:if="{{nextPlan}}">
-    <view class="section-title" bindtap="closeTodoSwipe">下次复查</view>
-    <view class="pad">
-      <view class="card card-pad" bindtap="closeTodoSwipe">
-        <view class="plan-head">
-          <view class="plan-date">{{nextPlan.displayDate}}</view>
-          <view class="plan-weekday">{{nextPlan.weekday}}</view>
-          <hh-pill tone="warn">还有 {{daysToNext}} 天</hh-pill>
+    <view class="recheck-pad next-wrap">
+      <view class="next-card">
+        <view class="next-title">下次复查</view>
+        <view class="next-overview" bindtap="goNextDetail">
+          <image class="next-calendar" src="/assets/ui-refresh/recheck-calendar-large.png" mode="aspectFit" />
+          <view class="next-main">
+            <view class="next-date-line">
+              <text class="next-date-number">{{nextPlan.monthNumber}}</text>
+              <text class="next-date-unit">月</text>
+              <text class="next-date-number">{{nextPlan.dayText}}</text>
+              <text class="next-date-unit">日</text>
+              <text class="next-weekday">{{nextPlan.weekday}}</text>
+            </view>
+            <view class="next-sub">{{nextPlan.hospital}} · {{nextPlan.type}}</view>
+          </view>
+          <view class="days-pill">还有 {{daysToNext}} 天</view>
         </view>
-        <view class="sub mt-8">{{nextPlan.hospital}} · {{nextPlan.type}}</view>
-        <view class="progress-line mt-12">
-          <view class="progress"><view style="width: {{progressPercent}}%;"></view></view>
-          <view class="sub">{{readyCount}}/{{nextPlan.todos.length}} 准备就绪</view>
+
+        <view class="next-progress-row">
+          <view class="next-progress">
+            <view class="next-progress-bar" style="width: {{progressPercent}}%;"></view>
+          </view>
+          <view class="next-progress-text">{{readyCount}}/{{nextPlan.todos.length}} 准备就绪</view>
         </view>
-        <view class="plan-actions {{allReady ? '' : 'single'}}">
-          <view class="btn secondary" bindtap="goNextDetail">查看详情</view>
-          <view wx:if="{{allReady}}" class="btn" bindtap="completePlan">标记为已完成</view>
+
+        <view class="next-divider"></view>
+        <view class="plan-actions">
+          <view class="btn secondary" bindtap="goNew">新增复查计划</view>
+          <view class="btn" bindtap="completePlan">标记为已完成</view>
         </view>
       </view>
     </view>
-    <view class="section-title" bindtap="closeTodoSwipe">待办事项</view>
-    <view class="pad">
-      <view class="card">
+
+    <view class="recheck-pad card-wrap">
+      <view class="todo-card">
+        <view class="card-head">
+          <view class="card-title">待办事项</view>
+          <view class="card-count">{{nextPlan.todos.length}} 项</view>
+        </view>
         <view wx:for="{{nextPlan.todos}}" wx:key="id" class="todo-swipe {{item.swipeOpen ? 'open' : ''}}" data-id="{{item.id}}" bindtouchstart="onTodoTouchStart" bindtouchend="onTodoTouchEnd" bindtouchcancel="onTodoTouchEnd">
           <view class="swipe-delete" data-id="{{item.id}}" catchtap="deleteTodo">删除</view>
-          <view class="row todo-swipe-content" data-index="{{index}}" bindtap="toggleTodo">
-            <view class="todo-box {{item.isDone ? 'done' : ''}}">{{item.isDone ? '✓' : ''}}</view>
-            <view class="flex {{item.isDone ? 'todo-done' : ''}}">{{item.text}}</view>
+          <view class="todo-row todo-swipe-content" data-index="{{index}}" bindtap="toggleTodo">
+            <view class="todo-box {{item.isDone ? 'done' : ''}}">
+              <image wx:if="{{item.isDone}}" class="todo-check" src="/assets/ui-refresh/recheck-todo-check.png" mode="aspectFit" />
+            </view>
+            <view class="todo-text {{item.isDone ? 'todo-done' : ''}}">{{item.text}}</view>
+            <view class="todo-status">{{item.isDone ? '已完成' : '待完成'}}</view>
           </view>
         </view>
-        <view wx:if="{{addingTodo}}" class="row todo-draft-row">
+        <view wx:if="{{addingTodo}}" class="todo-row todo-draft-row">
           <input class="todo-draft-input" value="{{todoDraft}}" placeholder="例如：准备检查单" bindinput="onTodoDraftInput" focus />
           <view class="todo-draft-actions">
             <view class="mini-action muted" bindtap="cancelTodoDraft">取消</view>
             <view class="mini-action" bindtap="saveTodoDraft">添加</view>
           </view>
         </view>
-        <view wx:else class="row add-row" bindtap="addTodo">+ 添加待办</view>
+        <view wx:else class="add-row" bindtap="addTodo">
+          <image class="add-icon" src="/assets/ui-refresh/recheck-add-circle.png" mode="aspectFit" />
+          <text>添加待办</text>
+        </view>
       </view>
     </view>
   </block>
-  <view class="section-title" bindtap="closeTodoSwipe">
-    <view>之后还有</view>
-    <view class="tiny">{{otherPlans.length}} 项</view>
+
+  <view wx:else class="recheck-pad empty-wrap">
+    <view class="empty-card" bindtap="goNew">
+      <image class="empty-icon" src="/assets/ui-refresh/recheck-calendar-large.png" mode="aspectFit" />
+      <view class="empty-title">还没有复查计划</view>
+      <view class="empty-sub">新增下一次复查后，这里会显示准备进度和待办事项。</view>
+    </view>
   </view>
-  <view class="pad" bindtap="closeTodoSwipe">
-    <view class="card">
-      <view wx:for="{{otherPlans}}" wx:key="id" class="row" data-id="{{item.id}}" bindtap="goDetail">
+
+  <view class="recheck-pad card-wrap">
+    <view class="future-card">
+      <view class="card-head">
+        <view class="card-title">之后还有</view>
+        <view class="card-count">{{otherPlans.length}} 项</view>
+      </view>
+      <view wx:if="{{otherPlans.length === 0}}" class="future-empty">暂无更多待复查计划</view>
+      <view wx:for="{{otherPlans}}" wx:key="id" class="future-row" data-id="{{item.id}}" bindtap="goDetail">
         <view class="date-block">
           <view class="date-day">{{item.dayText}}</view>
           <view class="date-month">{{item.monthText}}</view>
         </view>
-        <view class="flex">
-          <view class="body strong">{{item.type}}</view>
-          <view class="tiny">{{item.hospital}}</view>
+        <view class="future-divider"></view>
+        <image class="future-icon" src="{{item.icon}}" mode="aspectFit" />
+        <view class="future-main">
+          <view class="future-title">{{item.type}}</view>
+          <view class="future-hospital">{{item.hospital}}</view>
         </view>
-        <view class="tiny">{{item.weekday}}</view>
-        <view class="arrow">›</view>
+        <view class="future-weekday">{{item.weekday}}</view>
+        <view class="future-chevron">›</view>
       </view>
     </view>
   </view>
-  <view class="done-link" bindtap="closeTodoSwipe">已完成 ({{doneCount}}) ›</view>
+
+  <view class="done-link">已完成 ({{doneCount}}) ›</view>
 </view>

@@ -180,6 +180,8 @@ const white = hexToRgb('#FFFFFF');
 const muted = hexToRgb('#8A827A');
 const red = hexToRgb('#D84D43');
 const softGreen = hexToRgb('#EEF5EC');
+const softWarmGreen = hexToRgb('#EEF3EC');
+const paleSurface = hexToRgb('#F9FBF8');
 
 function drawIcon(name, painter, size = 72) {
   const draw = createCanvas(size, size);
@@ -217,6 +219,67 @@ drawIcon('recheck-icon.png', (draw) => {
   draw.fillCircle(33, 47, 2, green);
   draw.fillCircle(55, 42, 2, green);
 }, 88);
+
+drawIcon('recheck-calendar-large.png', (draw) => {
+  draw.fillRoundedRect(4, 4, 112, 112, 17, softWarmGreen);
+  draw.fillRoundedRect(29, 30, 62, 62, 10, green);
+  draw.fillRoundedRect(33, 37, 54, 49, 6, paleSurface);
+  draw.fillRect(33, 37, 54, 11, green);
+  draw.line(42, 24, 42, 40, 5, green);
+  draw.line(78, 24, 78, 40, 5, green);
+  draw.line(48, 64, 58, 74, 6, green);
+  draw.line(58, 74, 76, 56, 6, green);
+  draw.line(46, 84, 75, 84, 4, green);
+}, 120);
+
+drawIcon('recheck-todo-check.png', (draw) => {
+  draw.line(9, 21, 17, 29, 7, white);
+  draw.line(17, 29, 31, 11, 7, white);
+  draw.fillCircle(9, 21, 3, white);
+  draw.fillCircle(31, 11, 3, white);
+}, 40);
+
+drawIcon('recheck-add-circle.png', (draw) => {
+  draw.fillCircle(28, 28, 25, green);
+  draw.fillCircle(28, 28, 21, white);
+  draw.line(28, 16, 28, 40, 4, green);
+  draw.line(16, 28, 40, 28, 4, green);
+}, 56);
+
+drawIcon('recheck-plan-lab.png', (draw) => {
+  draw.fillCircle(40, 40, 35, softWarmGreen);
+  draw.fillRoundedRect(32, 18, 17, 42, 5, green);
+  draw.fillRoundedRect(36, 22, 9, 31, 3, paleSurface);
+  draw.fillRect(36, 44, 9, 9, green);
+  draw.line(28, 18, 53, 18, 4, green);
+  draw.line(28, 62, 54, 62, 5, green);
+  draw.line(28, 18, 28, 30, 4, green);
+  draw.line(53, 18, 53, 30, 4, green);
+}, 80);
+
+drawIcon('recheck-plan-stethoscope.png', (draw) => {
+  draw.fillCircle(40, 40, 35, softWarmGreen);
+  draw.line(25, 19, 25, 36, 4, green);
+  draw.line(48, 19, 48, 36, 4, green);
+  draw.line(25, 36, 36, 48, 5, green);
+  draw.line(48, 36, 36, 48, 5, green);
+  draw.line(36, 48, 36, 58, 4, green);
+  draw.fillCircle(48, 60, 8, green);
+  draw.fillCircle(48, 60, 4, paleSurface);
+  draw.line(36, 58, 48, 60, 4, green);
+  draw.fillCircle(25, 19, 4, green);
+  draw.fillCircle(48, 19, 4, green);
+}, 80);
+
+drawIcon('recheck-plan-scan.png', (draw) => {
+  draw.fillCircle(40, 40, 35, softWarmGreen);
+  draw.fillRoundedRect(20, 24, 40, 34, 8, green);
+  draw.fillRoundedRect(24, 28, 32, 26, 5, paleSurface);
+  draw.line(28, 36, 52, 36, 3, green);
+  draw.line(28, 45, 45, 45, 3, green);
+  draw.fillCircle(57, 58, 6, green);
+  draw.line(52, 53, 57, 58, 4, green);
+}, 80);
 
 drawIcon('health-icon-blood.png', (draw) => {
   categoryBase(draw);

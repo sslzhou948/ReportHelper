@@ -9,6 +9,25 @@ const {
 const { bindNetworkStatus, refreshNetworkStatus } = require('../../utils/network');
 const { isProfileRequiredError } = require('../../utils/profile');
 
+const DEFAULT_LAYOUT = {
+  homeBannerPaddingTop: 172,
+  homeBannerMinHeight: 312
+};
+const PLAN_ICONS = {
+  lab: '/assets/ui-refresh/recheck-plan-lab.png',
+  ct: '/assets/ui-refresh/recheck-plan-scan.png',
+  follow: '/assets/ui-refresh/recheck-plan-stethoscope.png',
+  default: '/assets/ui-refresh/recheck-plan-stethoscope.png'
+};
+
+function iconForPlan(plan) {
+  const text = `${plan.type || ''} ${plan.typeKey || ''} ${plan.department || ''}`.toLowerCase();
+  if (/血|验血|blood|lab|检验/.test(text)) return PLAN_ICONS.lab;
+  if (/ct|影像|超声|核磁|mri|scan/.test(text)) return PLAN_ICONS.ct;
+  if (/门诊|随访|复诊|clinic|follow/.test(text)) return PLAN_ICONS.follow;
+  return PLAN_ICONS.default;
+}
+
 function decoratePlan(plan) {
   const date = new Date(`${plan.date}T00:00:00`);
   const weekdays = [
@@ -28,6 +47,8 @@ function decoratePlan(plan) {
     })),
     displayDate: formatMonthDay(plan.date),
     weekday: weekdays[date.getDay()],
+    icon: iconForPlan(plan),
+    monthNumber: String(Number(plan.date.slice(5, 7))),
     dayText: String(Number(plan.date.slice(8, 10))),
     monthText: `${Number(plan.date.slice(5, 7))}\u6708`
   };
@@ -57,6 +78,7 @@ Page({
     progressPercent: 0,
     allReady: false,
     daysToNext: 0,
+    layout: DEFAULT_LAYOUT,
     networkOffline: false,
     addingTodo: false,
     todoDraft: '',
@@ -102,6 +124,7 @@ Page({
   },
   onShow() {
     bindNetworkStatus(this);
+    this.setData({ layout: getApp().getLayout ? getApp().getLayout() : DEFAULT_LAYOUT });
     this.load();
   },
   load() {
