@@ -195,7 +195,7 @@ function confirmQualityWarnings(photos) {
   return new Promise((resolve) => {
     wx.showModal({
       title: '图片质量可能影响识别',
-      content: `${count} 张图片分辨率、比例或拍摄构图可能影响 AI识别。${OCR_RESULT_TABLE_GUIDANCE} 也可以继续识别后重点核对。`,
+      content: `有 ${count} 张图片的清晰度、比例或裁切可能影响 AI识别。${OCR_RESULT_TABLE_GUIDANCE} 也可以继续识别后重点核对。`,
       confirmText: '继续识别',
       cancelText: '返回调整',
       success: (res) => resolve(!!res.confirm),
@@ -331,6 +331,7 @@ Page({
     showFixtureEntry: false,
     uploadError: '',
     hasDraft: false,
+    maxUploadPhotos: MAX_UPLOAD_PHOTOS,
     qualityWarningCount: 0
   },
   onLoad(query = {}) {

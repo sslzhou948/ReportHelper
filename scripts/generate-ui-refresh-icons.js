@@ -342,6 +342,135 @@ drawIcon('profile-logout.png', (draw) => {
   draw.line(43, 43, 54, 32, 5, danger);
 }, 64);
 
+drawIcon('upload-info.png', (draw) => {
+  strokeCircle(draw, 32, 32, 24, 4, green);
+  draw.fillCircle(32, 21, 3.5, green);
+  draw.line(32, 31, 32, 45, 5, green);
+}, 64);
+
+drawIcon('upload-bulb.png', (draw) => {
+  const amber = hexToRgb('#B86B1F');
+  draw.arc(32, 28, 16, 16, Math.PI * 0.82, Math.PI * 2.18, 4, amber);
+  draw.line(23, 41, 41, 41, 4, amber);
+  draw.line(26, 48, 38, 48, 4, amber);
+  draw.line(28, 55, 36, 55, 4, amber);
+  draw.line(27, 43, 23, 36, 4, amber);
+  draw.line(37, 43, 41, 36, 4, amber);
+  draw.line(32, 11, 32, 5, 4, amber);
+  draw.line(18, 16, 14, 12, 4, amber);
+  draw.line(46, 16, 50, 12, 4, amber);
+}, 64);
+
+drawIcon('upload-camera.png', (draw) => {
+  strokeRoundRect(draw, 12, 22, 40, 29, 7, 4, green);
+  draw.line(23, 17, 41, 17, 5, green);
+  draw.line(23, 17, 19, 23, 4, green);
+  draw.line(41, 17, 45, 23, 4, green);
+  strokeCircle(draw, 32, 36, 9, 4, green);
+  draw.fillCircle(47, 29, 2.8, green);
+}, 64);
+
+drawIcon('upload-album.png', (draw) => {
+  strokeRoundRect(draw, 13, 13, 38, 38, 5, 4, green);
+  draw.fillCircle(25, 24, 4, green);
+  draw.line(17, 45, 28, 34, 5, green);
+  draw.line(28, 34, 35, 41, 5, green);
+  draw.line(35, 41, 45, 29, 5, green);
+}, 64);
+
+drawIcon('upload-add.png', (draw) => {
+  const soft = hexToRgb('#F7F5F2');
+  draw.fillCircle(32, 32, 28, soft);
+  draw.line(32, 18, 32, 46, 5, muted);
+  draw.line(18, 32, 46, 32, 5, muted);
+}, 64);
+
+drawIcon('upload-close.png', (draw) => {
+  const dark = hexToRgb('#1F1F1F');
+  draw.fillCircle(32, 32, 29, white);
+  strokeCircle(draw, 32, 32, 28, 2, hexToRgb('#E3DED6'));
+  draw.line(23, 23, 41, 41, 5, dark);
+  draw.line(41, 23, 23, 41, 5, dark);
+}, 64);
+
+drawIcon('upload-clip.png', (draw) => {
+  const point = (x, y) => [x * 4.75 + 7, y * 4.75 + 8];
+
+  function strokeCubic(p0, p1, p2, p3, widthValue, color) {
+    let previous = p0;
+    for (let i = 1; i <= 36; i += 1) {
+      const t = i / 36;
+      const mt = 1 - t;
+      const point = [
+        mt * mt * mt * p0[0] + 3 * mt * mt * t * p1[0] + 3 * mt * t * t * p2[0] + t * t * t * p3[0],
+        mt * mt * mt * p0[1] + 3 * mt * mt * t * p1[1] + 3 * mt * t * t * p2[1] + t * t * t * p3[1]
+      ];
+      draw.line(previous[0], previous[1], point[0], point[1], widthValue, color);
+      previous = point;
+    }
+  }
+
+  const stroke = 10;
+  const p0 = point(21.44, 11.05);
+  const p1 = point(12.25, 20.24);
+  const p2 = point(3.76, 11.75);
+  const p3 = point(12.33, 3.18);
+  const p4 = point(17.99, 8.84);
+  const p5 = point(9.5, 17.32);
+  const p6 = point(6.67, 14.49);
+  const p7 = point(15.16, 6);
+
+  draw.line(p0[0], p0[1], p1[0], p1[1], stroke, green);
+  strokeCubic(p1, point(10.1, 22.4), point(5.6, 20.1), p2, stroke, green);
+  draw.line(p2[0], p2[1], p3[0], p3[1], stroke, green);
+  strokeCubic(p3, point(15.35, 0.2), point(20.85, 3.95), p4, stroke, green);
+  draw.line(p4[0], p4[1], p5[0], p5[1], stroke, green);
+  strokeCubic(p5, point(8.6, 18.2), point(5.8, 17.3), p6, stroke, green);
+  draw.line(p6[0], p6[1], p7[0], p7[1], stroke, green);
+}, 128);
+
+drawIcon('upload-trash.png', (draw) => {
+  draw.line(20, 18, 44, 18, 4, muted);
+  draw.line(25, 12, 39, 12, 4, muted);
+  strokeRoundRect(draw, 19, 23, 26, 30, 3, 4, muted);
+  draw.line(28, 30, 28, 47, 3, muted);
+  draw.line(36, 30, 36, 47, 3, muted);
+}, 64);
+
+drawIcon('upload-split.png', (draw) => {
+  strokeRoundRect(draw, 12, 15, 22, 30, 4, 4, green);
+  strokeRoundRect(draw, 31, 21, 21, 28, 4, 4, green);
+  draw.line(26, 50, 38, 59, 4, green);
+  draw.line(38, 59, 50, 50, 4, green);
+  draw.line(38, 59, 38, 48, 4, green);
+}, 64);
+
+drawIcon('upload-report-sample.png', (draw) => {
+  const paper = hexToRgb('#F6F4F1');
+  const lineColor = hexToRgb('#9A948D');
+  const grid = hexToRgb('#D8D2CA');
+  draw.fillRoundedRect(5, 5, 150, 190, 7, paper);
+  draw.line(19, 21, 94, 21, 3, lineColor);
+  draw.line(19, 33, 132, 33, 2, lineColor);
+  draw.line(19, 45, 112, 45, 2, lineColor);
+  for (let y = 63; y <= 142; y += 13) {
+    draw.line(18, y, 138, y, 1.5, grid);
+  }
+  for (let x = 18; x <= 138; x += 30) {
+    draw.line(x, 57, x, 147, 1.5, grid);
+  }
+  for (let y = 68; y <= 136; y += 13) {
+    draw.line(23, y, 43, y, 2, lineColor);
+    draw.line(54, y, 73, y, 2, lineColor);
+    draw.line(84, y, 105, y, 2, lineColor);
+    draw.line(115, y, 132, y, 2, lineColor);
+  }
+  draw.line(23, 166, 50, 154, 2.5, green);
+  draw.line(50, 154, 74, 161, 2.5, green);
+  draw.line(84, 165, 108, 153, 2.5, hexToRgb('#D84D43'));
+  draw.line(108, 153, 134, 160, 2.5, hexToRgb('#D84D43'));
+}, 160);
+
 drawIcon('recheck-icon.png', (draw) => {
   draw.fillCircle(44, 44, 39, softGreen);
   draw.fillRoundedRect(23, 25, 42, 41, 9, green);

@@ -1,48 +1,75 @@
-﻿<view class="page upload-page">
-  <view class="nav">
+<view class="page upload-ref-page upload-page">
+  <view class="nav upload-nav">
     <view class="nav-side left" bindtap="goBack">取消</view>
     <view class="nav-title">上传检查报告</view>
     <view class="nav-side right"></view>
   </view>
+
   <block wx:if="{{!grouping}}">
-    <view class="pad mt-12">
+    <view class="upload-pad upload-top">
       <view class="ocr-quality-tip">
-        <view class="tip-title">提高识别率</view>
-        <view class="tiny">优先上传医院 App、公众号或网页里的线上结果截图。纸质报告翻拍时让结果表格居中、拍正，减少折痕反光；解释/建议区占画面太多时，建议裁到结果表后再识别。</view>
+        <image class="tip-icon" src="/assets/ui-refresh/upload-tip-plus-tabler.png" mode="aspectFit" />
+        <view class="flex">
+          <view class="tip-title">提高识别率</view>
+          <view class="tip-copy">最多上传 {{maxUploadPhotos}} 张；优先上传线上结果截图。纸质报告请拍正、拍清晰，减少反光和折痕。</view>
+        </view>
       </view>
-      <view wx:if="{{hasDraft && photos.length > 0}}" class="draft-hint">已恢复上次未完成的上传草稿。</view>
-      <view wx:if="{{qualityWarningCount > 0}}" class="photo-quality-warning">{{qualityWarningCount}} 张图片可能影响 AI识别，建议重拍清晰正面图或识别后重点核对。</view>
+      <view wx:if="{{qualityWarningCount > 0}}" class="photo-quality-warning">有 {{qualityWarningCount}} 张图片清晰度或裁切可能影响 AI识别，建议让结果表格居中、裁到结果表后重拍，或识别后重点核对。</view>
       <view wx:if="{{uploadError}}" class="upload-error">{{uploadError}}</view>
     </view>
-    <view class="pad mt-12">
+
+    <view class="upload-pad upload-action-wrap">
       <view class="upload-actions">
-        <view class="upload-action" bindtap="chooseCamera"><view class="upload-icon">拍</view><view>拍照</view><view class="tiny">使用相机</view></view>
-        <view class="upload-action" bindtap="chooseAlbum"><view class="upload-icon">册</view><view>从相册</view><view class="tiny">可选多张</view></view>
+        <view class="upload-action" bindtap="chooseCamera">
+          <image class="upload-icon" src="/assets/ui-refresh/upload-camera-tabler.png" mode="aspectFit" />
+          <view>
+            <view class="upload-action-title">拍照</view>
+            <view class="upload-action-sub">使用相机</view>
+          </view>
+        </view>
+        <view class="upload-action" bindtap="chooseAlbum">
+          <image class="upload-icon" src="/assets/ui-refresh/upload-photo-tabler.png" mode="aspectFit" />
+          <view>
+            <view class="upload-action-title">从相册</view>
+            <view class="upload-action-sub">最多 {{maxUploadPhotos}} 张</view>
+          </view>
+        </view>
       </view>
     </view>
-    <view wx:if="{{photos.length > 0}}" class="section-title">已选 {{photos.length}} 张 → 将识别为 {{reportCount}} 份报告</view>
-    <view wx:else class="section-title">已选 0 张</view>
-    <view class="pad">
+
+    <view wx:if="{{photos.length > 0}}" class="upload-section-title">已选 {{photos.length}} 张 → 将识别为 {{reportCount}} 份报告</view>
+    <view wx:else class="upload-section-title">已选 0 张</view>
+
+    <view class="upload-pad">
       <view class="photo-grid">
         <view wx:for="{{photos}}" wx:key="id" data-id="{{item.id}}" class="photo {{item.group ? 'grouped' : ''}}" bindtap="preview">
           <image wx:if="{{item.tempFilePath}}" class="photo-thumb" src="{{item.tempFilePath}}" mode="aspectFill" />
-          <view wx:if="{{item.group}}" class="group-label">组 {{item.group}}</view>
-          <view class="photo-delete" data-id="{{item.id}}" catchtap="removePhoto">×</view>
+          <view class="photo-delete" data-id="{{item.id}}" catchtap="removePhoto">
+            <image class="photo-delete-icon" src="/assets/ui-refresh/upload-x-tabler.png" mode="aspectFit" />
+          </view>
           <view wx:if="{{item.qualityWarning}}" class="quality-badge">!</view>
           <view class="photo-index">第 {{item.id}} 张</view>
           <view class="clip" data-id="{{item.id}}" catchtap="startGrouping">
-            <image class="clip-icon" src="/assets/upload/group-link.png" mode="aspectFit" />
+            <image class="clip-icon" src="/assets/ui-refresh/upload-paperclip-tabler.png" mode="aspectFit" />
           </view>
-          <view wx:if="{{item.group}}" class="split" data-group="{{item.group}}" catchtap="splitGroup">拆</view>
+          <view wx:if="{{item.group}}" class="split" data-group="{{item.group}}" catchtap="splitGroup">
+            <image class="split-icon" src="/assets/ui-refresh/upload-split.png" mode="aspectFit" />
+          </view>
         </view>
-        <view class="photo add" bindtap="chooseAlbum">+</view>
+        <view class="photo add" bindtap="chooseAlbum">
+          <image class="add-photo-icon" src="/assets/ui-refresh/upload-plus-tabler.png" mode="aspectFit" />
+        </view>
       </view>
     </view>
-    <view class="pad mt-12">
-      <view wx:if="{{photos.length > 0}}" class="tiny">点图片可放大预览；同一份报告跨页拍摄时，点右下角合并图标，按顺序选择多张图片，系统会合并为 1 份报告识别。</view>
+
+    <view class="upload-pad upload-helper-wrap">
+      <view wx:if="{{photos.length > 0}}" class="merge-helper">
+        <image class="merge-helper-icon" src="/assets/ui-refresh/upload-paperclip-tabler.png" mode="aspectFit" />
+        <view class="merge-helper-text">同一份报告跨页拍摄时，点右下角合并图标，按顺序选择多张图片，系统会合并为 1 份报告识别。</view>
+      </view>
       <view wx:else class="empty-upload">
         <view class="body strong">还没有选择报告图片</view>
-        <view class="tiny mt-8">请先拍照或从相册选择检查报告，再开始识别。</view>
+        <view class="tiny mt-8">请先拍照或从相册选择检查报告，最多上传 {{maxUploadPhotos}} 张。</view>
       </view>
       <view wx:if="{{showFixtureEntry}}" class="fixture-entry">
         <view>
@@ -53,11 +80,12 @@
       </view>
     </view>
   </block>
+
   <block wx:else>
-    <view class="pad mt-12">
+    <view class="upload-pad upload-top">
       <view class="notice">正在分组：按拍摄顺序选择同一份报告的多张图片，完成后会合并识别。</view>
     </view>
-    <view class="pad mt-16">
+    <view class="upload-pad grouping-wrap">
       <view class="photo-grid">
         <view wx:for="{{photos}}" wx:key="id" data-id="{{item.id}}" class="photo {{item.isSelected ? 'selected' : ''}}" bindtap="toggleSelect">
           <image wx:if="{{item.tempFilePath}}" class="photo-thumb" src="{{item.tempFilePath}}" mode="aspectFill" />
@@ -65,13 +93,14 @@
           <view class="photo-index">第 {{item.id}} 张</view>
         </view>
       </view>
-      <view class="sub center mt-16">已选 {{selected.length}} 张，按选中顺序合并</view>
+      <view class="group-count-text">已选 {{selected.length}} 张，按选中顺序合并</view>
       <view class="group-actions">
         <view class="btn secondary" bindtap="cancelGrouping">取消</view>
         <view class="btn" bindtap="finishGrouping">完成合并</view>
       </view>
     </view>
   </block>
+
   <view class="bottom-action">
     <view class="btn {{photos.length === 0 || loading ? 'disabled' : ''}}" bindtap="startOcr">开始识别（{{photos.length}} 张 → {{reportCount}} 份报告）</view>
   </view>

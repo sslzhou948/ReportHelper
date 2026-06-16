@@ -1,18 +1,30 @@
-﻿<view class="page confirm-page">
-  <view class="nav">
+<view class="page upload-ref-page confirm-page">
+  <view class="nav upload-nav">
     <view class="nav-side left" bindtap="goBack">取消</view>
     <view class="nav-title">确认识别结果</view>
     <view class="nav-side right"></view>
   </view>
-  <view class="pad mt-12">
-    <view wx:if="{{recognizing}}" class="sub">预计将识别为 {{reportCount}} 份报告，完成后会进入核对流程。</view>
-    <view wx:else class="sub">共识别出 {{reportCount}} 份报告。请逐份查看详情核对，有冲突的请优先处理。</view>
-    <view wx:if="{{!recognizing && taskStatus !== 'failed'}}" class="confirm-check-tip">
-      AI识别可能漏识别或识别错位，保存前请核对医院、日期、报告类型、指标结果和单位。
+
+  <view class="upload-pad confirm-top">
+    <view wx:if="{{recognizing}}" class="confirm-notice info">
+      <image class="notice-icon" src="/assets/ui-refresh/upload-info.png" mode="aspectFit" />
+      <view class="notice-text">预计将识别为 {{reportCount}} 份报告，完成后会进入核对流程。</view>
     </view>
-    <view wx:if="{{profileNoticeText}}" class="profile-notice">{{profileNoticeText}}</view>
+    <view wx:elif="{{taskStatus !== 'failed'}}" class="confirm-notice info">
+      <image class="notice-icon" src="/assets/ui-refresh/upload-info.png" mode="aspectFit" />
+      <view class="notice-text">共识别出 {{reportCount}} 份报告。请逐份查看详情核对，有冲突的请优先处理。</view>
+    </view>
+    <view wx:if="{{!recognizing && taskStatus !== 'failed'}}" class="confirm-notice warn">
+      <image class="notice-icon" src="/assets/ui-refresh/upload-bulb.png" mode="aspectFit" />
+      <view class="notice-text">AI识别可能漏识别或识别错位，保存前请核对医院、日期、报告类型、指标结果和单位。</view>
+    </view>
+    <view wx:if="{{profileNoticeText}}" class="confirm-notice profile">
+      <image class="notice-icon" src="/assets/ui-refresh/upload-info.png" mode="aspectFit" />
+      <view class="notice-text">{{profileNoticeText}}</view>
+    </view>
   </view>
-  <view wx:if="{{recognizing}}" class="pad mt-12">
+
+  <view wx:if="{{recognizing}}" class="upload-pad state-wrap">
     <view class="card card-pad recognition-card {{slowRecognition ? 'slow' : ''}}">
       <view class="recognition-head">
         <view class="recognition-spinner"></view>
@@ -37,7 +49,8 @@
       </view>
     </view>
   </view>
-  <view wx:if="{{taskStatus === 'failed'}}" class="pad mt-12">
+
+  <view wx:if="{{taskStatus === 'failed'}}" class="upload-pad state-wrap">
     <view class="card card-pad failed-card">
       <view class="failed-title">识别失败</view>
       <view class="sub mt-8">{{errorMessage}}</view>
@@ -47,7 +60,8 @@
       </view>
     </view>
   </view>
-  <view wx:if="{{!recognizing && taskStatus !== 'failed' && reportCount === 0}}" class="pad mt-12">
+
+  <view wx:if="{{!recognizing && taskStatus !== 'failed' && reportCount === 0}}" class="upload-pad state-wrap">
     <view class="card card-pad empty-report-card">
       <view class="failed-title">本次没有可保存的报告</view>
       <view class="sub mt-8">已移除全部识别结果，或本次 AI识别未生成可核查报告。</view>
@@ -57,50 +71,68 @@
       </view>
     </view>
   </view>
-  <view wx:for="{{reports}}" wx:key="title">
-    <view class="section-title">{{item.title}}</view>
-    <view class="pad">
-      <view class="card card-pad {{item.conflict ? 'conflict' : ''}} {{item.needsManualInput ? 'manual-needed' : ''}} {{item.requiresDetailReview ? 'review-needed' : ''}}">
-        <view class="report-card-head">
+
+  <view wx:if="{{!recognizing && taskStatus !== 'failed' && reportCount > 0}}" class="confirm-list">
+    <view wx:for="{{reports}}" wx:key="draftId" class="upload-pad report-card-wrap">
+      <view class="confirm-report-card {{item.conflict ? 'conflict' : ''}} {{item.needsManualInput ? 'manual-needed' : ''}} {{item.requiresDetailReview ? 'review-needed' : ''}}">
+        <view class="report-card-body">
           <view class="page-thumb" data-index="{{index}}" catchtap="previewSourcePhoto">
-            <image wx:if="{{item.sourcePreviewCount}}" class="page-thumb-image" src="{{item.sourcePreviewUrls[0]}}" mode="aspectFill"></image>
-            <text wx:else>图</text>
+            <image wx:if="{{item.sourcePreviewCount}}" class="page-thumb-image" src="{{item.sourcePreviewUrls[0]}}" mode="aspectFill" />
+            <image wx:else class="page-thumb-fallback" src="/assets/ui-refresh/report-doc.png" mode="aspectFit" />
             <view wx:if="{{item.sourcePreviewCount > 1}}" class="page-thumb-count">{{item.sourcePreviewCount}}</view>
           </view>
-          <view class="flex">
-            <view class="body strong">{{item.type}}</view>
-            <view class="tiny">{{item.meta}}</view>
+          <view class="report-main">
+            <view class="report-main-top">
+              <view class="report-title-block">
+                <view class="report-type">{{item.type}}</view>
+                <view class="report-meta">{{item.meta}}</view>
+              </view>
+              <view wx:if="{{item.needsManualInput}}" class="detail-pill primary {{openingManualIndex === index ? 'disabled' : ''}}" data-index="{{index}}" bindtap="goManualFill">{{openingManualIndex === index ? '打开中' : '手动补录 ›'}}</view>
+              <view wx:else class="detail-pill {{openingDetailIndex === index ? 'disabled' : ''}}" data-index="{{index}}" bindtap="goEdit">{{openingDetailIndex === index ? '打开中' : '查看/编辑详情 ›'}}</view>
+            </view>
+            <view class="report-tags">
+              <view wx:if="{{item.canonicalTypeName && item.canonicalTypeName !== item.type}}" class="tag">归一：{{item.canonicalTypeName}}</view>
+              <view wx:if="{{item.modality === 'imaging'}}" class="tag">影像报告</view>
+              <view wx:if="{{item.examPart}}" class="tag">{{item.examPart}}</view>
+              <view wx:if="{{item.analysisPolicy === 'view_only'}}" class="tag muted">仅归档查看</view>
+            </view>
+            <view class="report-count-line">
+              <text>{{item.count}}</text>
+              <text wx:if="{{item.abnormal}}" class="value-high"> · {{item.abnormal}}</text>
+            </view>
+            <view wx:if="{{item.pendingText}}" class="pending-pill">{{item.pendingText}}</view>
+            <view wx:if="{{item.warningText || item.warningMoreText || item.inferredText || item.reviewRequiredText || item.manualText}}" class="hint-lines">
+              <view wx:if="{{item.warningText}}" class="hint-line">{{item.warningText}}</view>
+              <view wx:if="{{item.warningMoreText}}" class="hint-line">{{item.warningMoreText}}</view>
+              <view wx:if="{{item.inferredText}}" class="hint-line">{{item.inferredText}}</view>
+              <view wx:if="{{item.reviewRequiredText}}" class="hint-line">{{item.reviewRequiredText}}</view>
+              <view wx:if="{{item.manualText}}" class="hint-line">{{item.manualText}}</view>
+            </view>
           </view>
-        </view>
-        <view class="report-tags">
-          <view wx:if="{{item.canonicalTypeName && item.canonicalTypeName !== item.type}}" class="tag">归一：{{item.canonicalTypeName}}</view>
-          <view wx:if="{{item.modality === 'imaging'}}" class="tag">影像报告</view>
-          <view wx:if="{{item.examPart}}" class="tag">{{item.examPart}}</view>
-          <view wx:if="{{item.analysisPolicy === 'view_only'}}" class="tag muted">仅归档查看</view>
-        </view>
-        <view class="divider"></view>
-        <view class="sub">{{item.count}} <text wx:if="{{item.abnormal}}">· </text><text class="value-high">{{item.abnormal}}</text></view>
-        <view wx:if="{{item.pendingText || item.warningText || item.warningMoreText || item.inferredText || item.reviewRequiredText || item.manualText}}" class="hint-lines">
-          <view wx:if="{{item.pendingText}}" class="tiny">{{item.pendingText}}</view>
-          <view wx:if="{{item.warningText}}" class="tiny">{{item.warningText}}</view>
-          <view wx:if="{{item.warningMoreText}}" class="tiny">{{item.warningMoreText}}</view>
-          <view wx:if="{{item.inferredText}}" class="tiny">{{item.inferredText}}</view>
-          <view wx:if="{{item.reviewRequiredText}}" class="tiny">{{item.reviewRequiredText}}</view>
-          <view wx:if="{{item.manualText}}" class="tiny">{{item.manualText}}</view>
         </view>
         <view wx:if="{{item.conflict}}" class="conflict-bar" data-index="{{index}}" bindtap="goConflict">
           <view class="conflict-mark">!</view>
           <view class="flex">{{item.conflictCount}} 项重复识别，值不一致</view>
-          <view>处理 ›</view>
+          <view class="conflict-action">处理 ›</view>
         </view>
-        <view wx:if="{{item.needsManualInput}}" class="btn mt-12 {{openingManualIndex === index ? 'disabled' : ''}}" data-index="{{index}}" bindtap="goManualFill">{{openingManualIndex === index ? '正在打开...' : '手动补录 ›'}}</view>
-        <view wx:else class="btn secondary mt-12 {{openingDetailIndex === index ? 'disabled' : ''}}" data-index="{{index}}" bindtap="goEdit">{{openingDetailIndex === index ? '正在打开...' : '查看/编辑详情 ›'}}</view>
-        <view class="btn subtle mt-12 {{removingDraftIndex === index ? 'disabled' : ''}}" data-index="{{index}}" catchtap="removeDraft">{{removingDraftIndex === index ? '正在移除...' : '移除本次报告'}}</view>
-        <view wx:if="{{item.canSplit}}" class="split {{splittingDraftIndex === index ? 'disabled' : ''}}" data-index="{{index}}" catchtap="splitDraft">{{splittingDraftIndex === index ? '正在拆分...' : '拆分页面'}}</view>
-        <view wx:else class="split disabled">单页报告不可拆分</view>
+        <view class="report-action-footer">
+          <view class="report-action danger {{removingDraftIndex === index ? 'disabled' : ''}}" data-index="{{index}}" catchtap="removeDraft">
+            <image class="report-action-icon" src="/assets/ui-refresh/upload-trash.png" mode="aspectFit" />
+            <text>{{removingDraftIndex === index ? '正在移除' : '移除本次报告'}}</text>
+          </view>
+          <view wx:if="{{item.canSplit}}" class="report-action {{splittingDraftIndex === index ? 'disabled' : ''}}" data-index="{{index}}" catchtap="splitDraft">
+            <image class="report-action-icon" src="/assets/ui-refresh/upload-split.png" mode="aspectFit" />
+            <text>{{splittingDraftIndex === index ? '正在拆分' : '拆分页面'}}</text>
+          </view>
+          <view wx:else class="report-action disabled">
+            <image class="report-action-icon" src="/assets/ui-refresh/upload-split.png" mode="aspectFit" />
+            <text>单页不可拆分</text>
+          </view>
+        </view>
       </view>
     </view>
   </view>
+
   <view class="bottom-action">
     <view class="btn {{saving || recognizing || taskStatus === 'failed' || reportCount === 0 ? 'disabled' : ''}}" bindtap="saveAll">全部保存到病例夹（{{reportCount}} 份）</view>
   </view>

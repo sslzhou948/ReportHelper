@@ -257,11 +257,11 @@ assert.ok(uploadPickJs.includes('wx.getImageInfo') && uploadPickJs.includes('enr
 assert.ok(uploadPickJs.includes('confirmQualityWarnings(photos)') && uploadPickJs.includes('confirmText:') && uploadPickJs.includes('继续识别'), 'upload pick must confirm before spending OCR on low-quality photos');
 assert.ok(uploadPickJs.includes('OCR_RESULT_TABLE_GUIDANCE') && uploadPickJs.includes('结果表格居中') && uploadPickJs.includes('解释/建议区'), 'upload pick quality guidance must warn about table framing and explanatory-section interference');
 assert.ok(uploadPickWxml.includes('结果表格居中') && uploadPickWxml.includes('裁到结果表'), 'upload pick visible guidance must recommend table-centered photos for paper reports');
-assert.ok(uploadPickWxml.includes('/assets/upload/group-link.png') && uploadPickWxml.includes('clip-icon'), 'upload pick multi-page grouping must use a visible image icon instead of an ambiguous character');
+assert.ok(uploadPickWxml.includes('/assets/ui-refresh/upload-paperclip-tabler.png') && uploadPickWxml.includes('clip-icon'), 'upload pick multi-page grouping must use a visible standard paperclip image icon instead of an ambiguous character');
 assert.ok(uploadPickWxml.includes('同一份报告跨页拍摄') && uploadPickWxml.includes('合并为 1 份报告识别') && !uploadPickWxml.includes('曲别针') && !uploadPickWxml.includes('⌘'), 'upload pick grouping copy must clearly explain multi-page report grouping');
 assert.ok(!uploadPickWxml.includes('默认每张图识别为一份报告') && !uploadPickWxml.includes('把多张图分到同一组'), 'upload pick grouping guidance must not duplicate the lower photo-grid hint');
 assert.ok(uploadPickJs.includes('wx.showModal'), 'upload pick must confirm leaving with an unfinished draft');
-assert.ok(uploadPickJs.includes('splitGroup(event)'), 'upload pick must allow cancelling an existing photo merge');
+assert.ok(uploadPickJs.includes('splitGroup(event)') && uploadPickWxml.includes('catchtap="splitGroup"') && uploadPickWxml.includes('/assets/ui-refresh/upload-split.png'), 'upload pick must allow cancelling an existing photo merge through a visible split action');
 assert.ok(uploadPickJs.includes('removePhoto(event)') && uploadPickWxml.includes('catchtap="removePhoto"'), 'upload pick must allow removing a mistakenly selected photo');
 assert.ok(!homeWxml.includes('\u6b63\u5728\u8bc6\u522b 3 \u5f20\u62a5\u544a'), 'home OCR notice must not hardcode report counts');
 assert.ok(homeIndexJs.includes('api.listOcrTasks'), 'home must refresh pending OCR state from API');
@@ -328,6 +328,10 @@ assert.ok(uploadPickJs.includes('showApiErrorToast(error'), 'upload pick must su
 assert.ok(uploadPickJs.includes('runRealUploadSmokeForTest') && uploadPickJs.includes('wx.getFileSystemManager().writeFileSync') && uploadPickJs.includes('return this.startOcr()'), 'upload pick must expose a DevTools-only smoke path that still uses the real upload/OCR flow');
 assert.ok(uploadPickJs.includes('Array.isArray(options.files)') && uploadPickJs.includes('files.slice(0, MAX_UPLOAD_PHOTOS)') && uploadPickJs.includes('this.updatePhotos(photos, [])'), 'upload pick DevTools smoke path must support multi-image upload batches');
 assert.ok(uploadPickWxml.includes('qualityWarningCount') && uploadPickWxml.includes('quality-badge') && uploadPickWxss.includes('.photo-quality-warning'), 'upload pick must show local OCR quality warnings on selected photos');
+assert.ok(uploadPickJs.includes('MAX_UPLOAD_PHOTOS = 9') && uploadPickJs.includes('maxUploadPhotos: MAX_UPLOAD_PHOTOS'), 'upload pick must keep the upload cap as a single 9-image source of truth');
+assert.ok(uploadPickWxml.includes('\u6700\u591a\u4e0a\u4f20 {{maxUploadPhotos}} \u5f20') && uploadPickWxml.includes('\u6700\u591a {{maxUploadPhotos}} \u5f20'), 'upload pick must surface the 9-image upload cap in the UI');
+assert.ok(!uploadPickWxml.includes('\u5df2\u6062\u590d\u4e0a\u6b21\u672a\u5b8c\u6210\u7684\u4e0a\u4f20\u8349\u7a3f') && !uploadPickWxss.includes('.draft-hint'), 'upload pick must not show draft recovery as a normal first-upload hint');
+assert.ok(uploadPickWxml.includes('\u6e05\u6670\u5ea6\u6216\u88c1\u5207\u53ef\u80fd\u5f71\u54cd AI\u8bc6\u522b'), 'upload pick quality warning must describe quality or crop risk instead of implying photo count is the issue');
 assert.ok(uploadPickWxss.includes('.quality-badge') && uploadPickWxss.includes('bottom: 10rpx'), 'upload pick quality badge must not overlap grouped photo labels');
 assert.ok(uploadConfirmJs.includes("itemList: ['覆盖旧报告', '跳过重复报告']"), 'duplicate prompt should only expose replace or skip');
 assert.ok(!uploadConfirmJs.includes('仍保存为新报告'), 'duplicate prompt must not expose keep-both to normal users');

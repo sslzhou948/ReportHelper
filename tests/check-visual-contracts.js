@@ -22,10 +22,13 @@ const trendChartWxml = read('miniprogram/components/trend-chart/trend-chart.wxml
 const trendChartWxss = read('miniprogram/components/trend-chart/trend-chart.wxss');
 const trendChartJs = read('miniprogram/components/trend-chart/trend-chart.js');
 const reportDetailWxss = read('miniprogram/pages/health/report-detail.wxss');
+const uploadPickWxml = read('miniprogram/pages/upload/pick.wxml');
 const uploadPickWxss = read('miniprogram/pages/upload/pick.wxss');
+const uploadConfirmWxml = read('miniprogram/pages/upload/confirm.wxml');
 const uploadConfirmWxss = read('miniprogram/pages/upload/confirm.wxss');
 const uploadEditWxss = read('miniprogram/pages/upload/edit-detail.wxss');
 const uploadConflictWxss = read('miniprogram/pages/upload/conflict.wxss');
+const iconGenerator = read('scripts/generate-ui-refresh-icons.js');
 const appJs = read('miniprogram/app.js');
 const wxmlFiles = [];
 
@@ -211,6 +214,70 @@ const refLine = getRule(trendChartWxss, '.ref-line');
 assertDecl(refLine, 'border-top: 2rpx dashed var(--primary)', 'trend chart reference line must be visibly distinct');
 
 assert.ok(reportDetailWxss.includes('padding-bottom: calc(168rpx + env(safe-area-inset-bottom))'), 'report detail must reserve space for fixed bottom actions');
+
+assert.ok(uploadPickWxml.includes('class="page upload-ref-page upload-page"'), 'upload picker must use the refreshed upload page shell');
+assert.ok(uploadPickWxml.includes('/assets/ui-refresh/upload-tip-plus-tabler.png'), 'upload picker quality tip must use a filled plus icon from a standard icon library');
+assert.ok(uploadPickWxml.includes('/assets/ui-refresh/upload-camera-tabler.png'), 'upload picker camera action must use a standard icon-library source asset');
+assert.ok(uploadPickWxml.includes('/assets/ui-refresh/upload-photo-tabler.png'), 'upload picker album action must use a standard icon-library source asset');
+assert.ok(uploadPickWxml.includes('/assets/ui-refresh/upload-paperclip-tabler.png'), 'upload picker grouping affordance must use a standard icon-library paperclip source asset');
+assert.ok(uploadPickWxml.includes('/assets/ui-refresh/upload-x-tabler.png'), 'upload picker remove affordance must use a standard icon-library x source asset');
+assert.ok(uploadPickWxml.includes('/assets/ui-refresh/upload-plus-tabler.png'), 'upload picker add affordance must use a standard icon-library plus source asset');
+assert.ok(uploadPickWxml.includes('class="merge-helper"'), 'upload picker must keep visible multi-page merge guidance');
+assert.ok(!uploadPickWxml.includes('<view class="upload-icon">拍'), 'upload picker must not use text glyphs as action icons');
+
+const uploadAction = getRule(uploadPickWxss, '.upload-action');
+assertDecl(uploadAction, 'min-height: 102rpx', 'upload action cards must keep the reference height rhythm');
+assertDecl(uploadAction, 'display: flex', 'upload action cards must align icon and labels');
+
+const uploadTipTitle = getRule(uploadPickWxss, '.tip-title');
+assertDecl(uploadTipTitle, 'font-weight: 600', 'upload tip title must avoid heavy title weight');
+
+const uploadActionTitle = getRule(uploadPickWxss, '.upload-action-title');
+assertDecl(uploadActionTitle, 'font-weight: 600', 'upload action titles must avoid heavy title weight');
+
+const uploadSectionTitle = getRule(uploadPickWxss, '.upload-section-title');
+assertDecl(uploadSectionTitle, 'font-weight: 600', 'upload selected-count label must avoid heavy title weight');
+
+const uploadPhotoGrid = getRule(uploadPickWxss, '.photo-grid');
+assertDecl(uploadPhotoGrid, 'grid-template-columns: repeat(3, 1fr)', 'upload photo grid must stay three columns');
+
+const uploadPhoto = getRule(uploadPickWxss, '.photo');
+assertDecl(uploadPhoto, 'height: 224rpx', 'upload photo cards must keep the reference thumbnail rhythm');
+assertDecl(uploadPhoto, 'overflow: hidden', 'upload photo cards must clip thumbnails and overlays');
+
+const uploadPhotoIndex = getRule(uploadPickWxss, '.photo-index');
+assertDecl(uploadPhotoIndex, 'width: 100rpx', 'upload photo index pill must match the reference label width');
+assertDecl(uploadPhotoIndex, 'font-size: 26rpx', 'upload photo index text must match the reference label scale');
+assertDecl(uploadPhotoIndex, 'white-space: nowrap', 'upload photo index text must stay on one line');
+
+assert.ok(fs.existsSync(path.join(root, 'miniprogram', 'assets', 'ui-refresh', 'upload-paperclip-tabler.png')), 'upload paperclip asset must be generated from a standard icon-library source');
+assert.ok(iconGenerator.includes("drawIcon('upload-info.png'") && iconGenerator.includes("drawIcon('upload-split.png'") && iconGenerator.includes("drawIcon('upload-report-sample.png'"), 'upload visual assets must stay reproducible from the UI refresh icon generator');
+
+assert.ok(uploadConfirmWxml.includes('class="page upload-ref-page confirm-page"'), 'upload confirm must use the refreshed upload page shell');
+assert.ok(uploadConfirmWxml.includes('class="confirm-notice info"'), 'upload confirm must render the green information notice');
+assert.ok(uploadConfirmWxml.includes('class="confirm-report-card'), 'upload confirm must render refreshed report cards');
+assert.ok(uploadConfirmWxml.includes('class="detail-pill'), 'upload confirm must use inline detail action pills');
+assert.ok(uploadConfirmWxml.includes('class="report-action-footer"'), 'upload confirm must use a single bottom operation bar inside report cards');
+assert.ok(uploadConfirmWxml.includes('/assets/ui-refresh/upload-trash.png'), 'upload confirm remove action must use a refreshed image icon');
+assert.ok(uploadConfirmWxml.includes('/assets/ui-refresh/upload-split.png'), 'upload confirm split action must use a refreshed image icon');
+assert.ok(!uploadConfirmWxml.includes('class="btn subtle'), 'upload confirm report actions must not fall back to stacked button styling');
+
+const confirmReportCard = getRule(uploadConfirmWxss, '.confirm-report-card');
+assertDecl(confirmReportCard, 'border-radius: 24rpx', 'upload confirm report cards must keep compact rounded corners');
+assertDecl(confirmReportCard, 'overflow: hidden', 'upload confirm report card footer dividers must clip to card radius');
+
+const confirmReportBody = getRule(uploadConfirmWxss, '.report-card-body');
+assertDecl(confirmReportBody, 'display: flex', 'upload confirm report cards must align source thumbnail and metadata');
+assertDecl(confirmReportBody, 'gap: 22rpx', 'upload confirm report card thumbnail gap must stay stable');
+
+const confirmThumb = getRule(uploadConfirmWxss, '.page-thumb');
+assertDecl(confirmThumb, 'width: 142rpx', 'upload confirm thumbnail width must match the refreshed card density');
+assertDecl(confirmThumb, 'height: 170rpx', 'upload confirm thumbnail height must match the refreshed card density');
+
+const confirmActionFooter = getRule(uploadConfirmWxss, '.report-action-footer');
+assertDecl(confirmActionFooter, 'grid-template-columns: 1fr 1fr', 'upload confirm report footer must keep two equal actions');
+assertDecl(confirmActionFooter, 'border-top: 1rpx solid #E7E1D9', 'upload confirm report footer must use one clean divider');
+
 for (const [name, source] of [
   ['upload pick', uploadPickWxss],
   ['upload confirm', uploadConfirmWxss],
