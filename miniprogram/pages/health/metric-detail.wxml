@@ -1,72 +1,85 @@
 ﻿<view class="page">
   <view class="nav">
     <view class="nav-side left" bindtap="goBack">‹ 返回</view>
-    <view class="nav-title">{{latest.metricName}}</view>
-    <view class="pin-action {{isPinned ? 'active' : ''}} {{pinSaving ? 'saving' : ''}}" bindtap="togglePin">
+    <view class="nav-title">{{latest ? latest.metricName : '指标详情'}}</view>
+    <view wx:if="{{latest}}" class="pin-action {{isPinned ? 'active' : ''}} {{pinSaving ? 'saving' : ''}}" bindtap="togglePin">
       <view class="pin-dot">{{isPinned ? '✓' : '+'}}</view>
       <view>{{pinSaving ? '保存中' : (isPinned ? '已关注' : '关注')}}</view>
     </view>
   </view>
-  <view class="pad mt-12">
-    <view class="card card-pad">
-      <view class="metric-big {{latest.tone}}">
-        <text wx:if="{{isQualitative}}">{{latest.valueQualitative}}</text>
-        <text wx:else>{{latest.valueNumeric}}</text>
-        <text wx:if="{{!isQualitative}}" class="metric-unit">{{latest.unit}}</text>
-      </view>
-      <view class="pill-row">
-        <hh-pill wx:if="{{latest.tone === 'low'}}" tone="low">↓ 偏低</hh-pill>
-        <hh-pill wx:elif="{{latest.tone === 'high' || latest.tone === 'positive'}}" tone="high">↑ 偏高</hh-pill>
-        <hh-pill wx:else tone="primary">正常</hh-pill>
-        <hh-pill>{{latest.referenceText}}</hh-pill>
-      </view>
-      <view class="tiny mt-12">最近一次：{{latest.reportDate}} · {{latest.hospital}}</view>
-    </view>
-  </view>
 
-  <view class="pad mt-12">
-    <view class="card card-pad">
-      <view class="report-head">
-        <view class="title">趋势</view>
-        <view wx:if="{{hasTrendChart}}" class="tiny">← 滑动查看 →</view>
+  <block wx:if="{{emptyMetric}}">
+    <view class="pad mt-12">
+      <view class="card card-pad metric-empty-card">
+        <view class="body strong">暂未找到指标记录</view>
+        <view class="tiny mt-8">{{emptyMetricText}}</view>
+        <view class="metric-empty-action" bindtap="goBack">返回上一页</view>
       </view>
-      <view class="range-row compact">
-        <view
-          wx:for="{{rangeOptions}}"
-          wx:key="key"
-          data-range="{{item.key}}"
-          bindtap="switchRange"
-          class="range-chip {{range === item.key ? 'active' : ''}}"
-        >{{item.label}}</view>
-      </view>
-      <view wx:if="{{!hasTrendChart}}" class="notice">{{trendNotice}}</view>
-      <block wx:else>
-        <trend-chart history="{{history}}" />
-        <view class="tiny mt-12">{{chartReferenceNotice}}</view>
-      </block>
     </view>
-  </view>
+  </block>
 
-  <view class="section-title">
-    <view>历史记录</view>
-    <view class="tiny">{{history.length}} 次</view>
-  </view>
-  <view class="pad">
-    <view class="card">
-      <view wx:for="{{history}}" wx:key="reportId" class="row" data-id="{{item.reportId}}" bindtap="goReport">
-        <view class="flex">
-          <view class="body strong">{{item.reportDate}}</view>
-          <view class="tiny">{{item.hospital}}</view>
+  <block wx:else>
+    <view class="pad mt-12">
+      <view class="card card-pad">
+        <view class="metric-big {{latest.tone}}">
+          <text wx:if="{{isQualitative}}">{{latest.valueQualitative}}</text>
+          <text wx:else>{{latest.valueNumeric}}</text>
+          <text wx:if="{{!isQualitative}}" class="metric-unit">{{latest.unit}}</text>
         </view>
-        <view class="right">
-          <view class="history-value {{item.tone}}">
-            <text wx:if="{{item.valueType === 'qualitative'}}">{{item.valueQualitative}}</text>
-            <text wx:else>{{item.valueNumeric}}</text>
+        <view class="pill-row">
+          <hh-pill wx:if="{{latest.tone === 'low'}}" tone="low">↓ 偏低</hh-pill>
+          <hh-pill wx:elif="{{latest.tone === 'high' || latest.tone === 'positive'}}" tone="high">↑ 偏高</hh-pill>
+          <hh-pill wx:else tone="primary">正常</hh-pill>
+          <hh-pill>{{latest.referenceText}}</hh-pill>
+        </view>
+        <view class="tiny mt-12">最近一次：{{latest.reportDate}} · {{latest.hospital}}</view>
+      </view>
+    </view>
+
+    <view class="pad mt-12">
+      <view class="card card-pad">
+        <view class="report-head">
+          <view class="title">趋势</view>
+          <view wx:if="{{hasTrendChart}}" class="tiny">← 滑动查看 →</view>
+        </view>
+        <view class="range-row compact">
+          <view
+            wx:for="{{rangeOptions}}"
+            wx:key="key"
+            data-range="{{item.key}}"
+            bindtap="switchRange"
+            class="range-chip {{range === item.key ? 'active' : ''}}"
+          >{{item.label}}</view>
+        </view>
+        <view wx:if="{{!hasTrendChart}}" class="notice">{{trendNotice}}</view>
+        <block wx:else>
+          <trend-chart history="{{trendHistory}}" />
+          <view class="tiny mt-12">{{chartReferenceNotice}}</view>
+        </block>
+      </view>
+    </view>
+
+    <view class="section-title">
+      <view>历史记录</view>
+      <view class="tiny">{{history.length}} 次</view>
+    </view>
+    <view class="pad">
+      <view class="card">
+        <view wx:for="{{history}}" wx:key="reportId" class="row" data-id="{{item.reportId}}" bindtap="goReport">
+          <view class="flex">
+            <view class="body strong">{{item.reportDate}}</view>
+            <view class="tiny">{{item.hospital}}</view>
           </view>
-          <view class="tiny">{{item.referenceText}}</view>
+          <view class="right">
+            <view class="history-value {{item.tone}}">
+              <text wx:if="{{item.valueType === 'qualitative'}}">{{item.valueQualitative}}</text>
+              <text wx:else>{{item.valueNumeric}}</text>
+            </view>
+            <view class="tiny">{{item.referenceText}}</view>
+          </view>
+          <view class="arrow">›</view>
         </view>
-        <view class="arrow">›</view>
       </view>
     </view>
-  </view>
+  </block>
 </view>

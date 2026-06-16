@@ -414,10 +414,23 @@ sequentialChecks.push(async () => {
       tone: 'ok'
     }
   ];
+  const staleRows = [
+    {
+      ...historyRows[1],
+      reportId: 'report_stale_20250121',
+      metricKey: 'stale_metric',
+      metricName: '陈旧指标',
+      reportDate: '2025-01-21'
+    }
+  ];
   const requests = [];
   const apiStub = {
     getMetricHistory(profileId, metricKey, params = {}) {
       requests.push({ profileId, metricKey, params });
+      if (metricKey === 'missing_metric') return Promise.resolve({ history: [] });
+      if (metricKey === 'stale_metric') {
+        return Promise.resolve({ history: params.since ? [] : staleRows });
+      }
       return Promise.resolve({
         history: params.since ? historyRows.slice(0, 1) : historyRows
       });
@@ -464,14 +477,49 @@ sequentialChecks.push(async () => {
     assert.deepStrictEqual(requests[0].params, {}, 'all range should not add date filters');
     assert.strictEqual(page.data.hasTrendChart, true, 'numeric string histories should still enable trend chart rendering');
     assert.strictEqual(page.data.history.length, 2);
+    assert.strictEqual(page.data.trendHistory.length, 2);
+
+    await page.togglePin();
+    assert.strictEqual(page.data.isPinned, true, 'metric detail should optimistically reflect follow changes');
+    assert.strictEqual(page.data.latest.isPinned, true, 'metric detail latest row should stay in sync with follow state');
 
     await page.switchRange({ currentTarget: { dataset: { range: '1y' } } });
     assert.strictEqual(storageState.healthDataRange, '1y', 'metric detail range changes should stay in sync with health data range');
     assert.ok(requests[1].params.since && requests[1].params.until, 'bounded range should request date filters');
-    assert.strictEqual(page.data.history.length, 1);
+    assert.strictEqual(page.data.history.length, 2, 'metric detail history should keep all records when only the trend range changes');
+    assert.strictEqual(page.data.trendHistory.length, 1);
+    assert.strictEqual(page.data.isPinned, true, 'metric detail cached full history should preserve follow state across range changes');
     assert.strictEqual(page.data.hasTrendChart, false);
     assert.ok(page.data.trendNotice.includes('当前时间范围内少于 2 次数值记录'), 'range-limited histories should explain the active filter');
     assert.ok(!page.data.trendNotice.includes('首次'), 'range-limited histories should not claim this is the first record');
+
+    await page.onLoad({ metricKey: 'stale_metric', range: '30d' });
+    assert.strictEqual(page.data.emptyMetric, false, 'metric detail should keep the latest card when the selected trend range has no rows');
+    assert.strictEqual(page.data.latest.metricName, '陈旧指标');
+    assert.strictEqual(page.data.history.length, 1);
+    assert.strictEqual(page.data.trendHistory.length, 0);
+    assert.strictEqual(page.data.hasTrendChart, false);
+    assert.ok(page.data.trendNotice.includes('当前时间范围内少于 2 次数值记录'), 'empty trend ranges should explain the active filter without hiding the detail');
+
+    const requestCountBeforeInvalidRoute = requests.length;
+    await page.onLoad({});
+    assert.strictEqual(requests.length, requestCountBeforeInvalidRoute, 'metric detail should not request a default metric when the route key is missing');
+    assert.strictEqual(page.data.metricKey, '');
+    assert.strictEqual(page.data.emptyMetric, true);
+    assert.strictEqual(page.data.latest, null);
+    assert.strictEqual(page.data.history.length, 0);
+    assert.strictEqual(page.data.hasTrendChart, false);
+    assert.strictEqual(page.data.isPinned, false);
+    assert.ok(page.data.emptyMetricText, 'metric detail should explain an invalid route instead of rendering blank values');
+
+    await page.onLoad({ metricKey: 'missing_metric' });
+    assert.strictEqual(page.data.metricKey, 'missing_metric');
+    assert.strictEqual(page.data.emptyMetric, true);
+    assert.strictEqual(page.data.latest, null);
+    assert.strictEqual(page.data.history.length, 0);
+    assert.strictEqual(page.data.hasTrendChart, false);
+    assert.strictEqual(page.data.isPinned, false);
+    assert.ok(page.data.emptyMetricText, 'metric detail should explain empty histories instead of rendering blank values');
   } finally {
     delete require.cache[pageModulePath];
     if (savedApiModule) require.cache[apiModulePath] = savedApiModule;
@@ -1203,6 +1251,38 @@ sequentialChecks.push(async () => {
         tone: 'unknown',
         mappingStatus: 'confirmed',
         ocrConfidence: 0.91
+      }, {
+        metricKey: 'empty_numeric_range',
+        metricName: '\u7a7a\u533a\u95f4\u53c2\u8003',
+        originalMetricName: 'EMPTY RANGE',
+        category: 'hormone',
+        categoryCn: '\u6fc0\u7d20',
+        valueType: 'quantitative',
+        valueNumeric: 7,
+        unit: 'U/L',
+        refRangeLow: null,
+        refRangeHigh: null,
+        refText: '',
+        refMode: 'simple_range',
+        tone: 'unknown',
+        mappingStatus: 'confirmed',
+        ocrConfidence: 0.91
+      }, {
+        metricKey: 'no_reference_metric',
+        metricName: '\u65e0\u53c2\u8003\u6307\u6807',
+        originalMetricName: 'NO REF',
+        category: 'hormone',
+        categoryCn: '\u6fc0\u7d20',
+        valueType: 'quantitative',
+        valueNumeric: 8,
+        unit: 'U/L',
+        refRangeLow: null,
+        refRangeHigh: null,
+        refText: '',
+        refMode: 'none',
+        tone: 'unknown',
+        mappingStatus: 'confirmed',
+        ocrConfidence: 0.91
       }],
       findings: [],
       warnings: []
@@ -1213,6 +1293,35 @@ sequentialChecks.push(async () => {
     assert.strictEqual(complexRefItem.refMode, 'complex_text');
     assert.strictEqual(complexRefItem.showTonePicker, true);
     assert.strictEqual(complexRefItem.ref, '\u5973\uff1a0-1\u5468\u5c81\u22641300\uff1b2-4\u5468\u5c81\u2264350');
+    const emptyNumericRangeItem = page.data.groups.flatMap((group) => group.items).find((item) => item.name === '\u7a7a\u533a\u95f4\u53c2\u8003');
+    assert.strictEqual(emptyNumericRangeItem.refMode, 'simple_range');
+    assert.strictEqual(emptyNumericRangeItem.showTonePicker, false, 'empty numeric reference modes should not show manual tone picker');
+    const noReferenceItem = page.data.groups.flatMap((group) => group.items).find((item) => item.name === '\u65e0\u53c2\u8003\u6307\u6807');
+    assert.strictEqual(noReferenceItem.refMode, 'none');
+    assert.strictEqual(noReferenceItem.showTonePicker, true, 'no-reference metrics should show manual tone picker');
+
+    page.onMetricToneChange({
+      currentTarget: { dataset: { index: 3 } },
+      detail: { value: 2 }
+    });
+    assert.strictEqual(page.draft.metrics[3].tone, 'high', 'no-reference metrics should allow manual tone selection');
+
+    for (const modeIndex of [0, 1, 2]) {
+      page.onRefModeChange({
+        currentTarget: { dataset: { index: 3 } },
+        detail: { value: modeIndex }
+      });
+      const numericModeItem = page.data.groups.flatMap((group) => group.items).find((item) => item.name === '\u65e0\u53c2\u8003\u6307\u6807');
+      assert.strictEqual(numericModeItem.showTonePicker, false, 'numeric reference modes should hide manual tone picker even before bounds are filled');
+      assert.strictEqual(page.draft.metrics[3].tone, 'unknown', 'incomplete numeric reference modes should not keep a hidden manual tone');
+    }
+    page.onRefModeChange({
+      currentTarget: { dataset: { index: 3 } },
+      detail: { value: 3 }
+    });
+    const complexModeItem = page.data.groups.flatMap((group) => group.items).find((item) => item.name === '\u65e0\u53c2\u8003\u6307\u6807');
+    assert.strictEqual(complexModeItem.refMode, 'complex_text');
+    assert.strictEqual(complexModeItem.showTonePicker, true, 'complex-text reference mode should show manual tone picker');
 
     page.onMetricToneChange({
       currentTarget: { dataset: { index: 1 } },

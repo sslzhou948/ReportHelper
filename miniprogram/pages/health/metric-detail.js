@@ -26,6 +26,13 @@ function decorateHistory(history) {
   }));
 }
 
+function applyPinnedState(history, isPinned) {
+  return (history || []).map((row) => ({
+    ...row,
+    isPinned: !!isPinned
+  }));
+}
+
 function rangeQuery(rangeKey) {
   const option = RANGE_OPTIONS.find((item) => item.key === rangeKey) || RANGE_OPTIONS[0];
   const today = formatDate(new Date());
@@ -34,6 +41,10 @@ function rangeQuery(rangeKey) {
     since: addDays(today, -(option.days - 1)),
     until: today
   };
+}
+
+function hasRangeQuery(query) {
+  return !!(query && (query.since || query.until));
 }
 
 function normalizeRangeKey(rangeKey) {
@@ -47,6 +58,17 @@ function getStoredRangeKey() {
 
 function setStoredRangeKey(rangeKey) {
   if (typeof wx !== 'undefined' && wx.setStorageSync) wx.setStorageSync('healthDataRange', rangeKey);
+}
+
+function normalizeMetricKey(metricKey) {
+  const text = String(metricKey || '').trim();
+  return text === 'undefined' || text === 'null' ? '' : text;
+}
+
+function emptyMetricText(metricKey) {
+  return metricKey
+    ? '\u6682\u672a\u627e\u5230\u8be5\u6307\u6807\u7684\u5386\u53f2\u8bb0\u5f55\uff0c\u8bf7\u8fd4\u56de\u4e0a\u4e00\u9875\u786e\u8ba4\u6307\u6807\u662f\u5426\u5df2\u4fdd\u5b58\u3002'
+    : '\u672a\u627e\u5230\u8981\u67e5\u770b\u7684\u6307\u6807\uff0c\u8bf7\u8fd4\u56de\u4e0a\u4e00\u9875\u91cd\u65b0\u9009\u62e9\u3002';
 }
 
 function isTrendNumericRow(row) {
@@ -68,6 +90,9 @@ Page({
     rangeOptions: RANGE_OPTIONS,
     latest: null,
     history: [],
+    trendHistory: [],
+    emptyMetric: false,
+    emptyMetricText: '',
     isQualitative: false,
     hasTrendChart: false,
     trendNotice: '',
@@ -78,20 +103,72 @@ Page({
   },
   onLoad(query = {}) {
     this.profileId = getApp().getCurrentProfileId();
-    const metricKey = query.metricKey || 'wbc';
+    const metricKey = normalizeMetricKey(query.metricKey);
     const range = normalizeRangeKey(query.range || getStoredRangeKey());
     this.setData({ metricKey, range });
+    if (!metricKey) {
+      this.fullMetricKey = '';
+      this.fullHistoryCache = null;
+      this.setData({
+        latest: null,
+        history: [],
+        trendHistory: [],
+        emptyMetric: true,
+        emptyMetricText: emptyMetricText(metricKey),
+        isQualitative: false,
+        hasTrendChart: false,
+        trendNotice: '',
+        chartReferenceNotice: '',
+        isPinned: false,
+        pinSaving: false,
+        loading: false
+      });
+      return Promise.resolve();
+    }
     return this.load(metricKey, range);
   },
   load(metricKey, rangeKey = this.data.range) {
     const requestId = (this.loadRequestId || 0) + 1;
     this.loadRequestId = requestId;
     this.setData({ loading: true });
-    return api.getMetricHistory(this.profileId, metricKey, rangeQuery(rangeKey)).then(({ history }) => {
+    const trendParams = rangeQuery(rangeKey);
+    const hasCachedFullHistory = this.fullMetricKey === metricKey && Array.isArray(this.fullHistoryCache);
+    const fullHistoryPromise = hasCachedFullHistory
+      ? Promise.resolve({ history: this.fullHistoryCache })
+      : api.getMetricHistory(this.profileId, metricKey, {});
+    const trendHistoryPromise = hasRangeQuery(trendParams)
+      ? api.getMetricHistory(this.profileId, metricKey, trendParams)
+      : fullHistoryPromise;
+
+    return Promise.all([fullHistoryPromise, trendHistoryPromise]).then(([fullResult, trendResult]) => {
       if (requestId !== this.loadRequestId) return;
-      const decoratedHistory = decorateHistory(history);
+      const fullHistoryRows = (fullResult && fullResult.history) || [];
+      this.fullMetricKey = metricKey;
+      this.fullHistoryCache = fullHistoryRows;
+      const decoratedHistory = decorateHistory(fullHistoryRows);
+      const trendHistory = trendResult === fullResult
+        ? decoratedHistory
+        : decorateHistory((trendResult && trendResult.history) || []);
+      if (!decoratedHistory.length) {
+        this.setData({
+          range: rangeKey,
+          latest: null,
+          history: [],
+          trendHistory: [],
+          emptyMetric: true,
+          emptyMetricText: emptyMetricText(metricKey),
+          isQualitative: false,
+          hasTrendChart: false,
+          trendNotice: '',
+          chartReferenceNotice: '',
+          isPinned: false,
+          pinSaving: false,
+          loading: false
+        });
+        return;
+      }
       const latest = decoratedHistory[0];
-      const numericRows = decoratedHistory.filter(isTrendNumericRow);
+      const numericRows = trendHistory.filter(isTrendNumericRow);
       const numericHistoryCount = numericRows.length;
       const complexReferenceCount = numericRows.filter((item) => !item.hasNumericReference).length;
       const isQualitative = !!(latest && latest.valueType === 'qualitative');
@@ -99,6 +176,9 @@ Page({
         range: rangeKey,
         latest,
         history: decoratedHistory,
+        trendHistory,
+        emptyMetric: false,
+        emptyMetricText: '',
         isQualitative,
         hasTrendChart: !isQualitative && numericHistoryCount > 1,
         trendNotice: trendNoticeText({ isQualitative, numericHistoryCount, rangeKey }),
@@ -121,6 +201,7 @@ Page({
     const range = normalizeRangeKey(event.currentTarget.dataset.range);
     this.setData({ range });
     setStoredRangeKey(range);
+    if (!this.data.metricKey) return Promise.resolve();
     return this.load(this.data.metricKey, range);
   },
   goReport(event) {
@@ -129,12 +210,29 @@ Page({
   togglePin() {
     if (this.data.pinSaving || !this.data.latest) return;
     const nextPinned = !this.data.isPinned;
-    this.setData({ isPinned: nextPinned, pinSaving: true });
-    api.setMetricPinned(this.profileId, this.data.metricKey, nextPinned).then(() => {
+    const nextHistory = applyPinnedState(this.data.history, nextPinned);
+    const nextTrendHistory = applyPinnedState(this.data.trendHistory, nextPinned);
+    this.fullHistoryCache = applyPinnedState(this.fullHistoryCache, nextPinned);
+    this.setData({
+      isPinned: nextPinned,
+      pinSaving: true,
+      latest: { ...this.data.latest, isPinned: nextPinned },
+      history: nextHistory,
+      trendHistory: nextTrendHistory
+    });
+    return api.setMetricPinned(this.profileId, this.data.metricKey, nextPinned).then(() => {
       this.setData({ pinSaving: false });
       wx.showToast({ title: nextPinned ? PINNED_TOAST : UNPINNED_TOAST, icon: 'none' });
     }).catch((error) => {
-      this.setData({ isPinned: !nextPinned, pinSaving: false });
+      const revertedPinned = !nextPinned;
+      this.fullHistoryCache = applyPinnedState(this.fullHistoryCache, revertedPinned);
+      this.setData({
+        isPinned: revertedPinned,
+        pinSaving: false,
+        latest: { ...this.data.latest, isPinned: revertedPinned },
+        history: applyPinnedState(this.data.history, revertedPinned),
+        trendHistory: applyPinnedState(this.data.trendHistory, revertedPinned)
+      });
       showApiErrorToast(error, '\u66f4\u65b0\u5173\u6ce8\u5931\u8d25');
     });
   }

@@ -8,7 +8,6 @@ const {
   REF_RANGE_MODES,
   TONE_OPTIONS,
   formatReference,
-  hasNumericReference,
   inferRefMode,
   modeState,
   normalizeReferenceByMode,
@@ -28,13 +27,26 @@ function formatValue(metric) {
 }
 
 function shouldShowTonePicker(metric) {
-  return (metric.valueType || 'quantitative') === 'quantitative' && !hasNumericReference(metric);
+  const refMode = inferRefMode(metric);
+  return (metric.valueType || 'quantitative') === 'quantitative'
+    && (refMode === 'complex_text' || refMode === 'none');
+}
+
+function hasCompleteNumericReference(metric) {
+  const refMode = inferRefMode(metric);
+  const hasLow = toNumberOrNull(metric.refRangeLow) !== null;
+  const hasHigh = toNumberOrNull(metric.refRangeHigh) !== null;
+  if (refMode === 'simple_range') return hasLow && hasHigh;
+  if (refMode === 'upper_bound') return hasHigh;
+  if (refMode === 'lower_bound') return hasLow;
+  return false;
 }
 
 function recalculateMetricTone(metric) {
   const valueType = metric.valueType || 'quantitative';
   if (valueType === 'text') return 'unknown';
   if (valueType === 'qualitative') return calculateTone(metric.valueQualitative, null, null, 'qualitative', metric.tone);
+  if (!shouldShowTonePicker(metric) && !hasCompleteNumericReference(metric)) return 'unknown';
   return calculateTone(metric.valueNumeric, metric.refRangeLow, metric.refRangeHigh, 'quantitative', metric.tone);
 }
 

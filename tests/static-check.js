@@ -383,6 +383,9 @@ assert.ok(reportDetailJs.includes('showReportGone'), 'report detail must handle 
 assert.ok(reportDetailJs.includes('isNotFoundError(error)'), 'report detail must treat NOT_FOUND as a stale page');
 assert.ok(!apiMockJs.includes('photoCount: 4'), 'OCR mock fallback must not fabricate four photos');
 assert.ok(metricDetailJs.includes('hasTrendChart') && metricDetailWxml.includes('!hasTrendChart'), 'metric detail must not draw trend charts for qualitative or single-record metrics');
+assert.ok(metricDetailJs.includes('trendHistory') && metricDetailWxml.includes('history="{{trendHistory}}"'), 'metric detail range filters must drive only trend data, not the latest card or full history list');
+assert.ok(metricDetailJs.includes('emptyMetric') && metricDetailWxml.includes('wx:if="{{emptyMetric}}"'), 'metric detail must render an explicit empty state instead of blank latest fields');
+assert.ok(!metricDetailJs.includes("query.metricKey || 'wbc'"), 'metric detail must not silently default invalid routes to WBC');
 assert.ok(metricDetailJs.includes("return '\\u53c2\\u8003 --'") || metricDetailJs.includes("return '参考 --'"), 'metric detail must show missing reference ranges as --');
 assert.ok(metricDetailJs.includes('pinSaving'), 'metric detail must debounce follow/unfollow saves');
 assert.ok(pinnedManageJs.includes('savingKeys'), 'pinned manage must debounce per-metric follow saves');

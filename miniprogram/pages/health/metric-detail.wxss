@@ -21,6 +21,27 @@
   padding: 28rpx 30rpx;
 }
 
+.metric-empty-card {
+  min-height: 260rpx;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.metric-empty-action {
+  margin-top: 28rpx;
+  width: 220rpx;
+  height: 68rpx;
+  border-radius: 18rpx;
+  border: 1rpx solid #527858;
+  color: #527858;
+  font-size: 26rpx;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .pin-action {
   flex: 0 0 auto;
   min-width: 128rpx;

@@ -1,21 +1,28 @@
-﻿<view class="page edit-page">
-  <view class="nav">
+﻿<view class="page upload-ref-page edit-page">
+  <view class="nav upload-nav">
     <view class="nav-side left" bindtap="goBack">返回</view>
     <view class="nav-title">{{editing ? '编辑报告详情' : '报告详情'}}</view>
     <view wx:if="{{!editing}}" class="nav-side right" bindtap="startEdit">编辑</view>
     <view wx:else class="nav-side right" bindtap="saveAndBack">保存</view>
   </view>
-  <view class="pad mt-12">
-    <view class="notice">黄色标记的项 AI识别不确定，请重点检查</view>
+  <view class="pad edit-top">
+    <view class="detail-notice warn">
+      <image class="detail-notice-icon" src="/assets/ui-refresh/health-warning.png" mode="aspectFit" />
+      <view class="detail-notice-text">黄色标记的项 AI识别不确定，请重点检查</view>
+    </view>
   </view>
+  <view wx:if="{{sourcePreviewUrls.length}}" class="edit-section-title">来源照片</view>
   <view wx:if="{{sourcePreviewUrls.length}}" class="pad source-preview-pad">
     <scroll-view scroll-x class="source-preview-strip">
       <view wx:for="{{sourcePreviewUrls}}" wx:key="*this" class="source-preview-thumb" data-index="{{index}}" catchtap="previewSourcePhoto">
         <image class="source-preview-image" src="{{item}}" mode="aspectFill"></image>
+        <view class="source-preview-check">
+          <image class="source-preview-check-icon" src="/assets/ui-refresh/recheck-todo-check.png" mode="aspectFit" />
+        </view>
       </view>
     </scroll-view>
   </view>
-  <view class="section-title">基本信息</view>
+  <view class="section-title edit-section-title">基本信息</view>
   <view class="pad">
     <view class="card">
       <view class="edit-row"><view class="sub label">报告类型</view><input wx:if="{{editing}}" class="edit-input" value="{{basicInfo.type}}" data-field="type" bindinput="onBasicInput" /><view wx:else class="flex right readonly">{{basicInfo.type}}</view></view>
@@ -34,7 +41,7 @@
   <view wx:if="{{warnings.length}}">
     <view class="section-title">需要确认</view>
     <view class="pad">
-      <view class="card card-pad">
+      <view class="card confirm-card">
         <view wx:for="{{warnings}}" wx:key="code" class="warning-row">
           <view class="warn-dot">!</view>
           <view class="body">{{item.message}}</view>

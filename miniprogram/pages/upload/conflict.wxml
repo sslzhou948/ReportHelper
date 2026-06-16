@@ -1,49 +1,67 @@
-<view class="page conflict-page">
-  <view class="nav">
+<view class="page upload-ref-page conflict-page">
+  <view class="nav upload-nav">
     <view class="nav-side left" bindtap="goBack">返回</view>
     <view class="nav-title">处理重复识别</view>
     <view class="nav-side right"></view>
   </view>
-  <view class="pad mt-12">
-    <view class="sub">同一报告内有 {{conflictCount}} 项结果被重复识别，请逐项确认保留值。</view>
-    <view wx:if="{{autoIgnoredCount}}" class="tiny mt-8">已自动忽略 {{autoIgnoredCount}} 项无法定位到指标的 AI识别冲突。</view>
+
+  <view class="pad conflict-top">
+    <view class="detail-notice info">
+      <image class="detail-notice-icon" src="/assets/ui-refresh/upload-info.png" mode="aspectFit" />
+      <view class="detail-notice-text">
+        <view>同一报告内有 {{conflictCount}} 项结果被重复识别，请逐项确认保留值。</view>
+        <view wx:if="{{autoIgnoredCount}}" class="notice-subline">已自动忽略 {{autoIgnoredCount}} 项无法定位到指标的 AI识别冲突。</view>
+      </view>
+    </view>
   </view>
-  <view class="section-title">{{reportTitle}}</view>
+
+  <view class="conflict-section-title">{{reportTitle}}</view>
+
   <view class="pad">
-    <view wx:if="{{!loading && !conflicts.length}}" class="card card-pad">
+    <view wx:if="{{!loading && !conflicts.length}}" class="card card-pad empty-conflict-card">
       <view class="body strong">暂无待处理冲突</view>
       <view class="tiny mt-8">可能已在其他页面处理完成，请返回确认页继续保存。</view>
     </view>
-    <view wx:for="{{conflicts}}" wx:for-item="conflict" wx:for-index="conflictIndex" wx:key="id" class="card card-pad conflict-card">
+
+    <view wx:for="{{conflicts}}" wx:for-item="conflict" wx:for-index="conflictIndex" wx:key="id" class="card conflict-card">
       <view class="conflict-head">
-        <view class="body strong">{{conflict.metricName}}</view>
-        <view class="tiny">第 {{conflict.displayIndex}} / {{conflictCount}} 项</view>
+        <view class="body strong conflict-name">{{conflict.metricName}}</view>
+        <view class="conflict-count">第 {{conflict.displayIndex}} / {{conflictCount}} 项</view>
       </view>
       <view wx:if="{{conflict.message}}" class="tiny conflict-message">{{conflict.message}}</view>
+
       <view wx:for="{{conflict.candidates}}" wx:for-item="candidate" wx:for-index="candidateIndex" wx:key="index" data-conflict-index="{{conflictIndex}}" data-index="{{candidate.index}}" class="option {{conflict.selectedIndex === candidate.index ? 'active' : ''}}" bindtap="choose">
-        <view class="radio">{{conflict.selectedIndex === candidate.index ? '●' : ''}}</view>
+        <view class="radio">
+          <view wx:if="{{conflict.selectedIndex === candidate.index}}" class="radio-dot"></view>
+        </view>
         <view class="option-main">
-          <view class="option-value {{candidate.tone === 'high' ? 'value-high' : (candidate.tone === 'low' ? 'value-low' : '')}}">
-            {{candidate.displayValue}}<text wx:if="{{candidate.tone === 'high'}}"> ↑</text><text wx:if="{{candidate.tone === 'low'}}"> ↓</text>
+          <view class="option-line">
+            <view class="option-value {{candidate.tone === 'high' ? 'value-high' : (candidate.tone === 'low' ? 'value-low' : '')}}">
+              {{candidate.displayValue}}<text wx:if="{{candidate.tone === 'high'}}"> ↑</text><text wx:if="{{candidate.tone === 'low'}}"> ↓</text>
+            </view>
+            <view wx:if="{{candidate.displayUnit}}" class="option-unit">{{candidate.displayUnit}}</view>
           </view>
-          <view class="tiny">
+          <view class="tiny option-meta">
             <text wx:if="{{candidate.label}}">{{candidate.label}}</text>
-            <text wx:if="{{candidate.displayUnit}}"> {{candidate.displayUnit}}</text>
             <text wx:if="{{candidate.displayRef}}"> 参考 {{candidate.displayRef}}</text>
           </view>
         </view>
-        <view class="flex"></view>
-        <view class="tiny">{{candidate.sourceLabel}}</view>
+        <view class="option-source {{candidate.label ? '' : 'muted'}}">{{candidate.sourceLabel}}</view>
       </view>
+
       <view class="delete-option {{conflict.selectedIndex === -1 ? 'active' : ''}}" data-conflict-index="{{conflictIndex}}" data-index="-1" bindtap="choose">
-        <view class="radio">{{conflict.selectedIndex === -1 ? '●' : ''}}</view>
+        <view class="radio">
+          <view wx:if="{{conflict.selectedIndex === -1}}" class="radio-dot"></view>
+        </view>
         <view>都不要 · 删除此项</view>
       </view>
     </view>
   </view>
+
   <view class="pad mt-12">
-    <view class="tiny">提示：如果这是同一张图片里的上下两份报告，先保留当前更可信的值；后续会补充分拆能力。</view>
+    <view class="conflict-tip">提示：如果保留当前两个结果，可先在编辑页更改指标名或参考范围，使两条记录区分开来。</view>
   </view>
+
   <view class="bottom-action">
     <view class="btn {{saving || loading || (!conflicts.length && !autoIgnoredCount) ? 'disabled' : ''}}" bindtap="apply">{{saving ? '正在应用...' : (conflicts.length ? '应用选择' : '清理无效冲突')}}</view>
   </view>

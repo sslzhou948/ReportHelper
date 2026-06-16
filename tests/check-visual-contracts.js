@@ -26,7 +26,9 @@ const uploadPickWxml = read('miniprogram/pages/upload/pick.wxml');
 const uploadPickWxss = read('miniprogram/pages/upload/pick.wxss');
 const uploadConfirmWxml = read('miniprogram/pages/upload/confirm.wxml');
 const uploadConfirmWxss = read('miniprogram/pages/upload/confirm.wxss');
+const uploadEditWxml = read('miniprogram/pages/upload/edit-detail.wxml');
 const uploadEditWxss = read('miniprogram/pages/upload/edit-detail.wxss');
+const uploadConflictWxml = read('miniprogram/pages/upload/conflict.wxml');
 const uploadConflictWxss = read('miniprogram/pages/upload/conflict.wxss');
 const iconGenerator = read('scripts/generate-ui-refresh-icons.js');
 const appJs = read('miniprogram/app.js');
@@ -279,6 +281,33 @@ assertDecl(confirmThumb, 'height: 170rpx', 'upload confirm thumbnail height must
 const confirmActionFooter = getRule(uploadConfirmWxss, '.report-action-footer');
 assertDecl(confirmActionFooter, 'grid-template-columns: 1fr 1fr', 'upload confirm report footer must keep two equal actions');
 assertDecl(confirmActionFooter, 'border-top: 1rpx solid #E7E1D9', 'upload confirm report footer must use one clean divider');
+
+assert.ok(uploadEditWxml.includes('class="page upload-ref-page edit-page"'), 'upload edit detail must use the refreshed upload shell');
+assert.ok(uploadEditWxml.includes('class="detail-notice warn"'), 'upload edit detail must render the warning notice as a structured visual component');
+assert.ok(uploadEditWxml.includes('source-preview-check-icon'), 'upload edit detail source photos must show the refreshed selected marker asset');
+
+const uploadEditThumb = getRule(uploadEditWxss, '.source-preview-thumb');
+assertDecl(uploadEditThumb, 'width: 152rpx', 'upload edit source photo thumbnails must use the compact landscape ratio from the reference');
+assertDecl(uploadEditThumb, 'height: 88rpx', 'upload edit source photo thumbnails must use the compact landscape ratio from the reference');
+
+const uploadEditBottomGrid = getRule(uploadEditWxss, '.bottom-grid');
+assertDecl(uploadEditBottomGrid, 'grid-template-columns: 1fr 1fr', 'upload edit bottom actions must keep balanced button widths');
+
+const uploadEditRefEditor = getRule(uploadEditWxss, '.ref-editor');
+assertDecl(uploadEditRefEditor, 'flex-direction: column', 'upload edit reference controls must not squeeze labels and range inputs into one row');
+
+const uploadEditRefModeRow = getRule(uploadEditWxss, '.ref-mode-row');
+assertDecl(uploadEditRefModeRow, 'grid-template-columns: 92rpx 156rpx', 'upload edit reference mode picker must keep enough width for Chinese labels');
+
+const uploadEditPickerMini = getRule(uploadEditWxss, '.picker-mini');
+assertDecl(uploadEditPickerMini, 'white-space: nowrap', 'upload edit picker labels must not wrap vertically');
+
+assert.ok(uploadConflictWxml.includes('class="page upload-ref-page conflict-page"'), 'upload conflict must use the refreshed upload shell');
+assert.ok(uploadConflictWxml.includes('class="detail-notice info"'), 'upload conflict must render the duplicate warning as a green information notice');
+
+const conflictOption = getRule(uploadConflictWxss, '.option');
+assertDecl(conflictOption, 'min-height: 92rpx', 'upload conflict candidate options must keep a stable touch target');
+assertDecl(conflictOption, 'border-radius: 12rpx', 'upload conflict candidate options must match the compact reference radius');
 
 for (const [name, source] of [
   ['upload pick', uploadPickWxss],
