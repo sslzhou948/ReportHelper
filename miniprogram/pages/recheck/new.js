@@ -2,45 +2,29 @@ const { api } = require('../../utils/api');
 const { showApiErrorFeedback } = require('../../utils/error');
 const { buildDefaultTodos, defaultRecheckDate, validateRecheckPlan } = require('../../utils/recheck');
 
-const RECHECK_TEMPLATE_ID_KEY = 'recheckSubscribeTemplateId';
-
-function getSubscribeTemplateId() {
-  try {
-    return wx.getStorageSync(RECHECK_TEMPLATE_ID_KEY) || '';
-  } catch (error) {
-    return '';
-  }
+function areAllTodosDone(todos) {
+  return !!(todos && todos.length) && todos.every((todo) => !!todo.isDone);
 }
 
-function requestRecheckSubscribe() {
-  const templateId = getSubscribeTemplateId();
-  if (!templateId || !wx.requestSubscribeMessage) {
-    return Promise.resolve({ subscribeAccepted: false, templateId: '' });
-  }
-  return new Promise((resolve) => {
-    wx.requestSubscribeMessage({
-      tmplIds: [templateId],
-      success: (res) => {
-        resolve({
-          subscribeAccepted: res && res[templateId] === 'accept',
-          templateId
-        });
-      },
-      fail: () => resolve({ subscribeAccepted: false, templateId })
-    });
-  });
+function todoState(todos) {
+  return {
+    todos,
+    allTodosDone: areAllTodosDone(todos)
+  };
 }
+
+const defaultTodos = buildDefaultTodos();
 
 Page({
   data: {
     form: {
       type: '\u5e38\u89c4\u590d\u67e5',
       date: defaultRecheckDate(),
-      timeOfDay: '09:00',
       hospital: '\u534f\u548c\u533b\u9662',
       department: '\u80bf\u7624\u79d1'
     },
-    todos: buildDefaultTodos(),
+    todos: defaultTodos,
+    allTodosDone: areAllTodosDone(defaultTodos),
     errors: {},
     today: defaultRecheckDate(new Date(), 0),
     addingTodo: false,
@@ -110,7 +94,17 @@ Page({
       return;
     }
     todos[index] = { ...todos[index], isDone: !todos[index].isDone };
-    this.setData({ todos });
+    this.setData(todoState(todos));
+  },
+
+  toggleAllTodos() {
+    const nextDone = !areAllTodosDone(this.data.todos);
+    const todos = this.data.todos.map((todo) => ({
+      ...todo,
+      isDone: nextDone,
+      swipeOpen: false
+    }));
+    this.setData(todoState(todos));
   },
 
   addTodo() {
@@ -139,14 +133,17 @@ Page({
       sortOrder: this.data.todos.length + 1,
       swipeOpen: false
     });
-    this.setData({ todos, addingTodo: false, todoDraft: '' });
+    this.setData({
+      ...todoState(todos),
+      addingTodo: false,
+      todoDraft: ''
+    });
   },
 
   deleteTodo(event) {
     const index = Number(event.currentTarget.dataset.index);
-    this.setData({
-      todos: this.data.todos.filter((_, todoIndex) => todoIndex !== index)
-    });
+    const todos = this.data.todos.filter((_, todoIndex) => todoIndex !== index);
+    this.setData(todoState(todos));
   },
 
   save() {
@@ -160,26 +157,20 @@ Page({
 
     const profileId = getApp().getCurrentProfileId();
     this.setData({ saving: true });
-    return requestRecheckSubscribe().then((subscribe) => api.createRecheckPlan(profileId, {
+    return api.createRecheckPlan(profileId, {
       ...this.data.form,
       todos: this.data.todos.map((todo, index) => ({
         text: todo.text,
         isDone: todo.isDone,
         isTemplate: todo.isTemplate,
         sortOrder: index + 1
-      })),
-      reminderConfig: {
-        advanceDays: [3, 1, 0],
-        timeOfDay: this.data.form.timeOfDay || '09:00',
-        subscribeAccepted: subscribe.subscribeAccepted,
-        templateId: subscribe.templateId
-      }
+      }))
     }, {
       idempotencyKey: `recheck_${profileId}_${this.data.form.date}_${this.data.form.type}`
-    }).then(() => subscribe)).then((subscribe) => {
+    }).then(() => {
       wx.showToast({
-        title: subscribe.subscribeAccepted ? '\u5df2\u4fdd\u5b58' : '\u5df2\u4fdd\u5b58\uff0c\u672a\u5f00\u542f\u5fae\u4fe1\u63d0\u9192',
-        icon: subscribe.subscribeAccepted ? 'success' : 'none'
+        title: '\u5df2\u4fdd\u5b58',
+        icon: 'success'
       });
       setTimeout(() => wx.navigateBack(), 500);
     }).catch((error) => {

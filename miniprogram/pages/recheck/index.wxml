@@ -58,14 +58,18 @@
             <view class="todo-status">{{item.isDone ? '已完成' : '待完成'}}</view>
           </view>
         </view>
-        <view wx:if="{{addingTodo}}" class="todo-row todo-draft-row">
-          <input class="todo-draft-input" value="{{todoDraft}}" placeholder="例如：准备检查单" bindinput="onTodoDraftInput" focus />
-          <view class="todo-draft-actions">
-            <view class="mini-action muted" bindtap="cancelTodoDraft">取消</view>
-            <view class="mini-action" bindtap="saveTodoDraft">添加</view>
+        <view wx:if="{{addingTodo}}" class="todo-compose">
+          <view class="compose-head">
+            <view class="compose-title">添加自定义待办</view>
+            <view class="compose-close" bindtap="cancelTodoDraft">取消</view>
+          </view>
+          <input class="todo-draft-input todo-compose-input" value="{{todoDraft}}" placeholder="例如：准备检查单" confirm-type="done" bindconfirm="saveTodoDraft" bindinput="onTodoDraftInput" focus />
+          <view class="compose-footer">
+            <view class="compose-helper">建议写成一个明确动作，便于复查前逐项确认。</view>
+            <view class="compose-save {{todoDraft ? '' : 'disabled'}}" bindtap="saveTodoDraft">添加</view>
           </view>
         </view>
-        <view wx:else class="add-row" bindtap="addTodo">
+        <view wx:else class="row add-row" bindtap="addTodo">
           <image class="add-icon" src="/assets/ui-refresh/recheck-add-circle.png" mode="aspectFit" />
           <text>添加待办</text>
         </view>

@@ -14,6 +14,10 @@ const homeWxss = read('miniprogram/pages/home/index.wxss');
 const homeWxml = read('miniprogram/pages/home/index.wxml');
 const recheckWxss = read('miniprogram/pages/recheck/index.wxss');
 const recheckWxml = read('miniprogram/pages/recheck/index.wxml');
+const recheckNewWxml = read('miniprogram/pages/recheck/new.wxml');
+const recheckNewWxss = read('miniprogram/pages/recheck/new.wxss');
+const recheckDetailWxml = read('miniprogram/pages/recheck/detail.wxml');
+const recheckDetailWxss = read('miniprogram/pages/recheck/detail.wxss');
 const profileWxss = read('miniprogram/pages/profile/index.wxss');
 const profileWxml = read('miniprogram/pages/profile/index.wxml');
 const metricDetailWxml = read('miniprogram/pages/health/metric-detail.wxml');
@@ -147,6 +151,59 @@ assertDecl(dateBlock, 'color: #2D2925', 'recheck future date text must use the h
 
 const recheckPlanActions = getRule(recheckWxss, '.plan-actions');
 assertDecl(recheckPlanActions, 'grid-template-columns: 1fr 1fr', 'recheck next card must keep two equal action buttons');
+
+assert.ok(recheckWxml.includes('class="todo-compose"'), 'recheck index custom todo editor must use the shared compose panel');
+assert.ok(recheckWxml.includes('bindconfirm="saveTodoDraft"'), 'recheck index custom todo editor must support keyboard confirm');
+
+const recheckAddRow = getRule(recheckWxss, '.add-row');
+assertDecl(recheckAddRow, 'border: 2rpx dashed #D0C9BF', 'recheck index add row must match the shared dashed add affordance');
+
+const recheckCompose = getRule(recheckWxss, '.todo-compose');
+assertDecl(recheckCompose, 'background: #FAF8F4', 'recheck index custom todo editor must match the shared light compose panel');
+
+assert.ok(recheckNewWxml.includes('class="nav recheck-edit-nav"'), 'new recheck page must use the refreshed secondary nav');
+assert.ok(recheckNewWxml.includes('class="card recheck-form-card"'), 'new recheck page must use the refreshed form card');
+assert.ok(recheckNewWxml.includes('/assets/ui-refresh/recheck-plan-scan.png'), 'new recheck form must use refreshed image icons');
+assert.ok(recheckNewWxml.includes('/assets/ui-refresh/recheck-add-circle.png'), 'new recheck add row must use the refreshed add asset');
+assert.ok(recheckNewWxml.includes('class="todo-compose"'), 'new recheck custom todo editor must use a dedicated compose panel');
+assert.ok(recheckNewWxml.includes('bindconfirm="saveTodoDraft"'), 'new recheck custom todo editor must support keyboard confirm');
+assert.ok(recheckNewWxml.includes('catchtap="toggleAllTodos"'), 'new recheck todo select-all action must be wired');
+assert.ok(recheckNewWxml.includes('class="pad new-save-zone"'), 'new recheck page must keep a dedicated bottom save rhythm');
+
+const recheckNewNav = getRule(recheckNewWxss, '.recheck-edit-nav');
+assertDecl(recheckNewNav, 'min-height: 186rpx', 'new recheck nav must reserve capsule-safe top space');
+assertDecl(recheckNewNav, 'background: #F7F5F2', 'new recheck nav must match the warm refreshed shell');
+
+const recheckNewFormRow = getRule(recheckNewWxss, '.form-row');
+assertDecl(recheckNewFormRow, 'min-height: 96rpx', 'new recheck form rows must match the product row-height standard');
+
+const recheckNewTodoRow = getRule(recheckNewWxss, '.todo-row');
+assertDecl(recheckNewTodoRow, 'min-height: 104rpx', 'new recheck todo rows must stay slightly taller than compact form rows');
+
+const recheckNewCompose = getRule(recheckNewWxss, '.todo-compose');
+assertDecl(recheckNewCompose, 'background: #FAF8F4', 'new recheck custom todo editor must read as a light compose panel');
+
+const recheckNewSaveButton = getRule(recheckNewWxss, '.new-save-zone .btn');
+assertDecl(recheckNewSaveButton, 'height: 88rpx', 'new recheck save button must match refreshed bottom CTA height');
+
+assert.ok(recheckDetailWxml.includes('class="nav recheck-edit-nav"'), 'recheck detail page must use the refreshed secondary nav');
+assert.ok(recheckDetailWxml.includes('class="days-chip"'), 'recheck detail page must render the countdown as a refreshed chip');
+assert.ok(!recheckDetailWxml.includes('class="row reminder-row"'), 'recheck detail reminders must stay hidden while reminders are not product-ready');
+assert.ok(recheckDetailWxml.includes('class="todo-compose"'), 'recheck detail custom todo editor must use a dedicated compose panel');
+assert.ok(!recheckDetailWxml.includes('reminder-compose'), 'recheck detail custom reminder editor must stay hidden while reminders are not product-ready');
+assert.ok(recheckDetailWxml.includes('class="pad danger-zone"'), 'recheck detail destructive actions must use the two-column action zone');
+
+const recheckDetailFormRow = getRule(recheckDetailWxss, '.form-row');
+assertDecl(recheckDetailFormRow, 'min-height: 96rpx', 'recheck detail form rows must match the product row-height standard');
+
+const recheckDetailTodoRow = getRule(recheckDetailWxss, '.todo-row');
+assertDecl(recheckDetailTodoRow, 'min-height: 104rpx', 'recheck detail todo rows must stay consistent with new recheck todo rows');
+
+const recheckDaysChip = getRule(recheckDetailWxss, '.days-chip');
+assertDecl(recheckDaysChip, 'height: 58rpx', 'recheck detail countdown chip must remain compact');
+
+const recheckDangerZone = getRule(recheckDetailWxss, '.danger-zone');
+assertDecl(recheckDangerZone, 'grid-template-columns: 1fr 1fr', 'recheck detail destructive actions must stay side-by-side');
 
 const sectionAction = getRule(homeWxss, '.section-action');
 assertDecl(sectionAction, 'margin-left: auto', 'home section actions must be right aligned');

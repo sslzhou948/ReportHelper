@@ -1,75 +1,67 @@
 ﻿<view class="page">
-  <view class="nav">
+  <view class="nav recheck-edit-nav">
     <view class="nav-side left" bindtap="goBack">‹ 返回</view>
     <view class="nav-title">复查详情</view>
     <view class="nav-side right"></view>
   </view>
-  <view class="section-title" bindtap="closeTodoSwipe">基本信息</view>
+  <view class="section-title recheck-section-title" bindtap="closeTodoSwipe">基本信息</view>
   <view class="pad" bindtap="closeTodoSwipe">
-    <view class="card">
+    <view class="card recheck-form-card">
       <view class="row form-row">
-        <view class="sub label">检查类型</view>
+        <image class="form-icon" src="/assets/ui-refresh/recheck-plan-scan.png" mode="aspectFit" />
+        <view class="label">检查类型</view>
         <input class="field-input" value="{{plan.type}}" placeholder="请填写检查类型" data-key="type" bindinput="onFieldInput" bindblur="onFieldBlur" />
       </view>
       <view class="row form-row">
-        <view class="sub label">日期</view>
+        <image class="form-icon" src="/assets/ui-refresh/recheck-calendar-large.png" mode="aspectFit" />
+        <view class="label">日期</view>
         <picker class="field-control" mode="date" value="{{plan.date}}" start="{{today}}" bindchange="onDateChange">
           <view class="field-value">{{plan.date}}</view>
         </picker>
       </view>
       <view class="row form-row">
-        <view class="sub label">医院</view>
+        <image class="form-icon" src="/assets/ui-refresh/recheck-plan-lab.png" mode="aspectFit" />
+        <view class="label">医院</view>
         <input class="field-input" value="{{plan.hospital}}" placeholder="请填写医院" data-key="hospital" bindinput="onFieldInput" bindblur="onFieldBlur" />
       </view>
       <view class="row form-row">
-        <view class="sub label">科室</view>
+        <image class="form-icon" src="/assets/ui-refresh/recheck-plan-stethoscope.png" mode="aspectFit" />
+        <view class="label">科室</view>
         <input class="field-input" value="{{plan.department}}" placeholder="未指定" data-key="department" bindinput="onFieldInput" bindblur="onFieldBlur" />
       </view>
     </view>
   </view>
-  <view class="countdown" bindtap="closeTodoSwipe"><hh-pill tone="primary">{{days}} 天后</hh-pill></view>
-  <view class="section-title" bindtap="closeTodoSwipe">待办事项</view>
+  <view class="countdown" bindtap="closeTodoSwipe">
+    <view class="days-chip">
+      <image class="days-icon" src="/assets/ui-refresh/recheck-calendar-large.png" mode="aspectFit" />
+      <text>{{days}} 天后</text>
+    </view>
+  </view>
+  <view class="section-title recheck-section-title" bindtap="closeTodoSwipe">待办事项</view>
   <view class="pad">
-    <view class="card">
+    <view class="card recheck-list-card">
       <view wx:for="{{plan.todos}}" wx:key="id" class="todo-swipe {{item.swipeOpen ? 'open' : ''}}" data-id="{{item.id}}" bindtouchstart="onTodoTouchStart" bindtouchend="onTodoTouchEnd" bindtouchcancel="onTodoTouchEnd">
         <view class="swipe-delete" data-id="{{item.id}}" catchtap="deleteTodo">删除</view>
-        <view class="row todo-swipe-content" bindtap="closeTodoSwipe">
+        <view class="row todo-row todo-swipe-content" bindtap="closeTodoSwipe">
           <view class="todo-box {{item.isDone ? 'done' : ''}}">{{item.isDone ? '✓' : ''}}</view>
           <view class="flex">{{item.text}}</view>
         </view>
       </view>
-      <view wx:if="{{addingTodo}}" class="row todo-draft-row">
-        <input class="todo-draft-input" value="{{todoDraft}}" placeholder="例如：准备检查单" bindinput="onTodoDraftInput" focus />
-        <view class="todo-draft-actions">
-          <view class="mini-action muted" bindtap="cancelTodoDraft">取消</view>
-          <view class="mini-action" bindtap="saveTodoDraft">添加</view>
+      <view wx:if="{{addingTodo}}" class="todo-compose">
+        <view class="compose-head">
+          <view class="compose-title">添加自定义待办</view>
+          <view class="compose-close" bindtap="cancelTodoDraft">取消</view>
+        </view>
+        <input class="todo-draft-input todo-compose-input" value="{{todoDraft}}" placeholder="例如：准备检查单" confirm-type="done" bindconfirm="saveTodoDraft" bindinput="onTodoDraftInput" focus />
+        <view class="compose-footer">
+          <view class="compose-helper">建议写成一个明确动作，便于复查前逐项确认。</view>
+          <view class="compose-save {{todoDraft ? '' : 'disabled'}}" bindtap="saveTodoDraft">添加</view>
         </view>
       </view>
-      <view wx:else class="row add-row" bindtap="addTodo">+ 添加待办</view>
-    </view>
-  </view>
-  <view class="section-title" bindtap="closeTodoSwipe">提醒</view>
-  <view class="pad" bindtap="closeTodoSwipe">
-    <view class="card">
-      <view class="row form-row">
-        <view class="sub label">提醒时间</view>
-        <picker class="field-control" mode="time" value="{{reminderTime}}" bindchange="onReminderTimeChange">
-          <view class="field-value">{{reminderTime}}</view>
-        </picker>
+      <view wx:else class="row add-row" bindtap="addTodo">
+        <image class="add-icon" src="/assets/ui-refresh/recheck-add-circle.png" mode="aspectFit" />
+        <text>添加待办</text>
       </view>
-      <view wx:for="{{reminderRows}}" wx:key="day" class="row">
-        <view class="flex">{{item.label}}</view>
-        <switch checked="{{item.checked}}" color="#5A7A5A" data-day="{{item.day}}" bindchange="toggleReminder" />
-        <view wx:if="{{item.isCustom}}" class="delete-x" data-day="{{item.day}}" catchtap="deleteReminderDay">×</view>
-      </view>
-      <view wx:if="{{addingReminderDay}}" class="row todo-draft-row">
-        <input class="todo-draft-input" type="number" value="{{reminderDayDraft}}" placeholder="输入提前天数，0 表示当天" bindinput="onReminderDayDraftInput" focus />
-        <view class="todo-draft-actions">
-          <view class="mini-action muted" bindtap="cancelReminderDayDraft">取消</view>
-          <view class="mini-action" bindtap="saveReminderDayDraft">添加</view>
-        </view>
-      </view>
-      <view wx:else class="row add-row" bindtap="addReminderDay">+ 自定义提醒天数</view>
     </view>
   </view>
   <view class="pad danger-zone" bindtap="closeTodoSwipe">

@@ -3,8 +3,6 @@ const { daysBetween } = require('../../utils/date');
 const { isNotFoundError, showApiErrorFeedback, showApiErrorToast } = require('../../utils/error');
 const { todayString } = require('../../utils/recheck');
 
-const DEFAULT_REMINDER_DAYS = [3, 1, 0];
-
 function backToRecheck() {
   wx.navigateBack({
     fail: () => wx.switchTab({ url: '/pages/recheck/index' })
@@ -13,24 +11,6 @@ function backToRecheck() {
 
 function daysToPlan(plan) {
   return plan ? Math.max(0, daysBetween(new Date(), plan.date)) : 0;
-}
-
-function buildReminderRows(plan) {
-  const config = (plan && plan.reminderConfig) || {};
-  const advanceDays = Array.isArray(config.advanceDays) ? config.advanceDays : [3, 1, 0];
-  const enabled = new Set(advanceDays.map(Number).filter((day) => Number.isFinite(day) && day >= 0));
-  const days = Array.from(new Set(DEFAULT_REMINDER_DAYS.concat(Array.from(enabled)))).sort((left, right) => right - left);
-  return days.map((day) => ({
-    day,
-    label: day === 0 ? '\u5f53\u5929' : `\u63d0\u524d ${day} \u5929`,
-    checked: enabled.has(day),
-    isCustom: !DEFAULT_REMINDER_DAYS.includes(day)
-  }));
-}
-
-function getReminderTime(plan) {
-  const config = (plan && plan.reminderConfig) || {};
-  return plan && plan.timeOfDay ? plan.timeOfDay : (config.timeOfDay || '09:00');
 }
 
 function withTodoSwipeState(plan) {
@@ -50,8 +30,6 @@ function applyPlan(page, plan, extra = {}) {
   page.setData({
     plan: viewPlan,
     days: daysToPlan(viewPlan),
-    reminderRows: buildReminderRows(viewPlan),
-    reminderTime: getReminderTime(viewPlan),
     ...extra
   });
 }
@@ -60,13 +38,9 @@ Page({
   data: {
     plan: null,
     days: 0,
-    reminderRows: [],
-    reminderTime: '09:00',
     today: todayString(),
     addingTodo: false,
     todoDraft: '',
-    addingReminderDay: false,
-    reminderDayDraft: '',
     loading: false
   },
   setTodoSwipeOpen(todoId) {
@@ -187,8 +161,7 @@ Page({
     };
     this.setData({
       plan: optimisticPlan,
-      days: daysToPlan(optimisticPlan),
-      reminderRows: buildReminderRows(optimisticPlan)
+      days: daysToPlan(optimisticPlan)
     });
     api.updateRecheckPlan(this.data.plan.id, {
       [key]: value
@@ -246,97 +219,6 @@ Page({
       applyPlan(this, plan);
     }).catch((error) => {
       showApiErrorToast(error, '\u5220\u9664\u5f85\u529e\u5931\u8d25');
-    });
-  },
-  toggleReminder(event) {
-    if (!this.data.plan) return;
-    const day = Number(event.currentTarget.dataset.day);
-    const checked = !!event.detail.value;
-    const nextDays = this.currentReminderDays()
-      .filter((item) => item !== day)
-      .concat(checked ? [day] : [])
-      .sort((a, b) => b - a);
-    this.updateReminderDays(nextDays);
-  },
-  onReminderTimeChange(event) {
-    if (!this.data.plan) return;
-    const timeOfDay = event.detail.value || '09:00';
-    const nextConfig = {
-      ...(this.data.plan.reminderConfig || {}),
-      timeOfDay
-    };
-    const optimisticPlan = {
-      ...this.data.plan,
-      timeOfDay,
-      reminderConfig: nextConfig
-    };
-    applyPlan(this, optimisticPlan);
-    api.updateRecheckPlan(this.data.plan.id, {
-      timeOfDay,
-      reminderConfig: nextConfig
-    }, {
-      idempotencyKey: `recheck_reminder_time_${this.data.plan.id}_${Date.now()}`
-    }).then((plan) => {
-      applyPlan(this, plan);
-    }).catch((error) => {
-      showApiErrorToast(error, '\u66f4\u65b0\u63d0\u9192\u65f6\u95f4\u5931\u8d25');
-      this.load();
-    });
-  },
-  addReminderDay() {
-    this.setData({ addingReminderDay: true, reminderDayDraft: '' });
-  },
-  onReminderDayDraftInput(event) {
-    this.setData({ reminderDayDraft: event.detail.value });
-  },
-  cancelReminderDayDraft() {
-    this.setData({ addingReminderDay: false, reminderDayDraft: '' });
-  },
-  saveReminderDayDraft() {
-    if (!this.data.plan) return;
-    const day = Number(this.data.reminderDayDraft);
-    if (!Number.isInteger(day) || day < 0 || day > 365) {
-      wx.showToast({ title: '\u8bf7\u8f93\u5165 0-365 \u5929', icon: 'none' });
-      return;
-    }
-    this.updateReminderDays(Array.from(new Set(this.currentReminderDays().concat(day))).sort((left, right) => right - left), {
-      addingReminderDay: false,
-      reminderDayDraft: ''
-    });
-  },
-  deleteReminderDay(event) {
-    const day = Number(event.currentTarget.dataset.day);
-    this.updateReminderDays(this.currentReminderDays().filter((item) => item !== day));
-  },
-  currentReminderDays() {
-    const config = (this.data.plan && this.data.plan.reminderConfig) || {};
-    return (Array.isArray(config.advanceDays) ? config.advanceDays : [3, 1, 0])
-      .map(Number)
-      .filter((day) => Number.isInteger(day) && day >= 0);
-  },
-  updateReminderDays(advanceDays, extra = {}) {
-    if (!this.data.plan) return;
-    const currentConfig = this.data.plan.reminderConfig || {};
-    const nextConfig = {
-      ...currentConfig,
-      advanceDays,
-      timeOfDay: this.data.reminderTime,
-      subscribeAccepted: !!currentConfig.subscribeAccepted
-    };
-    const optimisticPlan = {
-      ...this.data.plan,
-      reminderConfig: nextConfig
-    };
-    applyPlan(this, optimisticPlan, extra);
-    api.updateRecheckPlan(this.data.plan.id, {
-      reminderConfig: nextConfig
-    }, {
-      idempotencyKey: `recheck_reminder_days_${this.data.plan.id}_${Date.now()}`
-    }).then((plan) => {
-      applyPlan(this, plan, extra);
-    }).catch((error) => {
-      showApiErrorToast(error, '\u66f4\u65b0\u63d0\u9192\u5931\u8d25');
-      this.load();
     });
   },
   cancelPlan() {

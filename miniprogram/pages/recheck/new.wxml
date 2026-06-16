@@ -1,64 +1,79 @@
 ﻿<view class="page">
-  <view class="nav">
+  <view class="nav recheck-edit-nav">
     <view class="nav-side left" bindtap="goBack">取消</view>
     <view class="nav-title">新增复查</view>
     <view class="nav-side right" bindtap="save">保存</view>
   </view>
-  <view class="pad mt-12" bindtap="closeTodoSwipe">
-    <view class="card">
+  <view class="pad recheck-form-wrap" bindtap="closeTodoSwipe">
+    <view class="card recheck-form-card">
       <view class="row form-row {{errors.type ? 'field-error' : ''}}">
-        <view class="sub label">检查类型</view>
+        <image class="form-icon" src="/assets/ui-refresh/recheck-plan-scan.png" mode="aspectFit" />
+        <view class="label">检查类型</view>
         <view class="field-stack">
           <input class="field-input" value="{{form.type}}" placeholder="请填写检查类型" data-key="type" bindinput="onInput" />
           <view wx:if="{{errors.type}}" class="tiny error-text">{{errors.type}}</view>
         </view>
+        <view class="row-chevron">›</view>
       </view>
       <view class="row form-row {{errors.date ? 'field-error' : ''}}">
-        <view class="sub label">日期</view>
+        <image class="form-icon" src="/assets/ui-refresh/recheck-calendar-large.png" mode="aspectFit" />
+        <view class="label">日期</view>
         <view class="field-stack">
           <picker class="field-control" mode="date" value="{{form.date}}" start="{{today}}" bindchange="onDateChange">
             <view class="field-value">{{form.date}}</view>
           </picker>
           <view wx:if="{{errors.date}}" class="tiny error-text">{{errors.date}}</view>
         </view>
+        <view class="row-chevron">›</view>
       </view>
       <view class="row form-row {{errors.hospital ? 'field-error' : ''}}">
-        <view class="sub label">医院</view>
+        <image class="form-icon" src="/assets/ui-refresh/recheck-plan-lab.png" mode="aspectFit" />
+        <view class="label">医院</view>
         <view class="field-stack">
           <input class="field-input" value="{{form.hospital}}" placeholder="请填写医院" data-key="hospital" bindinput="onInput" />
           <view wx:if="{{errors.hospital}}" class="tiny error-text">{{errors.hospital}}</view>
         </view>
+        <view class="row-chevron">›</view>
       </view>
       <view class="row form-row">
-        <view class="sub label">科室</view>
+        <image class="form-icon" src="/assets/ui-refresh/recheck-plan-stethoscope.png" mode="aspectFit" />
+        <view class="label">科室</view>
         <input class="field-input" value="{{form.department}}" placeholder="未指定" data-key="department" bindinput="onInput" />
+        <view class="row-chevron">›</view>
       </view>
     </view>
   </view>
-  <view class="section-title" bindtap="closeTodoSwipe">
+  <view class="section-title recheck-section-title" bindtap="closeTodoSwipe">
     <view>待办事项</view>
-    <view class="section-action">全选</view>
+    <view class="section-action" catchtap="toggleAllTodos">{{allTodosDone ? '取消全选' : '全选'}}</view>
   </view>
   <view class="pad">
-    <view class="card">
+    <view class="card recheck-list-card">
       <view wx:for="{{todos}}" wx:key="id" data-index="{{index}}" class="todo-swipe {{item.swipeOpen ? 'open' : ''}}" bindtouchstart="onTodoTouchStart" bindtouchend="onTodoTouchEnd" bindtouchcancel="onTodoTouchEnd">
         <view class="swipe-delete" data-index="{{index}}" catchtap="deleteTodo">删除</view>
-        <view class="row todo-swipe-content" data-index="{{index}}" bindtap="toggleTodo">
+        <view class="row todo-row todo-swipe-content" data-index="{{index}}" bindtap="toggleTodo">
           <view class="todo-box {{item.isDone ? 'done' : ''}}">{{item.isDone ? '✓' : ''}}</view>
           <view class="flex {{item.isDone ? '' : 'todo-muted'}}">{{item.text}}</view>
         </view>
       </view>
-      <view wx:if="{{addingTodo}}" class="row todo-draft-row">
-        <input class="todo-draft-input" value="{{todoDraft}}" placeholder="例如：带上旧报告" bindinput="onTodoDraftInput" focus />
-        <view class="todo-draft-actions">
-          <view class="mini-action muted" bindtap="cancelTodoDraft">取消</view>
-          <view class="mini-action" bindtap="saveTodoDraft">添加</view>
+      <view wx:if="{{addingTodo}}" class="todo-compose">
+        <view class="compose-head">
+          <view class="compose-title">添加自定义待办</view>
+          <view class="compose-close" bindtap="cancelTodoDraft">取消</view>
+        </view>
+        <input class="todo-draft-input todo-compose-input" value="{{todoDraft}}" placeholder="例如：带上旧报告" confirm-type="done" bindconfirm="saveTodoDraft" bindinput="onTodoDraftInput" focus />
+        <view class="compose-footer">
+          <view class="compose-helper">建议写成一个明确动作，便于复查前逐项确认。</view>
+          <view class="compose-save {{todoDraft ? '' : 'disabled'}}" bindtap="saveTodoDraft">添加</view>
         </view>
       </view>
-      <view wx:else class="row add-row" bindtap="addTodo">+ 自定义待办</view>
+      <view wx:else class="row add-row" bindtap="addTodo">
+        <image class="add-icon" src="/assets/ui-refresh/recheck-add-circle.png" mode="aspectFit" />
+        <text>自定义待办</text>
+      </view>
     </view>
   </view>
-  <view class="pad mt-16" bindtap="closeTodoSwipe">
+  <view class="pad new-save-zone" bindtap="closeTodoSwipe">
     <view class="btn {{saving ? 'disabled' : ''}}" bindtap="save">保存</view>
   </view>
 </view>
