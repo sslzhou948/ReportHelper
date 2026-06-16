@@ -1,5 +1,11 @@
 .page {
+  background: #F7F5F2;
   padding-bottom: calc(168rpx + env(safe-area-inset-bottom));
+}
+
+.nav {
+  background: #FFFFFF;
+  border-bottom: 0;
 }
 
 .report-head {
@@ -7,6 +13,20 @@
   align-items: center;
   justify-content: space-between;
   gap: 20rpx;
+}
+
+.pad {
+  padding: 0 22rpx;
+}
+
+.pad > .card {
+  border-radius: 22rpx;
+  border-color: #E7E1D9;
+  box-shadow: 0 8rpx 24rpx rgba(42, 39, 34, 0.055);
+}
+
+.card-pad {
+  padding: 28rpx 30rpx;
 }
 
 .nav-title {
@@ -25,15 +45,15 @@
 }
 
 .tag {
-  height: 44rpx;
+  height: 38rpx;
   padding: 0 16rpx;
-  border-radius: 22rpx;
-  background: var(--primary-soft);
-  color: var(--primary);
+  border-radius: 8rpx;
+  background: #EAF0E7;
+  color: #527858;
   display: flex;
   align-items: center;
-  font-size: 22rpx;
-  font-weight: 700;
+  font-size: 24rpx;
+  font-weight: 500;
 }
 
 .tag.muted {
@@ -42,17 +62,23 @@
 }
 
 .metric-row.low {
-  background: var(--low-soft);
+  background: #FFFFFF;
 }
 
 .metric-row.high,
 .metric-row.positive {
-  background: var(--high-soft);
+  background: #FFFFFF;
+}
+
+.metric-row {
+  min-height: 112rpx;
+  padding: 22rpx 30rpx;
+  border-bottom-color: #E7E1D9;
 }
 
 .metric-value {
-  font-size: 32rpx;
-  font-weight: 800;
+  font-size: 30rpx;
+  font-weight: 700;
 }
 
 .metric-name-line {
@@ -97,11 +123,11 @@
 }
 
 .trend-icon {
-  width: 56rpx;
-  height: 56rpx;
-  border-radius: 16rpx;
-  background: var(--primary-soft);
-  color: var(--primary);
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: 14rpx;
+  background: #EAF0E7;
+  color: #527858;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -134,10 +160,28 @@
   left: 0;
   right: 0;
   bottom: 0;
-  padding: 24rpx 32rpx calc(24rpx + env(safe-area-inset-bottom));
+  padding: 20rpx 22rpx calc(20rpx + env(safe-area-inset-bottom));
   background: #FFFFFF;
-  border-top: 1rpx solid var(--border-soft);
+  border-top: 1rpx solid #E7E1D9;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 20rpx;
+}
+
+.bottom-actions .btn {
+  height: 72rpx;
+  border-radius: 14rpx;
+  font-size: 30rpx;
+}
+
+.bottom-actions .btn.secondary {
+  background: #FFFFFF;
+  border-color: #527858;
+  color: #527858;
+}
+
+.bottom-actions .btn.danger {
+  background: #FFFFFF;
+  border: 2rpx solid #D84D43;
+  color: #D84D43;
 }

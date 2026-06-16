@@ -203,8 +203,10 @@ assertDecl(pinAction, 'height: 56rpx', 'metric detail follow action must stay co
 assert.ok(trendChartWxml.includes('wx:for="{{yTicks}}"'), 'trend chart must render y-axis ticks');
 assert.ok(trendChartWxml.includes('wx:for="{{refLines}}"'), 'trend chart must render latest reference limit lines');
 assert.ok(trendChartWxml.includes('wx:if="{{refBand}}"'), 'trend chart must render a range band when both reference limits are available');
+assert.ok(trendChartWxml.includes('class="point-label"'), 'trend chart must render compact value labels for each point');
 assert.ok(trendChartJs.includes('latestRefLow') && trendChartJs.includes('latestRefHigh'), 'trend chart reference lines must use the latest numeric limits');
 assert.ok(trendChartJs.includes('formatDateLabel'), 'trend chart x-axis labels must show real report dates');
+assert.ok(trendChartJs.includes("`${Number(month)}/${Number(day)}`"), 'trend chart x-axis labels must use month/day format to avoid looking like metric values');
 assert.ok(trendChartJs.includes('pointGap'), 'trend chart points must be evenly spaced rather than true-date mapped');
 
 const axisY = getRule(trendChartWxss, '.axis-y');

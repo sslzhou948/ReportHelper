@@ -28,7 +28,7 @@ function formatTick(value) {
 function formatDateLabel(date) {
   const [, month, day] = `${date}`.split('-');
   if (!month || !day) return `${date}`;
-  return `${Number(month)}.${Number(day)}`;
+  return `${Number(month)}/${Number(day)}`;
 }
 
 Component({
@@ -108,13 +108,15 @@ Component({
         : null;
 
       const points = rows.map((row, index) => {
+        const value = toNumberOrNull(row.valueNumeric);
         const x = CHART.left + index * CHART.pointGap;
-        const y = yToPx(toNumberOrNull(row.valueNumeric));
+        const y = yToPx(value);
         return {
           x,
           y,
           tone: row.tone,
           date: row.reportDate,
+          valueText: formatTick(value),
           isLatest: index === rows.length - 1
         };
       });

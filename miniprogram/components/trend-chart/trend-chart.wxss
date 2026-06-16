@@ -109,6 +109,22 @@
   margin-top: -11rpx;
 }
 
+.point-label {
+  position: absolute;
+  z-index: 4;
+  width: 72rpx;
+  margin-left: -36rpx;
+  margin-top: -38rpx;
+  padding: 2rpx 6rpx;
+  border-radius: 10rpx;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--ink);
+  font-size: 20rpx;
+  line-height: 24rpx;
+  text-align: center;
+  white-space: nowrap;
+}
+
 .point.high,
 .segment.high {
   background: var(--high);

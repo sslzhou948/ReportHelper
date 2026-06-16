@@ -11,6 +11,7 @@
       <view class="ref-label">{{item.label}}</view>
     </view>
     <view wx:for="{{segments}}" wx:key="id" class="segment {{item.tone}}" style="left: {{item.left}}rpx; top: {{item.top}}rpx; width: {{item.width}}rpx; transform: rotate({{item.angle}}deg);"></view>
+    <view wx:for="{{points}}" wx:key="date" class="point-label" style="left: {{item.x}}rpx; top: {{item.y}}rpx;">{{item.valueText}}</view>
     <view wx:for="{{points}}" wx:key="date" class="point {{item.tone}} {{item.isLatest ? 'latest' : ''}}" style="left: {{item.x}}rpx; top: {{item.y}}rpx;"></view>
     <view wx:for="{{xLabels}}" wx:key="text" class="axis-label" style="left: {{item.x}}rpx;">{{item.text}}</view>
   </view>
