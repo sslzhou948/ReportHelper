@@ -1,5 +1,5 @@
-<view class="page">
-  <view class="nav">
+<view class="page new-record-page">
+  <view class="nav new-record-nav">
     <view class="nav-side left" bindtap="goBack">‹ 返回</view>
     <view class="nav-title">新增记录</view>
     <view class="nav-side right"></view>
@@ -8,32 +8,45 @@
   <network-banner offline="{{networkOffline}}" bind:retry="retryAfterNetwork" />
   <loading-slow-banner visible="{{loadingSlow}}" bind:retry="retrySlowLoading" bind:cancel="cancelSlowLoading" />
 
-  <view class="pad mt-12">
-    <view class="intro-card">
-      <view class="title">新增健康记录</view>
-      <view class="sub mt-8">有报告单就拍照识别；没有报告单，也可以手动录入数值、阴性/阳性或描述结果。</view>
-    </view>
-  </view>
-
-  <view class="pad mt-12">
-    <view class="entry-card" bindtap="goUpload">
-      <view class="entry-icon">拍</view>
-      <view class="flex">
-        <view class="body strong">拍照识别报告</view>
-        <view class="tiny">拍照 / 相册上传，识别后再确认归档</view>
+  <view class="new-record-content">
+    <view class="new-record-hero">
+      <view class="hero-copy">
+        <view class="hero-title">新增健康记录</view>
+        <view class="hero-sub">有报告单，拍照识别</view>
+        <view class="hero-sub">没有报告单，手动录入结果</view>
       </view>
-      <view class="arrow">›</view>
+      <image class="hero-icon" src="/assets/ui-refresh/record-hero.png" mode="aspectFit" />
     </view>
-  </view>
 
-  <view class="pad mt-12">
-    <view class="entry-card manual-entry-card" bindtap="goManual">
-      <view class="entry-icon manual">录</view>
-      <view class="flex">
-        <view class="body strong">手动录入检查结果</view>
-        <view class="tiny">选择检查项后填写本次数值或描述</view>
+    <view class="entry-list">
+      <view class="entry-card" bindtap="goUpload">
+        <view class="entry-icon-wrap">
+          <image class="entry-icon" src="/assets/ui-refresh/record-camera.png" mode="aspectFit" />
+        </view>
+        <view class="entry-copy">
+          <view class="entry-title">拍照识别报告</view>
+          <view class="entry-sub">拍照或相册上传</view>
+          <view class="entry-sub entry-sub-extra">AI识别后再核对归档</view>
+        </view>
+        <view class="entry-arrow">›</view>
       </view>
-      <view class="arrow">›</view>
+
+      <view class="entry-card" bindtap="goManual">
+        <view class="entry-icon-wrap">
+          <image class="entry-icon" src="/assets/ui-refresh/record-pen.png" mode="aspectFit" />
+        </view>
+        <view class="entry-copy">
+          <view class="entry-title">手动录入检查结果</view>
+          <view class="entry-sub">没有报告单，也可以手动录入数值</view>
+          <view class="entry-sub entry-sub-extra">或阴性/阳性、描述结果</view>
+        </view>
+        <view class="entry-arrow">›</view>
+      </view>
+    </view>
+
+    <view class="record-tip">
+      <image class="record-tip-icon" src="/assets/ui-refresh/record-tip.png" mode="aspectFit" />
+      <view class="record-tip-text">建议优先上传清晰的线上报告截图或拍正的纸质报告。</view>
     </view>
   </view>
 </view>

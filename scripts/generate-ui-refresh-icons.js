@@ -475,6 +475,65 @@ drawIcon('metric-pending.png', (draw) => {
   draw.line(76, 57, 64, 69, 5, color);
 }, 96);
 
+drawIcon('record-hero.png', (draw) => {
+  const color = hexToRgb('#7EA184');
+  const soft = hexToRgb('#DCE8DA99');
+  draw.fillEllipse(90, 94, 34, 26, soft);
+  drawFoldedPaper(draw, 38, 18, 50, 70, color);
+  draw.line(50, 38, 68, 38, 5, color);
+  draw.line(50, 52, 78, 52, 5, color);
+  draw.line(50, 66, 70, 66, 5, color);
+  draw.line(51, 90, 65, 76, 5, color);
+  draw.line(65, 76, 78, 84, 5, color);
+  draw.line(78, 84, 98, 60, 5, color);
+  draw.fillCircle(51, 90, 5, color);
+  draw.fillCircle(65, 76, 5, color);
+  draw.fillCircle(78, 84, 5, color);
+  draw.fillCircle(98, 60, 5, color);
+  draw.fillCircle(104, 92, 20, hexToRgb('#7EA184'));
+  draw.line(104, 78, 104, 106, 6, white);
+  draw.line(90, 92, 118, 92, 6, white);
+}, 128);
+
+drawIcon('record-camera.png', (draw) => {
+  const color = hexToRgb('#5A7A5A');
+  strokeRoundRect(draw, 24, 34, 48, 36, 8, 5, color);
+  draw.line(34, 34, 39, 25, 5, color);
+  draw.line(39, 25, 57, 25, 5, color);
+  draw.line(57, 25, 62, 34, 5, color);
+  strokeCircle(draw, 48, 52, 11, 5, color);
+  draw.line(16, 23, 16, 36, 5, color);
+  draw.line(16, 23, 29, 23, 5, color);
+  draw.line(80, 23, 67, 23, 5, color);
+  draw.line(80, 23, 80, 36, 5, color);
+  draw.line(16, 73, 16, 60, 5, color);
+  draw.line(16, 73, 29, 73, 5, color);
+  draw.line(80, 73, 67, 73, 5, color);
+  draw.line(80, 73, 80, 60, 5, color);
+}, 96);
+
+drawIcon('record-pen.png', (draw) => {
+  const color = hexToRgb('#5A7A5A');
+  strokeRoundRect(draw, 23, 18, 40, 56, 6, 5, color);
+  draw.line(35, 36, 52, 36, 5, color);
+  draw.line(35, 49, 48, 49, 5, color);
+  draw.line(55, 66, 74, 47, 6, color);
+  draw.line(74, 47, 82, 55, 6, color);
+  draw.line(82, 55, 63, 74, 6, color);
+  draw.line(55, 66, 52, 78, 5, color);
+  draw.line(52, 78, 63, 74, 5, color);
+}, 96);
+
+drawIcon('record-tip.png', (draw) => {
+  const color = hexToRgb('#7EA184');
+  strokeCircle(draw, 32, 25, 14, 4, color);
+  draw.line(23, 36, 28, 45, 4, color);
+  draw.line(41, 36, 36, 45, 4, color);
+  draw.line(28, 45, 36, 45, 4, color);
+  draw.line(28, 51, 36, 51, 4, color);
+  draw.line(30, 57, 34, 57, 4, color);
+}, 64);
+
 drawIcon('profile-logout.png', (draw) => {
   const danger = hexToRgb('#D84D43');
   draw.line(13, 11, 36, 11, 4, danger);
