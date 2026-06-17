@@ -332,6 +332,34 @@ drawIcon('profile-info.png', (draw) => {
   draw.line(32, 30, 32, 45, 5, green);
 }, 64);
 
+drawIcon('guide-camera.png', (draw) => {
+  const color = hexToRgb('#668B68');
+  strokeRoundRect(draw, 19, 35, 58, 41, 9, 5, color);
+  draw.line(33, 29, 50, 29, 5, color);
+  draw.line(33, 29, 28, 35, 5, color);
+  draw.line(50, 29, 56, 35, 5, color);
+  strokeCircle(draw, 48, 56, 13, 5, color);
+  draw.fillCircle(68, 43, 3, color);
+}, 96);
+
+drawIcon('guide-checklist.png', (draw) => {
+  const color = hexToRgb('#668B68');
+  strokeRoundRect(draw, 26, 20, 44, 58, 8, 5, color);
+  strokeRoundRect(draw, 38, 14, 20, 12, 5, 5, color);
+  [[34, 38, 40, 44, 49, 34], [34, 54, 40, 60, 49, 50], [34, 70, 40, 76, 49, 66]].forEach((points) => {
+    draw.line(points[0], points[1], points[2], points[3], 4, color);
+    draw.line(points[2], points[3], points[4], points[5], 4, color);
+  });
+}, 96);
+
+drawIcon('guide-chart.png', (draw) => {
+  const color = hexToRgb('#668B68');
+  draw.line(20, 76, 78, 76, 5, color);
+  strokeRoundRect(draw, 23, 56, 13, 20, 3, 5, color);
+  strokeRoundRect(draw, 43, 42, 13, 34, 3, 5, color);
+  strokeRoundRect(draw, 63, 25, 13, 51, 3, 5, color);
+}, 96);
+
 drawIcon('profile-logout.png', (draw) => {
   const danger = hexToRgb('#D84D43');
   draw.line(13, 11, 36, 11, 4, danger);

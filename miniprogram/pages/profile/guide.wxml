@@ -1,19 +1,57 @@
-﻿<view class="page">
+<view class="page guide-page">
   <view class="nav">
     <view class="nav-side left" bindtap="goBack">‹ 返回</view>
     <view class="nav-title">使用指南</view>
     <view class="nav-side right"></view>
   </view>
-  <view class="pad mt-12">
-    <view class="card card-pad">
-      <view class="title">三步整理检查报告</view>
-      <view class="guide-step">1. 拍照或从相册选择报告</view>
-      <view class="guide-step">2. 核对识别结果，修正不确定项</view>
-      <view class="guide-step">3. 在健康数据里按指标或时间查看</view>
+
+  <view class="guide-content">
+    <view class="guide-card">
+      <view class="guide-title">三步整理检查报告</view>
+      <view class="guide-step">
+        <view class="guide-number">1</view>
+        <view class="guide-line"></view>
+        <image class="guide-icon" src="/assets/ui-refresh/guide-camera.png" mode="aspectFit" />
+        <view class="guide-copy">
+          <view class="guide-step-title">拍照或从相册选择报告</view>
+          <view class="guide-step-sub">支持拍照上传或从相册选择图片</view>
+        </view>
+      </view>
+      <view class="guide-step">
+        <view class="guide-number">2</view>
+        <view class="guide-line"></view>
+        <image class="guide-icon" src="/assets/ui-refresh/guide-checklist.png" mode="aspectFit" />
+        <view class="guide-copy">
+          <view class="guide-step-title">核对识别结果，修正不确定项</view>
+          <view class="guide-step-sub">系统识别后请逐项核对，可手动修正</view>
+        </view>
+      </view>
+      <view class="guide-step last">
+        <view class="guide-number">3</view>
+        <image class="guide-icon" src="/assets/ui-refresh/guide-chart.png" mode="aspectFit" />
+        <view class="guide-copy">
+          <view class="guide-step-title">在健康数据里按指标或时间查看</view>
+          <view class="guide-step-sub">自动统计异常和趋势，随时掌握变化</view>
+        </view>
+      </view>
+      <view class="guide-warning">
+        <view class="warning-icon"></view>
+        <view class="warning-text">当前版本只做数据整理和异常标记，不提供诊断结论。任何治疗决定请以医生意见为准。</view>
+      </view>
+    </view>
+
+    <view class="guide-section-title">常见问题</view>
+    <view class="faq-card">
+      <view wx:for="{{faqList}}" wx:key="id" class="faq-row" data-id="{{item.id}}" bindtap="openFaq">
+        <view class="faq-icon"></view>
+        <view class="faq-title">{{item.title}}</view>
+        <view class="faq-arrow">›</view>
+      </view>
+    </view>
+
+    <view class="guide-footer">
+      <image class="footer-icon" src="/assets/ui-refresh/profile-guide.png" mode="aspectFit" />
+      <text>我的病例夹</text>
     </view>
   </view>
-  <view class="pad mt-12">
-    <view class="notice">当前版本只做数据整理和异常标记，不提供诊断结论。任何治疗决定请以医生意见为准。</view>
-  </view>
 </view>
-
