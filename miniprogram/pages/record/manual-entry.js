@@ -152,7 +152,8 @@ Page({
       wx.showToast({ title: '\u8bf7\u5148\u9009\u62e9\u68c0\u67e5\u9879\u76ee', icon: 'none' });
       return;
     }
-    if (!String(form.hospital || '').trim()) {
+    const hospital = String(form.hospital || '').trim();
+    if (!hospital) {
       wx.showToast({ title: '\u8bf7\u586b\u5199\u533b\u9662', icon: 'none' });
       return;
     }
@@ -177,7 +178,7 @@ Page({
       : undefined;
     getApp().ensureCurrentProfileId(api).then((profileId) => api.createManualReport(profileId, {
       reportDate: form.reportDate,
-      hospital: form.hospital,
+      hospital,
       note: form.note,
       metric: {
         metricKey: template.metricKey,

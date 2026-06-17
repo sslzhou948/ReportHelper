@@ -28,7 +28,7 @@
       <view class="template-form-list">
       <view class="form-row">
         <image class="form-icon" src="/assets/ui-refresh/profile-template.png" mode="aspectFit" />
-        <view class="label">模板名称</view>
+        <view class="label">检查项名称</view>
         <input class="form-input" value="{{form.metricName}}" placeholder="如 XX血药浓度、胸部CT" data-field="metricName" bindinput="onFormInput" />
       </view>
       <view class="form-row">
@@ -136,9 +136,9 @@
         <view class="arrow">›</view>
       </view>
       <view wx:if="{{filteredItems.length === 0}}" class="empty-block">
-        <view class="body strong">没有找到录入模板</view>
-        <view class="tiny mt-8">可以新建一个手动录入模板，之后每次录入都能复用默认单位和参考值。</view>
-        <view class="btn mt-12" bindtap="startCreate">新建录入模板</view>
+        <view class="body strong">没有找到检查项</view>
+        <view class="tiny mt-8">可以新建一个检查项，之后录入同类结果时复用单位和参考值。</view>
+        <view class="btn mt-12" bindtap="startCreate">新建检查项</view>
       </view>
     </view>
   </view>

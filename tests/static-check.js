@@ -295,7 +295,8 @@ assert.ok(healthIndexJs.includes("const DEFAULT_RANGE = '30d'"), 'health range o
 assert.ok(healthIndexJs.indexOf("{ key: 'all', label: '全部' }") < healthIndexJs.indexOf("{ key: '30d', label: '近30天', days: 30 }"), 'health range chips must place 全部 at the left edge');
 assert.ok(recordNewJs.includes('/pages/upload/pick') && recordNewJs.includes('/pages/profile/custom-metrics?mode=select'), 'record entry must split only into photo recognition and manual entry');
 assert.ok(!recordNewWxml.includes('为{{profile.relation') && recordNewWxml.includes('新增健康记录'), 'record entry title must not repeat the archive relation');
-assert.ok(profileIndexJs.includes('/pages/profile/custom-metrics?mode=manage') && profileIndexWxml.includes('手动新增检查项') && !profileIndexWxml.includes('我的检查项目'), 'profile page must name the custom metric area by its manual-entry function');
+assert.ok(recordNewWxml.includes('手动录入检查结果') && recordNewWxml.includes('没有报告单，也可以手动录入数值'), 'record entry must clearly support manual result entry without a report image');
+assert.ok(profileIndexJs.includes('/pages/profile/custom-metrics?mode=manage') && profileIndexWxml.includes('检查项管理') && !profileIndexWxml.includes('我的检查项目'), 'profile page must name the custom metric area as management instead of result entry');
 assert.ok(profileIndexJs.includes("devRuntimeVisible: envVersion === 'develop'"), 'profile dev runtime tools must only be visible in the develop environment');
 assert.ok(profileCustomMetricsJs.includes("const mode = query.mode === 'select' ? 'select' : 'manage'") && profileCustomMetricsJs.includes('isSelectMode'), 'custom metric page must be reusable for select and manage modes');
 assert.ok(profileCustomMetricsJs.includes('api.listMetricSnapshots(profileId)') && profileCustomMetricsJs.includes('mergeMetricTemplates(customRows, snapshots)'), 'manual template management must show the same dynamic metric-derived template list as manual selection');
@@ -307,7 +308,7 @@ assert.ok(profileCustomMetricsJs.includes("'exam', 'electrophysiology', 'patholo
 assert.ok(profileCustomMetricsJs.includes('api.listManualTemplates') && profileCustomMetricsJs.includes('api.saveManualTemplate') && profileCustomMetricsJs.includes('api.archiveManualTemplate'), 'manual template management must sync through the backend API layer');
 assert.ok(apiJs.includes('/manual-templates') && apiMockJs.includes('listManualTemplates'), 'manual template APIs must exist for backend and local mock clients');
 assert.ok(manualEntryJs.includes('api.createManualReport'), 'manual entry must persist through the manual report API');
-assert.ok(manualEntryJs.includes("form.hospital") && manualEntryWxml.includes('请填写医院'), 'manual entry must require hospital before saving reports');
+assert.ok(manualEntryJs.includes('const hospital = String(form.hospital || \'\').trim()') && manualEntryJs.includes('\\u8bf7\\u586b\\u5199\\u533b\\u9662') && manualEntryWxml.includes('请填写医院'), 'manual entry must require hospital on each saved report');
 assert.ok(manualEntryJs.includes("mappingStatus: 'confirmed'"), 'manual custom metrics must be followable in the user profile without waiting for public mapping review');
 assert.ok(manualEntryWxml.includes('自定义模板') && manualEntryWxml.includes('textarea') && manualEntryJs.includes("template.valueType === 'text'"), 'manual entry must label custom templates and support text-only exam results');
 assert.ok(manualEntryWxml.includes('<picker class="field-control" mode="date"') && manualEntryWxml.includes('<picker class="field-control" range="{{qualitativeOptions}}"'), 'manual entry pickers must occupy the right-side form control area');

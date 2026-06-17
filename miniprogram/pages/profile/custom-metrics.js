@@ -161,10 +161,10 @@ Page({
     mode: 'manage',
     isSelectMode: false,
     isManageMode: true,
-    pageTitle: '手动新增检查项',
-    sectionTitle: '自定义录入模板',
+    pageTitle: '检查项管理',
+    sectionTitle: '常用检查项',
     saveText: '保存',
-    formTitle: '新建录入模板',
+    formTitle: '新建检查项',
     keyword: '',
     filterKey: 'all',
     filterLabel: filterLabelFor('all'),
@@ -187,9 +187,9 @@ Page({
       mode,
       isSelectMode: mode === 'select',
       isManageMode: mode === 'manage',
-      pageTitle: mode === 'select' ? '选择录入模板' : '手动新增检查项',
-      sectionTitle: mode === 'select' ? '可录入模板' : '常用模板',
-      saveText: mode === 'select' ? '保存并录入' : '保存'
+      pageTitle: mode === 'select' ? '选择检查项' : '检查项管理',
+      sectionTitle: mode === 'select' ? '可录入检查项' : '常用检查项',
+      saveText: mode === 'select' ? '保存并录入结果' : '保存'
     });
   },
 
@@ -257,7 +257,7 @@ Page({
   startCreate() {
     this.setData({
       editing: true,
-      formTitle: '新建录入模板',
+      formTitle: '新建检查项',
       form: emptyForm()
     });
   },
@@ -267,7 +267,7 @@ Page({
     if (!metric) return;
     this.setData({
       editing: true,
-      formTitle: '编辑录入模板',
+      formTitle: '编辑检查项',
       form: normalizeForm(metric)
     });
   },
@@ -342,18 +342,18 @@ Page({
   },
 
   cancelEdit() {
-    this.setData({ editing: false, formTitle: '新建录入模板', form: emptyForm() });
+    this.setData({ editing: false, formTitle: '新建检查项', form: emptyForm() });
   },
 
   saveTemplate() {
     const form = this.data.form;
     if (!String(form.metricName || '').trim()) {
-      wx.showToast({ title: '\u8bf7\u586b\u5199\u6a21\u677f\u540d\u79f0', icon: 'none' });
+      wx.showToast({ title: '\u8bf7\u586b\u5199\u68c0\u67e5\u9879\u540d\u79f0', icon: 'none' });
       return;
     }
     const normalizedForm = sanitizeFormByCategory(form);
     api.saveManualTemplate(this.profileId, normalizedForm).then((saved) => {
-      this.setData({ editing: false, formTitle: '新建录入模板', form: emptyForm() });
+      this.setData({ editing: false, formTitle: '新建检查项', form: emptyForm() });
       if (this.data.mode === 'select') {
         wx.setStorageSync('manualEntryTemplate', saved);
         wx.navigateTo({ url: `/pages/record/manual-entry?metricKey=${saved.metricKey}` });
