@@ -38,6 +38,35 @@ const LEGACY_CATEGORY_MAP = {
   imaging: 'exam',
   ultrasound: 'exam'
 };
+const FILTER_OPTIONS = [
+  { key: 'all', label: '全部模板' },
+  { key: 'lab', label: '检验指标' },
+  { key: 'exam', label: '影像检查' },
+  { key: 'electrophysiology', label: '电生理' },
+  { key: 'pathology', label: '病理' },
+  { key: 'other', label: '其他' }
+];
+
+function normalizeCategoryKey(category) {
+  return LEGACY_CATEGORY_MAP[category] || category || DEFAULT_CATEGORY.key;
+}
+
+function categoryIconFor(category) {
+  const normalized = normalizeCategoryKey(category);
+  const map = {
+    lab: '/assets/ui-refresh/manual-flask-circle.png',
+    exam: '/assets/ui-refresh/recheck-plan-scan.png',
+    electrophysiology: '/assets/ui-refresh/recheck-plan-stethoscope.png',
+    pathology: '/assets/ui-refresh/report-doc.png',
+    other: '/assets/ui-refresh/profile-template.png'
+  };
+  return map[normalized] || map.other;
+}
+
+function filterLabelFor(key) {
+  const option = FILTER_OPTIONS.find((item) => item.key === key) || FILTER_OPTIONS[0];
+  return option.key === 'all' ? '筛选' : option.label;
+}
 
 function valueTypeStateForCategory(category, valueType) {
   if (TEXT_CATEGORY_KEYS.includes(category)) {
@@ -132,11 +161,13 @@ Page({
     mode: 'manage',
     isSelectMode: false,
     isManageMode: true,
-    pageTitle: '维护手动录入模板',
+    pageTitle: '手动新增检查项',
     sectionTitle: '自定义录入模板',
     saveText: '保存',
     formTitle: '新建录入模板',
     keyword: '',
+    filterKey: 'all',
+    filterLabel: filterLabelFor('all'),
     items: [],
     filteredItems: [],
     editing: false,
@@ -156,8 +187,8 @@ Page({
       mode,
       isSelectMode: mode === 'select',
       isManageMode: mode === 'manage',
-      pageTitle: mode === 'select' ? '选择录入模板' : '维护手动录入模板',
-      sectionTitle: mode === 'select' ? '可录入模板' : '自定义录入模板',
+      pageTitle: mode === 'select' ? '选择录入模板' : '手动新增检查项',
+      sectionTitle: mode === 'select' ? '可录入模板' : '常用模板',
       saveText: mode === 'select' ? '保存并录入' : '保存'
     });
   },
@@ -171,13 +202,11 @@ Page({
     const loadingToken = beginSlowLoading(this);
     getApp().ensureCurrentProfileId(api).then((profileId) => Promise.all([
       api.listManualTemplates(profileId),
-      this.data.mode === 'select' ? api.listMetricSnapshots(profileId) : Promise.resolve([])
+      api.listMetricSnapshots(profileId)
     ]).then(([customRows, snapshots]) => ({ profileId, customRows, snapshots }))).then(({ profileId, customRows, snapshots }) => {
       if (!finishSlowLoading(this, loadingToken)) return;
       this.profileId = profileId;
-      const items = this.data.mode === 'select'
-        ? mergeMetricTemplates(customRows, snapshots)
-        : customRows;
+      const items = mergeMetricTemplates(customRows, snapshots);
       this.setData({ items: this.decorateItems(items) }, () => this.applyFilter());
     }).catch((error) => {
       if (!finishSlowLoading(this, loadingToken)) return;
@@ -188,15 +217,21 @@ Page({
 
   applyFilter() {
     const keyword = String(this.data.keyword || '').trim().toLowerCase();
+    const filterKey = this.data.filterKey;
+    const byCategory = filterKey === 'all'
+      ? this.data.items
+      : this.data.items.filter((item) => item.categoryKey === filterKey);
     const filteredItems = keyword
-      ? this.data.items.filter((item) => [item.metricName, item.categoryCn, item.unit].some((value) => String(value || '').toLowerCase().includes(keyword)))
-      : this.data.items;
+      ? byCategory.filter((item) => [item.metricName, item.categoryCn, item.unit].some((value) => String(value || '').toLowerCase().includes(keyword)))
+      : byCategory;
     this.setData({ filteredItems });
   },
 
   decorateItems(items) {
     return (items || []).map((item) => ({
       ...item,
+      categoryKey: normalizeCategoryKey(item.category),
+      icon: categoryIconFor(item.category),
       sourceText: item.source === 'custom' ? '自' : '史',
       refDisplay: item.valueType === 'quantitative' ? formatReference(item) : ''
     }));
@@ -204,6 +239,19 @@ Page({
 
   onSearchInput(event) {
     this.setData({ keyword: event.detail.value }, () => this.applyFilter());
+  },
+
+  openFilter() {
+    wx.showActionSheet({
+      itemList: FILTER_OPTIONS.map((item) => item.label),
+      success: (res) => {
+        const option = FILTER_OPTIONS[res.tapIndex] || FILTER_OPTIONS[0];
+        this.setData({
+          filterKey: option.key,
+          filterLabel: filterLabelFor(option.key)
+        }, () => this.applyFilter());
+      }
+    });
   },
 
   startCreate() {
@@ -222,6 +270,14 @@ Page({
       formTitle: '编辑录入模板',
       form: normalizeForm(metric)
     });
+  },
+
+  openMetric(event) {
+    if (this.data.isSelectMode) {
+      this.selectMetric(event);
+      return;
+    }
+    this.editMetric(event);
   },
 
   deleteMetric(event) {

@@ -23,6 +23,17 @@ function today() {
   return new Date().toISOString().slice(0, 10);
 }
 
+function categoryIconFor(category) {
+  const map = {
+    lab: '/assets/ui-refresh/manual-flask-circle.png',
+    exam: '/assets/ui-refresh/recheck-plan-scan.png',
+    electrophysiology: '/assets/ui-refresh/recheck-plan-stethoscope.png',
+    pathology: '/assets/ui-refresh/report-doc.png',
+    other: '/assets/ui-refresh/profile-template.png'
+  };
+  return map[category] || map.lab;
+}
+
 function buildForm(template) {
   const refMode = inferRefMode(template);
   const reference = normalizeReferenceByMode(template, refMode);
@@ -59,6 +70,7 @@ function buildReferencePayload(form) {
 Page({
   data: {
     template: {},
+    templateIcon: '/assets/ui-refresh/manual-flask-circle.png',
     form: buildForm({}),
     qualitativeOptions: ['阴性', '阳性', '弱阳性', '可疑'],
     refModeLabels: REF_RANGE_MODES.map((item) => item.label),
@@ -75,6 +87,7 @@ Page({
     const form = buildForm(template);
     this.setData({
       template,
+      templateIcon: categoryIconFor(template.category),
       form,
       showManualTone: needsManualTone(form)
     });

@@ -16,7 +16,7 @@ const DEFAULT_LAYOUT = {
 const ROUTE_MAP = {
   '\u6570\u636e\u5bfc\u51fa': '/pages/profile/export',
   '\u62a5\u544a\u5f52\u6863\u7ba1\u7406': '/pages/profile/reports-archive',
-  '\u7ef4\u62a4\u624b\u52a8\u5f55\u5165\u6a21\u677f': '/pages/profile/custom-metrics?mode=manage',
+  '\u624b\u52a8\u65b0\u589e\u68c0\u67e5\u9879': '/pages/profile/custom-metrics?mode=manage',
   '\u4f7f\u7528\u6307\u5357': '/pages/profile/guide',
   '\u6307\u6807\u8bf4\u660e': '/pages/profile/metric-help',
   '\u610f\u89c1\u53cd\u9988': '/pages/profile/feedback',

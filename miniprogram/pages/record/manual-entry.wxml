@@ -1,5 +1,5 @@
-<view class="page action-page">
-  <view class="nav">
+<view class="page action-page manual-entry-page">
+  <view class="nav manual-entry-nav">
     <view class="nav-side left" bindtap="goBack">‹ 返回</view>
     <view class="nav-title">录入检查结果</view>
     <view class="nav-side right"></view>
@@ -8,79 +8,107 @@
   <network-banner offline="{{networkOffline}}" bind:retry="retryAfterNetwork" />
   <loading-slow-banner visible="{{loadingSlow}}" bind:retry="retrySlowLoading" bind:cancel="cancelSlowLoading" />
 
-  <view class="pad mt-12">
-    <view class="card card-pad">
-      <view class="body strong">{{template.metricName}}</view>
-      <view class="tiny mt-8">{{template.categoryCn}}<text wx:if="{{template.unit}}"> · 默认单位 {{template.unit}}</text></view>
+  <view class="pad manual-hero-pad">
+    <view class="card template-hero">
+      <image class="template-hero-icon" src="{{templateIcon}}" mode="aspectFit" />
+      <view class="template-hero-main">
+        <view class="template-hero-title">{{template.metricName}}</view>
+        <view class="template-hero-sub">{{template.categoryCn}}<text wx:if="{{template.unit}}"> · 默认单位 {{template.unit}}</text></view>
+      </view>
     </view>
   </view>
 
-  <view class="section-title">本次结果</view>
+  <view class="section-title manual-section-title">
+    <view class="section-marker"></view>
+    <view>本次结果</view>
+  </view>
   <view class="pad">
     <view class="card form-card">
       <view class="row form-row">
+        <image class="field-icon" src="/assets/ui-refresh/manual-calendar.png" mode="aspectFit" />
         <view class="field-label">检查日期</view>
         <picker class="field-control" mode="date" value="{{form.reportDate}}" bindchange="onDateChange">
           <view class="field-value">{{form.reportDate}}</view>
         </picker>
+        <view class="field-chevron">›</view>
       </view>
       <view class="row form-row">
+        <image class="field-icon" src="/assets/ui-refresh/manual-hospital.png" mode="aspectFit" />
         <view class="field-label">医院</view>
         <input class="field-input" value="{{form.hospital}}" placeholder="请填写医院" data-field="hospital" bindinput="onInput" />
       </view>
       <view wx:if="{{template.source === 'custom'}}" class="row form-row">
+        <image class="field-icon" src="/assets/ui-refresh/profile-template.png" mode="aspectFit" />
         <view class="field-label">来源</view>
         <view class="field-value custom-source">自定义模板</view>
       </view>
       <view wx:if="{{template.valueType === 'qualitative'}}" class="row form-row">
+        <image class="field-icon" src="/assets/ui-refresh/manual-result.png" mode="aspectFit" />
         <view class="field-label">结果</view>
         <picker class="field-control" range="{{qualitativeOptions}}" value="{{form.qualitativeIndex}}" bindchange="onQualitativeChange">
           <view class="field-value">{{form.valueQualitative || '请选择'}}</view>
         </picker>
+        <view class="field-chevron">›</view>
       </view>
       <view wx:elif="{{template.valueType === 'text'}}" class="text-form-row">
-        <view class="field-label">描述</view>
+        <view class="text-form-head">
+          <image class="field-icon" src="/assets/ui-refresh/manual-note.png" mode="aspectFit" />
+          <view class="field-label">描述</view>
+        </view>
         <textarea class="text-input" value="{{form.valueText}}" placeholder="{{form.refText || '填写检查所见或医生结论'}}" data-field="valueText" bindinput="onInput" />
       </view>
       <view wx:else class="row form-row">
+        <image class="field-icon" src="/assets/ui-refresh/manual-result.png" mode="aspectFit" />
         <view class="field-label">结果</view>
         <input class="field-input value" type="digit" value="{{form.valueNumeric}}" placeholder="填写数值" data-field="valueNumeric" bindinput="onInput" />
       </view>
       <view wx:if="{{template.valueType !== 'text'}}" class="row form-row">
+        <image class="field-icon" src="/assets/ui-refresh/manual-unit.png" mode="aspectFit" />
         <view class="field-label">单位</view>
         <input class="field-input" value="{{form.unit}}" placeholder="如 ng/mL" data-field="unit" bindinput="onInput" />
       </view>
       <view wx:if="{{template.valueType === 'quantitative'}}" class="row form-row ref-row">
+        <image class="field-icon" src="/assets/ui-refresh/manual-reference.png" mode="aspectFit" />
         <view class="field-label">参考模式</view>
         <picker class="field-control" range="{{refModeLabels}}" value="{{form.refModeIndex}}" bindchange="onRefModeChange">
           <view class="field-value">{{form.refModeLabel}}</view>
         </picker>
+        <view class="field-chevron">›</view>
       </view>
       <view wx:if="{{template.valueType === 'quantitative' && form.refMode === 'simple_range'}}" class="row form-row ref-row">
+        <image class="field-icon" src="/assets/ui-refresh/manual-range.png" mode="aspectFit" />
         <view class="field-label">区间范围</view>
         <input class="ref-input" type="digit" value="{{form.refRangeLow}}" placeholder="下限" data-field="refRangeLow" bindinput="onInput" />
         <view class="range-dash">-</view>
         <input class="ref-input" type="digit" value="{{form.refRangeHigh}}" placeholder="上限" data-field="refRangeHigh" bindinput="onInput" />
       </view>
       <view wx:elif="{{template.valueType === 'quantitative' && form.refMode === 'upper_bound'}}" class="row form-row">
+        <image class="field-icon" src="/assets/ui-refresh/manual-range.png" mode="aspectFit" />
         <view class="field-label">参考上限</view>
         <input class="field-input" type="digit" value="{{form.refRangeHigh}}" placeholder="如 5.6" data-field="refRangeHigh" bindinput="onInput" />
       </view>
       <view wx:elif="{{template.valueType === 'quantitative' && form.refMode === 'lower_bound'}}" class="row form-row">
+        <image class="field-icon" src="/assets/ui-refresh/manual-range.png" mode="aspectFit" />
         <view class="field-label">参考下限</view>
         <input class="field-input" type="digit" value="{{form.refRangeLow}}" placeholder="如 40" data-field="refRangeLow" bindinput="onInput" />
       </view>
       <view wx:elif="{{template.valueType === 'quantitative' && form.refMode === 'complex_text'}}" class="text-form-row compact-text-row">
-        <view class="field-label">参考原文</view>
+        <view class="text-form-head">
+          <image class="field-icon" src="/assets/ui-refresh/manual-reference.png" mode="aspectFit" />
+          <view class="field-label">参考原文</view>
+        </view>
         <textarea class="text-input ref-text-input" value="{{form.refText}}" placeholder="填写复杂参考范围原文" data-field="refText" bindinput="onInput" />
       </view>
       <view wx:if="{{template.valueType === 'quantitative' && showManualTone}}" class="row form-row">
+        <image class="field-icon" src="/assets/ui-refresh/manual-status.png" mode="aspectFit" />
         <view class="field-label">结果状态</view>
         <picker class="field-control" range="{{toneLabels}}" value="{{form.toneIndex}}" bindchange="onToneChange">
           <view class="field-value">{{form.toneLabel}}</view>
         </picker>
+        <view class="field-chevron">›</view>
       </view>
       <view class="row form-row">
+        <image class="field-icon" src="/assets/ui-refresh/manual-note.png" mode="aspectFit" />
         <view class="field-label">备注</view>
         <input class="field-input" value="{{form.note}}" placeholder="可不填" data-field="note" bindinput="onInput" />
       </view>
@@ -88,7 +116,13 @@
   </view>
 
   <view class="bottom-action safe-bottom">
-    <view class="btn secondary" bindtap="goBack">取消</view>
-    <view class="btn" bindtap="saveManualReport">保存记录</view>
+    <view class="btn secondary" bindtap="goBack">
+      <image class="btn-icon" src="/assets/ui-refresh/manual-note.png" mode="aspectFit" />
+      <text>取消</text>
+    </view>
+    <view class="btn" bindtap="saveManualReport">
+      <image class="btn-icon primary-icon" src="/assets/ui-refresh/manual-save-white.png" mode="aspectFit" />
+      <text>保存记录</text>
+    </view>
   </view>
 </view>

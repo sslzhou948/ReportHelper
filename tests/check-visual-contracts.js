@@ -26,6 +26,10 @@ const healthSearchWxml = read('miniprogram/pages/health/search.wxml');
 const healthSearchWxss = read('miniprogram/pages/health/search.wxss');
 const pinnedManageWxml = read('miniprogram/pages/health/pinned-manage.wxml');
 const pinnedManageWxss = read('miniprogram/pages/health/pinned-manage.wxss');
+const manualEntryWxml = read('miniprogram/pages/record/manual-entry.wxml');
+const manualEntryWxss = read('miniprogram/pages/record/manual-entry.wxss');
+const customMetricsWxml = read('miniprogram/pages/profile/custom-metrics.wxml');
+const customMetricsWxss = read('miniprogram/pages/profile/custom-metrics.wxss');
 const trendChartWxml = read('miniprogram/components/trend-chart/trend-chart.wxml');
 const trendChartWxss = read('miniprogram/components/trend-chart/trend-chart.wxss');
 const trendChartJs = read('miniprogram/components/trend-chart/trend-chart.js');
@@ -290,6 +294,73 @@ assertDecl(pinRow, 'min-height: 120rpx', 'pinned manage rows must match the refr
 
 const guideRow = getRule(pinnedManageWxss, '.guide-row');
 assertDecl(guideRow, 'min-height: 92rpx', 'pinned manage guide row must remain a compact secondary action');
+
+assert.ok(manualEntryWxml.includes('class="card template-hero"'), 'manual entry must render the refreshed template hero card');
+assert.ok(manualEntryWxml.includes('/assets/ui-refresh/manual-calendar.png') && manualEntryWxml.includes('/assets/ui-refresh/manual-result.png'), 'manual entry form rows must use refreshed image icons');
+assert.ok(manualEntryWxml.includes('class="field-chevron"'), 'manual entry picker rows must expose a consistent chevron affordance');
+assert.ok(manualEntryWxml.includes('/assets/ui-refresh/manual-save-white.png'), 'manual entry bottom primary action must use the refreshed save icon');
+
+const manualNav = getRule(manualEntryWxss, '.manual-entry-nav');
+assertDecl(manualNav, 'min-height: 186rpx', 'manual entry nav must match the refreshed edit-page nav height');
+assertDecl(manualNav, 'padding: 122rpx 32rpx 20rpx', 'manual entry nav must match new recheck page capsule-safe rhythm');
+
+const manualHero = getRule(manualEntryWxss, '.template-hero');
+assertDecl(manualHero, 'min-height: 144rpx', 'manual entry template hero must keep the reference compact height');
+assertDecl(manualHero, 'background: linear-gradient(135deg, #EDF4EA 0%, #E5EDE1 100%)', 'manual entry template hero must use the soft green reference surface');
+
+const manualFormRow = getRule(manualEntryWxss, '.form-row');
+assertDecl(manualFormRow, 'min-height: 100rpx', 'manual entry form rows must align with the product row rhythm');
+assertDecl(manualFormRow, 'border-bottom: 1rpx solid #E7E1D9', 'manual entry form rows must use one clean divider');
+
+const manualFieldLabel = getRule(manualEntryWxss, '.field-label');
+assertDecl(manualFieldLabel, 'font-weight: 400', 'manual entry body labels must not be bold by default');
+
+assert.ok(customMetricsWxml.includes('class="template-search-box"') && customMetricsWxml.includes('bindtap="openFilter"'), 'custom metrics must render the refreshed search and working filter controls');
+assert.ok(customMetricsWxml.includes('class="template-form-list"') && customMetricsWxml.includes('bindtap="openMetric"'), 'custom metrics must use row-form editing and row tap routing');
+assert.ok(customMetricsWxml.includes('/assets/ui-refresh/manual-filter.png') && customMetricsWxml.includes('src="{{item.icon}}"'), 'custom metrics must use image icons for filters and template rows');
+
+const customNav = getRule(customMetricsWxss, '.custom-metrics-nav');
+assertDecl(customNav, 'min-height: 186rpx', 'custom metrics nav must match the refreshed edit-page nav height');
+assertDecl(customNav, 'padding: 122rpx 32rpx 20rpx', 'custom metrics nav must match new recheck page capsule-safe rhythm');
+
+assert.ok(!customMetricsWxml.includes('add-template-action'), 'custom metrics add action must not sit under the WeChat capsule');
+assert.ok(customMetricsWxml.includes('class="template-add-inline"') && customMetricsWxml.includes('bindtap="startCreate"'), 'custom metrics must expose add template action outside the capsule nav');
+
+const customAddInline = getRule(customMetricsWxss, '.template-add-inline');
+assertDecl(customAddInline, 'height: 76rpx', 'custom metrics inline add action must match the search and filter control height');
+assertDecl(customAddInline, 'background: #E8EFE4', 'custom metrics inline add action must use the soft green refreshed action surface');
+
+const customTools = getRule(customMetricsWxss, '.template-tools');
+assertDecl(customTools, 'grid-template-columns: 1fr 128rpx', 'custom metrics search and filter must share one stable row');
+
+const customSearchBox = getRule(customMetricsWxss, '.template-search-box');
+assertDecl(customSearchBox, 'height: 76rpx', 'custom metrics search box must use the shared toolbar control height');
+
+const customFilterChip = getRule(customMetricsWxss, '.filter-chip');
+assertDecl(customFilterChip, 'height: 76rpx', 'custom metrics filter chip must use the shared toolbar control height');
+
+const customFormRow = getRule(customMetricsWxss, '.form-row');
+assertDecl(customFormRow, 'min-height: 94rpx', 'custom metrics edit form rows must match the compact row standard');
+assertDecl(customFormRow, 'border-bottom: 1rpx solid #E7E1D9', 'custom metrics edit rows must use one clean divider');
+
+const customMetricRow = getRule(customMetricsWxss, '.metric-row');
+assertDecl(customMetricRow, 'min-height: 112rpx', 'custom metrics list rows must match the refreshed list rhythm');
+for (const iconName of [
+  'manual-calendar.png',
+  'manual-filter.png',
+  'manual-flask-circle.png',
+  'manual-hospital.png',
+  'manual-note.png',
+  'manual-range.png',
+  'manual-reference.png',
+  'manual-result.png',
+  'manual-save-white.png',
+  'manual-status.png',
+  'manual-unit.png'
+]) {
+  assert.ok(fs.existsSync(path.join(root, 'miniprogram', 'assets', 'ui-refresh', iconName)), `manual entry icon asset must exist: ${iconName}`);
+}
+assert.ok(iconGenerator.includes("drawIcon('manual-flask-circle.png'") && iconGenerator.includes("drawIcon('manual-filter.png'"), 'manual entry visual assets must stay reproducible from the UI refresh icon generator');
 
 assert.ok(trendChartWxml.includes('wx:for="{{yTicks}}"'), 'trend chart must render y-axis ticks');
 assert.ok(trendChartWxml.includes('wx:for="{{refLines}}"'), 'trend chart must render latest reference limit lines');

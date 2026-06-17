@@ -76,9 +76,9 @@
             <view class="profile-menu-value">{{reportsCount}} 份报告</view>
             <view class="profile-chevron">›</view>
           </view>
-          <view class="profile-menu-row" data-title="维护手动录入模板" bindtap="showStatic">
+          <view class="profile-menu-row" data-title="手动新增检查项" bindtap="showStatic">
             <image class="profile-menu-icon" src="/assets/ui-refresh/profile-template.png" mode="aspectFit" />
-            <view class="profile-menu-label">维护手动录入模板</view>
+            <view class="profile-menu-label">手动新增检查项</view>
             <view class="profile-menu-value">自定义项目和参考值</view>
             <view class="profile-chevron">›</view>
           </view>

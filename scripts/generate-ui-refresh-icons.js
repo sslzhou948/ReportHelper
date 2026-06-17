@@ -385,6 +385,107 @@ drawIcon('upload-add.png', (draw) => {
   draw.line(18, 32, 46, 32, 5, muted);
 }, 64);
 
+drawIcon('manual-flask-circle.png', (draw) => {
+  draw.fillCircle(48, 48, 42, green);
+  draw.line(40, 21, 56, 21, 6, white);
+  draw.line(44, 22, 44, 48, 6, white);
+  draw.line(52, 22, 52, 48, 6, white);
+  draw.line(44, 48, 28, 70, 6, white);
+  draw.line(52, 48, 68, 70, 6, white);
+  draw.line(28, 70, 68, 70, 6, white);
+  draw.fillCircle(39, 60, 4, green);
+  draw.fillCircle(52, 62, 3, green);
+}, 96);
+
+drawIcon('manual-calendar.png', (draw) => {
+  strokeRoundRect(draw, 12, 16, 40, 38, 5, 4, green);
+  draw.line(12, 27, 52, 27, 4, green);
+  draw.line(23, 10, 23, 21, 5, green);
+  draw.line(41, 10, 41, 21, 5, green);
+  draw.line(22, 37, 30, 45, 4, green);
+  draw.line(30, 45, 43, 34, 4, green);
+}, 64);
+
+drawIcon('manual-hospital.png', (draw) => {
+  strokeRoundRect(draw, 12, 20, 40, 36, 5, 4, green);
+  strokeRoundRect(draw, 20, 10, 24, 20, 4, 4, green);
+  draw.line(32, 16, 32, 26, 4, green);
+  draw.line(27, 21, 37, 21, 4, green);
+  draw.line(24, 56, 24, 43, 4, green);
+  draw.line(40, 56, 40, 43, 4, green);
+  draw.line(20, 37, 44, 37, 3, green);
+}, 64);
+
+drawIcon('manual-result.png', (draw) => {
+  strokeRoundRect(draw, 15, 15, 34, 40, 5, 4, green);
+  draw.line(25, 11, 39, 11, 4, green);
+  draw.line(25, 20, 39, 20, 4, green);
+  draw.line(23, 32, 41, 32, 3, green);
+  draw.line(23, 43, 35, 43, 3, green);
+}, 64);
+
+drawIcon('manual-unit.png', (draw) => {
+  draw.line(17, 48, 47, 18, 5, green);
+  draw.line(14, 45, 20, 51, 5, green);
+  draw.line(44, 15, 50, 21, 5, green);
+  for (let i = 0; i < 4; i += 1) {
+    const start = 24 + i * 6;
+    draw.line(start, 41 - i * 6, start + 4, 45 - i * 6, 3, green);
+  }
+}, 64);
+
+drawIcon('manual-reference.png', (draw) => {
+  draw.line(18, 19, 18, 19, 7, green);
+  draw.line(28, 19, 50, 19, 4, green);
+  draw.line(18, 32, 18, 32, 7, green);
+  draw.line(28, 32, 50, 32, 4, green);
+  draw.line(18, 45, 18, 45, 7, green);
+  draw.line(28, 45, 44, 45, 4, green);
+}, 64);
+
+drawIcon('manual-range.png', (draw) => {
+  draw.arc(22, 39, 10, 12, Math.PI, Math.PI * 2, 4, green);
+  draw.arc(42, 39, 10, 12, Math.PI, Math.PI * 2, 4, green);
+  draw.line(12, 39, 12, 47, 4, green);
+  draw.line(52, 39, 52, 47, 4, green);
+  draw.line(20, 47, 44, 47, 4, green);
+}, 64);
+
+drawIcon('manual-status.png', (draw) => {
+  draw.line(32, 9, 51, 18, 4, green);
+  draw.line(51, 18, 49, 38, 4, green);
+  draw.line(49, 38, 32, 55, 4, green);
+  draw.line(32, 55, 15, 38, 4, green);
+  draw.line(15, 38, 13, 18, 4, green);
+  draw.line(13, 18, 32, 9, 4, green);
+  draw.line(24, 32, 30, 39, 5, green);
+  draw.line(30, 39, 42, 27, 5, green);
+}, 64);
+
+drawIcon('manual-note.png', (draw) => {
+  drawFoldedPaper(draw, 15, 9, 34, 46, green);
+  draw.line(23, 27, 40, 27, 3, green);
+  draw.line(23, 37, 40, 37, 3, green);
+  draw.line(23, 47, 34, 47, 3, green);
+}, 64);
+
+drawIcon('manual-save-white.png', (draw) => {
+  strokeRoundRect(draw, 12, 10, 40, 44, 5, 4, white);
+  draw.line(21, 10, 21, 28, 4, white);
+  draw.line(43, 10, 43, 28, 4, white);
+  draw.line(21, 28, 43, 28, 4, white);
+  strokeRoundRect(draw, 22, 36, 20, 18, 3, 4, white);
+}, 64);
+
+drawIcon('manual-filter.png', (draw) => {
+  draw.line(14, 18, 50, 18, 5, green);
+  draw.line(18, 18, 30, 34, 5, green);
+  draw.line(46, 18, 34, 34, 5, green);
+  draw.line(30, 34, 30, 50, 5, green);
+  draw.line(34, 34, 34, 45, 5, green);
+  draw.line(30, 50, 39, 45, 5, green);
+}, 64);
+
 drawIcon('upload-close.png', (draw) => {
   const dark = hexToRgb('#1F1F1F');
   draw.fillCircle(32, 32, 29, white);
