@@ -22,6 +22,10 @@ const profileWxss = read('miniprogram/pages/profile/index.wxss');
 const profileWxml = read('miniprogram/pages/profile/index.wxml');
 const metricDetailWxml = read('miniprogram/pages/health/metric-detail.wxml');
 const metricDetailWxss = read('miniprogram/pages/health/metric-detail.wxss');
+const healthSearchWxml = read('miniprogram/pages/health/search.wxml');
+const healthSearchWxss = read('miniprogram/pages/health/search.wxss');
+const pinnedManageWxml = read('miniprogram/pages/health/pinned-manage.wxml');
+const pinnedManageWxss = read('miniprogram/pages/health/pinned-manage.wxss');
 const trendChartWxml = read('miniprogram/components/trend-chart/trend-chart.wxml');
 const trendChartWxss = read('miniprogram/components/trend-chart/trend-chart.wxss');
 const trendChartJs = read('miniprogram/components/trend-chart/trend-chart.js');
@@ -258,6 +262,34 @@ assert.ok(!metricDetailWxml.includes('★'), 'metric detail follow control must 
 const pinAction = getRule(metricDetailWxss, '.pin-action');
 assertDecl(pinAction, 'min-width: 128rpx', 'metric detail follow action must be easy to tap and read');
 assertDecl(pinAction, 'height: 56rpx', 'metric detail follow action must stay compact but legible');
+
+assert.ok(healthSearchWxml.includes('class="page search-ref-page"'), 'health search must use the refreshed 09 page shell');
+assert.ok(healthSearchWxml.includes('/assets/ui-refresh/search-soft.png'), 'health search must use the refreshed search icon asset');
+assert.ok(healthSearchWxml.includes('class="result-icon"'), 'health search rows must include visual category icons');
+
+const searchBox = getRule(healthSearchWxss, '.search-box');
+assertDecl(searchBox, 'height: 96rpx', 'health search box must match the reference input height');
+assertDecl(searchBox, 'border: 3rpx solid #668865', 'health search focused box must keep the reference green outline');
+
+const searchResultRow = getRule(healthSearchWxss, '.search-result-row');
+assertDecl(searchResultRow, 'min-height: 120rpx', 'health search result rows must match the refreshed list rhythm');
+
+const searchHelper = getRule(healthSearchWxss, '.search-helper');
+assertDecl(searchHelper, 'width: 456rpx', 'health search helper must stay compact and centered');
+
+assert.ok(pinnedManageWxml.includes('class="pin-notice"'), 'pinned manage must render the refreshed guidance notice');
+assert.ok(pinnedManageWxml.includes('已关注 <text>{{pinnedCount}}</text> / {{pinnedLimit}}'), 'pinned manage must render the live followed count');
+assert.ok(!pinnedManageWxml.includes('drag-handle'), 'pinned manage must not draw fake drag handles without sorting support');
+
+const pinNotice = getRule(pinnedManageWxss, '.pin-notice');
+assertDecl(pinNotice, 'min-height: 134rpx', 'pinned manage notice must match the reference guidance card height');
+assertDecl(pinNotice, 'border: 1rpx solid #C9D8C9', 'pinned manage notice must use the soft green outline');
+
+const pinRow = getRule(pinnedManageWxss, '.pin-row');
+assertDecl(pinRow, 'min-height: 120rpx', 'pinned manage rows must match the refreshed list rhythm');
+
+const guideRow = getRule(pinnedManageWxss, '.guide-row');
+assertDecl(guideRow, 'min-height: 92rpx', 'pinned manage guide row must remain a compact secondary action');
 
 assert.ok(trendChartWxml.includes('wx:for="{{yTicks}}"'), 'trend chart must render y-axis ticks');
 assert.ok(trendChartWxml.includes('wx:for="{{refLines}}"'), 'trend chart must render latest reference limit lines');

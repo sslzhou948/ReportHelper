@@ -1,36 +1,49 @@
-﻿<view class="page">
-  <view class="nav">
+<view class="page search-ref-page">
+  <view class="nav search-nav">
     <view class="nav-side left" bindtap="goBack">‹ 返回</view>
     <view class="nav-title">搜索</view>
     <view class="nav-side right"></view>
   </view>
-  <view class="pad mt-12">
-    <input class="search-input" value="{{keyword}}" placeholder="搜索指标 / 报告 / 医院" bindinput="onInput" focus />
-  </view>
-  <view class="section-title">指标</view>
-  <view class="pad">
-    <view class="card">
-      <view wx:for="{{metrics}}" wx:key="metricKey" class="row" data-key="{{item.metricKey}}" bindtap="goMetric">
-        <view class="flex">
-          <view class="body strong">{{item.metricName}}</view>
-          <view class="tiny">{{item.categoryCn}} · {{item.trendLabel}}</view>
-        </view>
-        <hh-pill wx:if="{{item.hasAbnormalTone}}" tone="high">异常</hh-pill>
-        <view class="arrow">›</view>
-      </view>
+  <view class="pad search-pad">
+    <view class="search-box">
+      <image class="search-icon" src="/assets/ui-refresh/search-soft.png" mode="aspectFit" />
+      <input class="search-input" value="{{keyword}}" placeholder="搜索指标 / 报告 / 医院" bindinput="onInput" focus />
+      <view wx:if="{{keyword}}" class="search-clear" bindtap="clearKeyword">×</view>
     </view>
   </view>
-  <view class="section-title">报告</view>
+  <view class="section-title search-section-title">指标</view>
   <view class="pad">
-    <view class="card">
-      <view wx:for="{{reports}}" wx:key="id" class="row" data-id="{{item.id}}" bindtap="goReport">
-        <view class="flex">
-          <view class="body strong">{{item.type}}</view>
-          <view class="tiny">{{item.hospital}} · {{item.displayDate}}</view>
+    <view class="card search-result-card">
+      <view wx:for="{{metrics}}" wx:key="metricKey" class="row search-result-row" data-key="{{item.metricKey}}" bindtap="goMetric">
+        <image class="result-icon" src="{{item.icon}}" mode="aspectFit" />
+        <view class="result-main">
+          <view class="result-title">{{item.metricName}}</view>
+          <view class="result-sub">{{item.categoryCn}} · {{item.trendLabel}}</view>
         </view>
-        <hh-pill wx:if="{{item.abnormalCount > 0}}" tone="high">{{item.abnormalCount}} 异常</hh-pill>
-        <view class="arrow">›</view>
+        <view wx:if="{{item.hasAbnormalTone}}" class="search-badge high">异常</view>
+        <view class="search-arrow">›</view>
       </view>
+      <view wx:if="{{metrics.length === 0}}" class="search-empty-row">暂无匹配指标</view>
     </view>
+  </view>
+  <view class="section-title search-section-title">报告</view>
+  <view class="pad">
+    <view class="card search-result-card">
+      <view wx:for="{{reports}}" wx:key="id" class="row search-result-row report-row" data-id="{{item.id}}" bindtap="goReport">
+        <image class="result-icon report-icon" src="{{item.icon}}" mode="aspectFit" />
+        <view class="result-main">
+          <view class="result-title">{{item.type}}</view>
+          <view class="result-sub">{{item.hospital}}</view>
+          <view class="result-date">{{item.displayDate}}</view>
+        </view>
+        <view wx:if="{{item.abnormalCount > 0}}" class="search-badge high">{{item.abnormalText}}</view>
+        <view class="search-arrow">›</view>
+      </view>
+      <view wx:if="{{reports.length === 0}}" class="search-empty-row">暂无匹配报告</view>
+    </view>
+  </view>
+  <view class="search-helper">
+    <image class="helper-icon" src="/assets/ui-refresh/search-soft.png" mode="aspectFit" />
+    <view>{{emptyResult ? '没有找到结果，可尝试搜索医院或报告类型' : '没有找到时可尝试搜索医院或报告类型'}}</view>
   </view>
 </view>

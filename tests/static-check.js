@@ -170,6 +170,7 @@ const recordNewWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'recor
 const manualEntryJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'record', 'manual-entry.js'), 'utf8');
 const healthIndexJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'health', 'index.js'), 'utf8');
 const healthSearchJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'health', 'search.js'), 'utf8');
+const healthSearchWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'health', 'search.wxml'), 'utf8');
 const uploadPickJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'upload', 'pick.js'), 'utf8');
 const uploadPickWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'upload', 'pick.wxml'), 'utf8');
 const uploadPickWxss = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'upload', 'pick.wxss'), 'utf8');
@@ -200,6 +201,7 @@ const manualEntryWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'rec
 const metricDetailJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'health', 'metric-detail.js'), 'utf8');
 const metricDetailWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'health', 'metric-detail.wxml'), 'utf8');
 const pinnedManageJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'health', 'pinned-manage.js'), 'utf8');
+const pinnedManageWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'health', 'pinned-manage.wxml'), 'utf8');
 const apiJs = fs.readFileSync(path.join(miniprogramRoot, 'utils', 'api.js'), 'utf8');
 const apiConfigJs = fs.readFileSync(path.join(miniprogramRoot, 'utils', 'api-config.js'), 'utf8');
 const apiMockJs = fs.readFileSync(path.join(miniprogramRoot, 'utils', 'api-mock.js'), 'utf8');
@@ -390,6 +392,14 @@ assert.ok(metricDetailJs.includes("return '\\u53c2\\u8003 --'") || metricDetailJ
 assert.ok(metricDetailJs.includes('pinSaving'), 'metric detail must debounce follow/unfollow saves');
 assert.ok(pinnedManageJs.includes('savingKeys'), 'pinned manage must debounce per-metric follow saves');
 assert.ok(metricDetailJs.includes('showApiErrorToast') && pinnedManageJs.includes('showApiErrorToast'), 'pinned metric pages must surface API errors consistently');
+assert.ok(healthSearchWxml.includes('class="search-box"') && healthSearchWxml.includes('bindtap="clearKeyword"') && healthSearchJs.includes('clearKeyword()'), 'health search must expose the refreshed search box with a working clear action');
+assert.ok(healthSearchWxml.includes('class="result-icon"') && healthSearchJs.includes('categoryIcon(metric)'), 'health search result rows must show category icons instead of plain text-only rows');
+assert.ok(healthSearchJs.includes('ensureCurrentProfileId(api)'), 'health search must resolve the current profile when opened directly');
+assert.ok(!healthSearchJs.includes('defaultRangeQuery') && !healthSearchJs.includes('addDays(today'), 'health search must search all available reports instead of silently limiting to the last 30 days');
+assert.ok(pinnedManageWxml.includes('已关注 <text>{{pinnedCount}}</text> / {{pinnedLimit}}') && pinnedManageJs.includes('pinnedCount'), 'pinned manage must show a live followed count');
+assert.ok(pinnedManageJs.includes('nextPinned && this.data.pinnedCount >= PINNED_LIMIT'), 'pinned manage must enforce the displayed follow limit');
+assert.ok(pinnedManageJs.includes('ensureCurrentProfileId(api)'), 'pinned manage must resolve the current profile when opened directly');
+assert.ok(!pinnedManageWxml.includes('drag-handle') && !pinnedManageWxml.includes('拖拽'), 'pinned manage must not advertise drag sorting until sorting is implemented');
 assert.ok(!apiMockJs.includes('reportCount: 3'), 'OCR mock fallback must not fabricate three reports');
 assert.ok(profileExportJs.includes('api.createExport'), 'profile export page must create a real export task');
 assert.ok(!profileExportWxml.includes('暂不创建导出任务'), 'profile export page must not present export as disabled');

@@ -1,21 +1,34 @@
-﻿<view class="page">
-  <view class="nav">
+<view class="page pinned-ref-page">
+  <view class="nav pinned-nav">
     <view class="nav-side left" bindtap="goBack">‹ 返回</view>
     <view class="nav-title">关注指标</view>
     <view class="nav-side right" bindtap="goBack">完成</view>
   </view>
-  <view class="pad mt-12">
-    <view class="notice">选择需要展示在首页的指标。异常指标会优先显示，方便复查前快速查看。</view>
+  <view class="pad pinned-pad">
+    <view class="pin-notice">
+      <view class="notice-icon">i</view>
+      <view class="notice-copy">选择需要展示在首页的指标。异常指标会优先显示，方便复查前快速查看。</view>
+    </view>
   </view>
-  <view class="pad mt-12">
-    <view class="card">
-      <view wx:for="{{metrics}}" wx:key="metricKey" class="row {{item.pinSaving ? 'saving' : ''}}" data-key="{{item.metricKey}}" bindtap="toggle">
+  <view class="pin-count">已关注 <text>{{pinnedCount}}</text> / {{pinnedLimit}}</view>
+  <view class="pad">
+    <view class="card pin-list-card">
+      <view wx:for="{{metrics}}" wx:key="metricKey" class="row pin-row {{item.pinSaving ? 'saving' : ''}}" data-key="{{item.metricKey}}" bindtap="toggle">
         <view class="check {{item.isPinned ? 'on' : ''}}">{{item.pinSaving ? '…' : (item.isPinned ? '✓' : '')}}</view>
-        <view class="flex">
-          <view class="body strong">{{item.metricName}}</view>
-          <view class="tiny">{{item.categoryCn}} · {{item.lastDate}}</view>
+        <image class="pin-icon" src="{{item.icon}}" mode="aspectFit" />
+        <view class="pin-main">
+          <view class="pin-title">{{item.metricName}}</view>
+          <view class="pin-sub">{{item.categoryCn}} · {{item.lastDate}}</view>
         </view>
       </view>
+    </view>
+  </view>
+  <view class="pin-sort-hint">首页会优先展示异常指标，其次展示最近更新的关注项</view>
+  <view class="pad">
+    <view class="guide-row" bindtap="showFollowGuide">
+      <view class="guide-star">☆</view>
+      <view class="guide-text">关注说明</view>
+      <view class="guide-arrow">›</view>
     </view>
   </view>
 </view>
