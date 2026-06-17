@@ -25,11 +25,13 @@ function withTimeout(promise, ms, label) {
 function fixtureSparkline(tone = 'ok') {
   return {
     tone,
-    segments: [
-      { id: '1', left: 12, top: 26, width: 44.8, angle: -7.7, tone },
-      { id: '2', left: 56.4, top: 20, width: 44.9, angle: -7.6, tone },
-      { id: '3', left: 100.8, top: 14.1, width: 37.4, angle: 19.7, tone },
-      { id: '4', left: 136.2, top: 26.7, width: 38.6, angle: -4.0, tone }
+    neutralCurve: false,
+    curvePoints: [
+      { id: '0', x: 12, y: 26, tone },
+      { id: '1', x: 56, y: 20, tone },
+      { id: '2', x: 101, y: 14, tone },
+      { id: '3', x: 136, y: 27, tone },
+      { id: '4', x: 174, y: 24, tone }
     ],
     points: [
       { id: 'latest', left: 174, top: 24, tone }

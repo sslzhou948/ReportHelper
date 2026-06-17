@@ -353,48 +353,6 @@
   overflow: hidden;
 }
 
-.metric-spark-segment {
-  position: absolute;
-  height: 4rpx;
-  border-radius: 4rpx;
-  background: #5A8B63;
-  transform-origin: left center;
-  opacity: 0.92;
-}
-
-.metric-spark-point {
-  position: absolute;
-  width: 12rpx;
-  height: 12rpx;
-  margin-left: -6rpx;
-  margin-top: -6rpx;
-  border-radius: 50%;
-  background: #5A8B63;
-  box-shadow: 0 0 0 3rpx rgba(90, 139, 99, 0.10);
-}
-
-.metric-spark-segment.high,
-.metric-spark-segment.abnormal,
-.metric-spark-segment.positive {
-  background: #D84D43;
-}
-
-.metric-spark-point.high,
-.metric-spark-point.abnormal,
-.metric-spark-point.positive {
-  background: #D84D43;
-  box-shadow: 0 0 0 3rpx rgba(216, 77, 67, 0.10);
-}
-
-.metric-spark-segment.low {
-  background: #2F6DB3;
-}
-
-.metric-spark-point.low {
-  background: #2F6DB3;
-  box-shadow: 0 0 0 3rpx rgba(47, 109, 179, 0.10);
-}
-
 .empty-metric {
   color: #77736E;
 }

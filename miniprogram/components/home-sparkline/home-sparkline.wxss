@@ -1,0 +1,11 @@
+.home-sparkline,
+.home-sparkline-canvas {
+  display: block;
+  width: 186rpx;
+  height: 44rpx;
+}
+
+.home-sparkline {
+  position: relative;
+  overflow: hidden;
+}

@@ -4,6 +4,7 @@
   "backgroundColorBottom": "#EDEAE4",
   "usingComponents": {
     "profile-switcher": "/components/profile-switcher/profile-switcher",
+    "home-sparkline": "/components/home-sparkline/home-sparkline",
     "hh-pill": "/components/pill/pill",
     "network-banner": "/components/network-banner/network-banner",
     "loading-slow-banner": "/components/loading-slow-banner/loading-slow-banner"

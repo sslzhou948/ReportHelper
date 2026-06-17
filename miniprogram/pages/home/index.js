@@ -53,6 +53,14 @@ function pointTone(row, fallbackTone) {
   return row.tone || row.lastTone || fallbackTone || 'ok';
 }
 
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function roundSparkValue(value) {
+  return Number(value.toFixed(1));
+}
+
 function buildHomeSparkline(history, snapshot) {
   const rows = (history || [])
     .filter((row) => row.valueType !== 'qualitative' && row.valueType !== 'text')
@@ -64,19 +72,27 @@ function buildHomeSparkline(history, snapshot) {
     .sort((left, right) => new Date(left.reportDate || 0) - new Date(right.reportDate || 0))
     .slice(-HOME_SPARKLINE_POINT_LIMIT);
 
-  if (rows.length < 2) {
+  const hasSingleNumericRecord = rows.length < 2;
+  if (hasSingleNumericRecord) {
     const fallbackValue = toNumberOrNull(snapshot && snapshot.lastValueNumeric);
     if (fallbackValue === null) {
-      return { tone: snapshot && snapshot.lastTone || 'ok', segments: [], points: [] };
+      return {
+        tone: snapshot && snapshot.lastTone || 'ok',
+        neutralCurve: false,
+        curvePoints: [],
+        points: []
+      };
     }
     rows.splice(0, rows.length, {
       reportDate: `${snapshot && snapshot.lastDate || ''}-start`,
       numericValue: fallbackValue,
-      tone: snapshot && snapshot.lastTone
+      tone: snapshot && snapshot.lastTone,
+      isSynthetic: true
     }, {
       reportDate: snapshot && snapshot.lastDate || 'latest',
       numericValue: fallbackValue,
-      tone: snapshot && snapshot.lastTone
+      tone: snapshot && snapshot.lastTone,
+      isSynthetic: true
     });
   }
 
@@ -98,33 +114,23 @@ function buildHomeSparkline(history, snapshot) {
     const y = HOME_SPARKLINE.top + (max - row.numericValue) / span * plotHeight;
     return {
       id: `${index}`,
-      x: Number(x.toFixed(1)),
-      y: Number(y.toFixed(1)),
+      x: roundSparkValue(x),
+      y: roundSparkValue(y),
       tone: pointTone(row, fallbackTone),
       isLatest: index === rows.length - 1
     };
   });
 
-  const segments = [];
-  for (let i = 1; i < points.length; i += 1) {
-    const from = points[i - 1];
-    const to = points[i];
-    const dx = to.x - from.x;
-    const dy = to.y - from.y;
-    segments.push({
-      id: `${i}`,
-      left: from.x,
-      top: from.y,
-      width: Number(Math.sqrt(dx * dx + dy * dy).toFixed(1)),
-      angle: Number((Math.atan2(dy, dx) * 180 / Math.PI).toFixed(1)),
-      tone: to.tone
-    });
-  }
-
   const latest = points[points.length - 1];
   return {
     tone: latest ? latest.tone : fallbackTone,
-    segments,
+    neutralCurve: hasSingleNumericRecord,
+    curvePoints: points.map((point) => ({
+      id: point.id,
+      x: point.x,
+      y: clamp(point.y, HOME_SPARKLINE.top, HOME_SPARKLINE.height - HOME_SPARKLINE.bottom),
+      tone: point.tone
+    })),
     points: latest ? [{
       id: 'latest',
       left: latest.x,

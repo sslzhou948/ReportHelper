@@ -60,21 +60,8 @@
         <text wx:else>{{item.lastValueNumeric}}</text>
       </view>
       <view wx:if="{{item.unit}}" class="metric-unit">{{item.unit}}</view>
-      <view class="metric-sparkline {{item.sparkline.tone}}">
-        <view
-          wx:for="{{item.sparkline.segments}}"
-          wx:for-item="segment"
-          wx:key="id"
-          class="metric-spark-segment {{segment.tone}}"
-          style="left: {{segment.left}}rpx; top: {{segment.top}}rpx; width: {{segment.width}}rpx; transform: rotate({{segment.angle}}deg);"
-        ></view>
-        <view
-          wx:for="{{item.sparkline.points}}"
-          wx:for-item="point"
-          wx:key="id"
-          class="metric-spark-point {{point.tone}}"
-          style="left: {{point.left}}rpx; top: {{point.top}}rpx;"
-        ></view>
+      <view class="metric-sparkline">
+        <home-sparkline sparkline="{{item.sparkline}}"></home-sparkline>
       </view>
     </view>
     <view wx:if="{{pinnedMetrics.length === 0}}" class="metric-card empty-metric" bindtap="goPinnedManage">
