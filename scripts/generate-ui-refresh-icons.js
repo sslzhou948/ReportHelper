@@ -360,6 +360,121 @@ drawIcon('guide-chart.png', (draw) => {
   strokeRoundRect(draw, 63, 25, 13, 51, 3, 5, color);
 }, 96);
 
+drawIcon('export-hero.png', (draw) => {
+  const color = hexToRgb('#527858');
+  drawFoldedPaper(draw, 20, 13, 50, 68, color);
+  draw.line(31, 49, 62, 49, 6, color);
+  draw.line(50, 36, 63, 49, 6, color);
+  draw.line(50, 62, 63, 49, 6, color);
+}, 96);
+
+drawIcon('export-report.png', (draw) => {
+  const color = hexToRgb('#527858');
+  drawFoldedPaper(draw, 21, 16, 52, 64, color);
+  draw.line(32, 40, 58, 40, 4, color);
+  draw.line(32, 52, 60, 52, 4, color);
+  draw.line(32, 64, 50, 64, 4, color);
+}, 96);
+
+drawIcon('export-metrics.png', (draw) => {
+  const color = hexToRgb('#527858');
+  strokeRoundRect(draw, 18, 19, 60, 58, 6, 5, color);
+  draw.line(18, 38, 78, 38, 4, color);
+  draw.line(18, 58, 78, 58, 4, color);
+  draw.line(38, 19, 38, 77, 4, color);
+  draw.line(58, 19, 58, 77, 4, color);
+}, 96);
+
+drawIcon('export-recheck.png', (draw) => {
+  const color = hexToRgb('#527858');
+  strokeRoundRect(draw, 19, 24, 58, 54, 8, 5, color);
+  draw.line(19, 39, 77, 39, 5, color);
+  draw.line(32, 15, 32, 31, 6, color);
+  draw.line(64, 15, 64, 31, 6, color);
+  draw.line(36, 58, 45, 67, 5, color);
+  draw.line(45, 67, 62, 50, 5, color);
+}, 96);
+
+drawIcon('export-ready.png', (draw) => {
+  const color = hexToRgb('#527858');
+  strokeCircle(draw, 48, 48, 34, 5, color);
+  draw.line(32, 49, 44, 61, 6, color);
+  draw.line(44, 61, 66, 37, 6, color);
+}, 96);
+
+drawIcon('export-link.png', (draw) => {
+  const color = hexToRgb('#527858');
+  draw.arc(35, 39, 17, 12, Math.PI * 0.65, Math.PI * 1.85, 5, color);
+  draw.arc(61, 57, 17, 12, Math.PI * 1.65, Math.PI * 2.85, 5, color);
+  draw.line(40, 54, 56, 42, 5, color);
+}, 96);
+
+drawIcon('export-action-white.png', (draw) => {
+  drawFoldedPaper(draw, 23, 18, 44, 58, white);
+  draw.line(34, 49, 62, 49, 6, white);
+  draw.line(51, 38, 62, 49, 6, white);
+  draw.line(51, 60, 62, 49, 6, white);
+}, 96);
+
+drawIcon('metric-flag.png', (draw) => {
+  const color = hexToRgb('#527858');
+  draw.line(27, 18, 27, 78, 5, color);
+  draw.line(30, 22, 69, 22, 5, color);
+  draw.line(69, 22, 62, 47, 5, color);
+  draw.line(62, 47, 30, 47, 5, color);
+}, 96);
+
+drawIcon('metric-range.png', (draw) => {
+  const color = hexToRgb('#527858');
+  draw.line(21, 68, 70, 19, 5, color);
+  draw.line(24, 65, 31, 72, 5, color);
+  draw.line(67, 16, 74, 23, 5, color);
+  for (let i = 0; i < 5; i += 1) {
+    const pos = 30 + i * 8;
+    draw.line(pos, 59 - i * 8, pos + 5, 64 - i * 8, 3, color);
+  }
+}, 96);
+
+drawIcon('metric-trend.png', (draw) => {
+  const color = hexToRgb('#527858');
+  draw.line(20, 75, 76, 75, 5, color);
+  draw.line(20, 75, 20, 21, 5, color);
+  draw.line(29, 60, 43, 46, 5, color);
+  draw.line(43, 46, 55, 54, 5, color);
+  draw.line(55, 54, 74, 31, 5, color);
+  draw.line(66, 31, 74, 31, 5, color);
+  draw.line(74, 31, 74, 40, 5, color);
+}, 96);
+
+drawIcon('metric-star-shield.png', (draw) => {
+  const color = hexToRgb('#527858');
+  draw.line(48, 16, 72, 25, 5, color);
+  draw.line(72, 25, 69, 55, 5, color);
+  draw.line(69, 55, 48, 78, 5, color);
+  draw.line(48, 78, 27, 55, 5, color);
+  draw.line(27, 55, 24, 25, 5, color);
+  draw.line(24, 25, 48, 16, 5, color);
+  draw.line(48, 36, 52, 45, 4, color);
+  draw.line(52, 45, 62, 46, 4, color);
+  draw.line(62, 46, 55, 53, 4, color);
+  draw.line(55, 53, 57, 63, 4, color);
+  draw.line(57, 63, 48, 58, 4, color);
+  draw.line(48, 58, 39, 63, 4, color);
+  draw.line(39, 63, 41, 53, 4, color);
+  draw.line(41, 53, 34, 46, 4, color);
+  draw.line(34, 46, 44, 45, 4, color);
+  draw.line(44, 45, 48, 36, 4, color);
+}, 96);
+
+drawIcon('metric-pending.png', (draw) => {
+  const color = hexToRgb('#527858');
+  drawFoldedPaper(draw, 25, 16, 48, 64, color);
+  draw.line(35, 39, 58, 39, 4, color);
+  draw.line(35, 52, 54, 52, 4, color);
+  draw.line(64, 57, 76, 69, 5, color);
+  draw.line(76, 57, 64, 69, 5, color);
+}, 96);
+
 drawIcon('profile-logout.png', (draw) => {
   const danger = hexToRgb('#D84D43');
   draw.line(13, 11, 36, 11, 4, danger);

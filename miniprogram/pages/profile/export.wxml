@@ -1,32 +1,62 @@
-﻿<view class="page">
+<view class="page export-ref-page">
   <view class="nav">
     <view class="nav-side left" bindtap="goBack">‹ 返回</view>
     <view class="nav-title">数据导出</view>
     <view class="nav-side right"></view>
   </view>
-  <view class="pad mt-12">
-    <view class="card card-pad">
-      <view class="title">导出当前档案数据</view>
-      <view class="sub mt-8">包含检查报告、指标记录和复查计划。导出文件生成后会提供 24 小时有效的安全下载链接。</view>
+
+  <view class="export-content">
+    <view class="export-hero">
+      <image class="export-hero-icon" src="/assets/ui-refresh/export-hero.png" mode="aspectFit" />
+      <view class="export-hero-copy">
+        <view class="export-hero-title">导出当前档案数据</view>
+        <view class="export-hero-sub">包含检查报告、指标记录和复查计划。</view>
+        <view class="export-hero-sub">导出文件生成后会提供 24 小时有效的安全下载链接。</view>
+      </view>
     </view>
-  </view>
-  <view class="section-title">导出内容</view>
-  <view class="pad">
-    <view class="card">
-      <view class="row"><view class="flex">报告原始记录</view><view class="tiny">PDF / 图片索引</view></view>
-      <view class="row"><view class="flex">结构化指标</view><view class="tiny">CSV</view></view>
-      <view class="row"><view class="flex">复查计划</view><view class="tiny">JSON</view></view>
+
+    <view class="export-section-title">导出内容</view>
+    <view class="export-card">
+      <view class="export-row">
+        <image class="export-row-icon" src="/assets/ui-refresh/export-report.png" mode="aspectFit" />
+        <view class="export-row-title">报告原始记录</view>
+        <view class="export-row-value">PDF / 图片索引</view>
+        <view class="export-chevron">›</view>
+      </view>
+      <view class="export-row">
+        <image class="export-row-icon" src="/assets/ui-refresh/export-metrics.png" mode="aspectFit" />
+        <view class="export-row-title">结构化指标</view>
+        <view class="export-row-value">CSV</view>
+        <view class="export-chevron">›</view>
+      </view>
+      <view class="export-row">
+        <image class="export-row-icon" src="/assets/ui-refresh/export-recheck.png" mode="aspectFit" />
+        <view class="export-row-title">复查计划</view>
+        <view class="export-row-value">JSON</view>
+        <view class="export-chevron">›</view>
+      </view>
     </view>
-  </view>
-  <view class="pad mt-16">
-    <view class="btn {{loading ? 'disabled' : ''}}" bindtap="exportData">{{loading ? '正在生成' : '生成导出文件'}}</view>
-  </view>
-  <view wx:if="{{exportResult}}" class="pad mt-12">
-    <view class="card card-pad">
-      <view class="title">{{exportReady ? '导出已生成' : '导出处理中'}}</view>
-      <view class="sub mt-8">{{exportResult.fileName}}</view>
-      <view class="tiny mt-8">有效期至 {{exportResult.expiresAt}}</view>
-      <view wx:if="{{exportReady}}" class="btn secondary mt-16" bindtap="copyDownloadUrl">复制下载链接</view>
+
+    <view class="export-primary {{loading ? 'disabled' : ''}}" bindtap="exportData">
+      <image class="export-primary-icon" src="/assets/ui-refresh/export-action-white.png" mode="aspectFit" />
+      <text>{{loading ? '正在生成' : '生成导出文件'}}</text>
+    </view>
+
+    <view wx:if="{{exportResult}}" class="export-result-card">
+      <view class="export-result-head">
+        <image class="export-result-icon" src="/assets/ui-refresh/export-ready.png" mode="aspectFit" />
+        <view class="export-result-copy">
+          <view class="export-result-title">{{exportReady ? '导出已生成' : '导出处理中'}}</view>
+          <view class="export-result-file">{{exportResult.fileName}}</view>
+          <view class="export-result-expire">有效期至 {{exportResult.expiresAt}}</view>
+        </view>
+      </view>
+      <view wx:if="{{exportReady}}" class="export-copy-link" bindtap="copyDownloadUrl">
+        <image class="export-link-icon" src="/assets/ui-refresh/export-link.png" mode="aspectFit" />
+        <text>复制下载链接</text>
+      </view>
+      <view wx:if="{{exportReady}}" class="export-result-note">链接有效期内可多次下载，请妥善保存。</view>
+      <view wx:else class="export-result-note">文件还在生成中，请稍后返回查看。</view>
     </view>
   </view>
 </view>

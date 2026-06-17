@@ -1,8 +1,138 @@
-.help-row {
-  align-items: flex-start;
+.metric-help-page {
+  background: #f7f5f2;
 }
 
-.strong {
+.metric-help-content {
+  padding: 24rpx 32rpx 48rpx;
+}
+
+.metric-help-notice {
+  min-height: 80rpx;
+  padding: 20rpx 24rpx;
+  border-radius: 24rpx;
+  background: #edf3ec;
+  color: #4f5d4d;
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+}
+
+.notice-icon {
+  width: 36rpx;
+  height: 36rpx;
+  flex: 0 0 auto;
+}
+
+.notice-text {
+  flex: 1;
+  min-width: 0;
+  color: #4f4841;
+  font-size: 26rpx;
+  line-height: 1.45;
+}
+
+.metric-search {
+  margin-top: 24rpx;
+  height: 80rpx;
+  padding: 0 26rpx;
+  border-radius: 24rpx;
+  border: 1rpx solid #ddd6cd;
+  background: #fffdf9;
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+  box-shadow: 0 4rpx 12rpx rgba(42, 39, 34, 0.025);
+}
+
+.metric-search-icon {
+  width: 36rpx;
+  height: 36rpx;
+  opacity: 0.78;
+  flex: 0 0 auto;
+}
+
+.metric-search-input {
+  flex: 1;
+  min-width: 0;
+  height: 78rpx;
+  color: #24211d;
+  font-size: 28rpx;
+  line-height: 78rpx;
+}
+
+.metric-help-card {
+  margin-top: 28rpx;
+  border-radius: 24rpx;
+  border: 1rpx solid #e2dcd3;
+  background: #fffdf9;
+  box-shadow: 0 5rpx 18rpx rgba(60, 54, 48, 0.04);
+  overflow: hidden;
+}
+
+.metric-help-row {
+  min-height: 142rpx;
+  padding: 24rpx 22rpx 24rpx 28rpx;
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  border-bottom: 1rpx solid #ebe6de;
+}
+
+.metric-help-row:last-child {
+  border-bottom: 0;
+}
+
+.metric-icon-wrap {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  background: #eef3ec;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.metric-help-icon {
+  width: 52rpx;
+  height: 52rpx;
+}
+
+.metric-help-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.metric-help-title {
+  color: #24211d;
+  font-size: 30rpx;
   font-weight: 700;
+  line-height: 40rpx;
 }
 
+.metric-help-text {
+  margin-top: 10rpx;
+  color: #7a7065;
+  font-size: 25rpx;
+  line-height: 1.45;
+}
+
+.metric-help-chevron {
+  color: #8a827a;
+  font-size: 40rpx;
+  line-height: 1;
+  flex: 0 0 auto;
+}
+
+.metric-help-empty {
+  margin-top: 28rpx;
+  min-height: 180rpx;
+  border-radius: 24rpx;
+  border: 1rpx dashed #d8d2c9;
+  background: rgba(255, 253, 249, 0.72);
+  color: var(--ink-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26rpx;
+}
