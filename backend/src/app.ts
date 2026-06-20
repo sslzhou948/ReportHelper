@@ -3,6 +3,7 @@ import jwt from '@fastify/jwt';
 import Fastify from 'fastify';
 import type { PrismaClient } from '@prisma/client';
 import type { Env } from './config/env.js';
+import { registerAdminRoutes } from './routes/admin.js';
 import { registerAuthRoutes } from './routes/auth.js';
 import { registerExportRoutes } from './routes/exports.js';
 import { registerOcrRoutes } from './routes/ocr.js';
@@ -121,6 +122,7 @@ export function buildApp({ env, prisma }: BuildAppOptions) {
   });
 
   app.register(registerAuthRoutes);
+  app.register(registerAdminRoutes);
   app.register(registerProfileRoutes);
   app.register(registerUploadRoutes);
   app.register(registerOcrRoutes);

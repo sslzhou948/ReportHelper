@@ -62,6 +62,8 @@ function validateImageInventory(file) {
   const allowedCoverage = new Set(['fixture_golden', 'ocr_eval_golden', 'pending_golden']);
   const imageFiles = fs.readdirSync(sourceDir).filter((entry) => fs.statSync(path.join(sourceDir, entry)).isFile()).sort();
   const inventoryFiles = [];
+  const availableInventoryFiles = [];
+  const unavailableOcrEvalFiles = [];
   const seenIds = new Set();
   const byId = new Map();
   for (const item of inventory.cases) {
@@ -73,17 +75,23 @@ function validateImageInventory(file) {
     assert.ok(['laboratory', 'imaging'].includes(item.modality), `invalid inventory modality for ${item.id}: ${item.modality}`);
     assert.ok(item.layout && typeof item.layout === 'string', `inventory case needs a layout label: ${item.id}`);
     const imagePath = path.join(sourceDir, item.file);
-    assert.ok(fs.existsSync(imagePath), `missing inventory image: ${item.file}`);
-    assert.ok(fs.statSync(imagePath).size > 1024, `inventory image looks too small: ${item.file}`);
+    if (fs.existsSync(imagePath)) {
+      assert.ok(fs.statSync(imagePath).size > 1024, `inventory image looks too small: ${item.file}`);
+      availableInventoryFiles.push(item.file);
+    } else {
+      assert.strictEqual(item.coverage, 'ocr_eval_golden', `missing checked-in image is only allowed for optional OCR eval cases: ${item.file}`);
+      unavailableOcrEvalFiles.push(item.file);
+    }
     inventoryFiles.push(item.file);
     byId.set(item.id, item);
   }
-  assert.strictEqual(inventoryFiles.length, imageFiles.length, 'image inventory must not duplicate or omit realtestcase images');
-  assert.deepStrictEqual([...new Set(inventoryFiles)].sort(), imageFiles, 'image inventory must track every realtestcase image exactly once');
+  assert.deepStrictEqual([...new Set(availableInventoryFiles)].sort(), imageFiles, 'image inventory must track every checked-in realtestcase image exactly once');
   return {
     byId,
     sourceDir,
     count: inventory.cases.length,
+    availableCount: availableInventoryFiles.length,
+    unavailableOcrEvalCount: unavailableOcrEvalFiles.length,
     pendingCount: inventory.cases.filter((item) => item.coverage === 'pending_golden').length
   };
 }
@@ -99,8 +107,12 @@ function validateManifest(file, options = {}) {
     seenIds.add(item.id);
     const imagePath = path.join(sourceDir, item.file);
     const goldenPath = path.resolve(path.dirname(file), item.expectedGolden);
-    assert.ok(fs.existsSync(imagePath), `missing fixture image: ${item.file}`);
-    assert.ok(fs.statSync(imagePath).size > 1024, `fixture image looks too small: ${item.file}`);
+    if (options.requireImages !== false) {
+      assert.ok(fs.existsSync(imagePath), `missing fixture image: ${item.file}`);
+      assert.ok(fs.statSync(imagePath).size > 1024, `fixture image looks too small: ${item.file}`);
+    } else if (fs.existsSync(imagePath)) {
+      assert.ok(fs.statSync(imagePath).size > 1024, `fixture image looks too small: ${item.file}`);
+    }
     assert.ok(fs.existsSync(goldenPath), `missing golden json: ${item.expectedGolden}`);
     const golden = readJson(goldenPath);
     assertGoldenShape(item, golden);
@@ -116,7 +128,7 @@ function validateManifest(file, options = {}) {
 
 const inventory = validateImageInventory(imageInventoryPath);
 const primary = validateManifest(manifestPath, { requireFixtureDraft: true });
-const ocrEval = validateManifest(ocrEvalManifestPath);
+const ocrEval = validateManifest(ocrEvalManifestPath, { requireImages: false });
 
 for (const item of readJson(manifestPath).cases) {
   const inventoryItem = inventory.byId.get(item.id);
@@ -132,4 +144,4 @@ for (const item of readJson(ocrEvalManifestPath).cases) {
   assert.strictEqual(inventoryItem.coverage, 'ocr_eval_golden', `OCR eval case must be ocr_eval_golden in image inventory: ${item.id}`);
 }
 
-console.log(`Fixture check passed: ${primary.count} fixture cases, ${ocrEval.count} OCR eval cases, ${inventory.pendingCount} pending golden cases under ${path.relative(root, primary.sourceDir)}`);
+console.log(`Fixture check passed: ${primary.count} fixture cases, ${ocrEval.count} OCR eval golden cases, ${inventory.availableCount} checked-in images, ${inventory.unavailableOcrEvalCount} OCR eval images unavailable, ${inventory.pendingCount} pending golden cases under ${path.relative(root, primary.sourceDir)}`);

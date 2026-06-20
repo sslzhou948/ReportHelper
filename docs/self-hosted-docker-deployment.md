@@ -41,6 +41,7 @@ POSTGRES_DATA_DIR=/your/persistent/path/postgres
 UPLOAD_DATA_DIR=/your/persistent/path/uploads
 JWT_SECRET=use-a-new-long-random-secret
 WECHAT_APP_SECRET=your-wechat-app-secret
+ADMIN_CONFIG_PASSWORD=0512
 BACKEND_PUBLIC_BASE_URL=https://api.your-domain.com
 OPENAI_API_BASE_URL=https://api.ads8260.win:8260/v1
 OPENAI_OCR_MODEL=gpt-5.4-mini
@@ -48,6 +49,7 @@ OPENAI_API_KEY=your-new-server-side-key
 ```
 
 Use a new LLM API key for deployment. Any key pasted into chat or local notes should be treated as exposed.
+The hidden AI endpoint configuration page uses the regular mini program login session plus `ADMIN_CONFIG_PASSWORD`; no WeChat openid allowlist is required.
 
 ## 3. Start Services
 
@@ -69,6 +71,8 @@ Expected response contains:
 ```json
 {"data":{"ok":true,"service":"healthhelper-backend"}}
 ```
+
+After an upgrade that changes the OCR endpoint config schema, confirm the backend logs include a successful Prisma migration run. The hidden AI config page uses database-backed configuration first and the `.env` OpenAI settings as fallback.
 
 ## 4. Backup
 
@@ -107,11 +111,14 @@ Before uploading the mini program:
 6. Test on a phone:
    - login
    - create profile
+   - open "About", tap the version number 5 times, enter the admin password, and verify the AI config page is accessible after login
+   - test the AI endpoint connection and save the config
    - upload a report photo
    - OCR recognition
    - edit/confirm
    - save to case folder
    - view health data and metric trend
+   - optionally roll back the AI endpoint config once and confirm a new OCR task still uses the fallback or restored config
 
 `trial` and `release` mini program environments now force backend mode. Local `develop` still defaults to mock unless you set storage overrides in DevTools.
 

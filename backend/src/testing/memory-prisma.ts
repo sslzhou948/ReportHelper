@@ -23,6 +23,8 @@ export class MemoryPrisma {
   reportMetricValues: Row[] = [];
   userMetricSnapshots: Row[] = [];
   manualEntryTemplates: Row[] = [];
+  ocrProviderConfigs: Row[] = [];
+  ocrProviderConfigAudits: Row[] = [];
   recheckPlans: Row[] = [];
   recheckTodos: Row[] = [];
 
@@ -457,6 +459,84 @@ export class MemoryPrisma {
       if (!template) throw new Error('manual entry template not found');
       Object.assign(template, data, { updatedAt: now() });
       return template;
+    }
+  };
+
+  private matchesOcrProviderConfigWhere(config: Row, where: any = {}) {
+    if (where.id && config.id !== where.id) return false;
+    if (where.isActive !== undefined && config.isActive !== where.isActive) return false;
+    if (typeof where.status === 'string' && config.status !== where.status) return false;
+    if (where.status?.in && !where.status.in.includes(config.status)) return false;
+    return true;
+  }
+
+  private sortOcrProviderConfigs(rows: Row[], orderBy: any = {}) {
+    if (orderBy.updatedAt === 'desc') {
+      rows.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+    } else if (orderBy.updatedAt === 'asc') {
+      rows.sort((a, b) => a.updatedAt.getTime() - b.updatedAt.getTime());
+    }
+    return rows;
+  }
+
+  ocrProviderConfig = {
+    findFirst: async ({ where, orderBy }: any = {}) => {
+      const rows = this.sortOcrProviderConfigs(
+        this.ocrProviderConfigs.filter((config) => this.matchesOcrProviderConfigWhere(config, where)),
+        orderBy
+      );
+      return rows[0] || null;
+    },
+    findMany: async ({ where, orderBy, take }: any = {}) => {
+      let rows = this.sortOcrProviderConfigs(
+        this.ocrProviderConfigs.filter((config) => this.matchesOcrProviderConfigWhere(config, where)),
+        orderBy
+      );
+      if (typeof take === 'number') rows = rows.slice(0, take);
+      return rows;
+    },
+    create: async ({ data }: any) => {
+      const config = {
+        id: randomUUID(),
+        ...data,
+        createdAt: now(),
+        updatedAt: now()
+      };
+      this.ocrProviderConfigs.push(config);
+      return config;
+    },
+    update: async ({ where, data }: any) => {
+      const config = this.ocrProviderConfigs.find((item) => item.id === where.id);
+      if (!config) throw new Error('ocr provider config not found');
+      Object.assign(config, data, { updatedAt: now() });
+      return config;
+    },
+    updateMany: async ({ where, data }: any) => {
+      const rows = this.ocrProviderConfigs.filter((config) => this.matchesOcrProviderConfigWhere(config, where));
+      rows.forEach((config) => Object.assign(config, data, { updatedAt: now() }));
+      return { count: rows.length };
+    }
+  };
+
+  ocrProviderConfigAudit = {
+    create: async ({ data }: any) => {
+      const audit = {
+        id: randomUUID(),
+        ...data,
+        createdAt: now()
+      };
+      this.ocrProviderConfigAudits.push(audit);
+      return audit;
+    },
+    findMany: async ({ where, orderBy, take }: any = {}) => {
+      let rows = this.ocrProviderConfigAudits.filter((audit) => {
+        if (where?.configId && audit.configId !== where.configId) return false;
+        if (where?.actorUserId && audit.actorUserId !== where.actorUserId) return false;
+        return true;
+      });
+      if (orderBy?.createdAt === 'desc') rows.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+      if (typeof take === 'number') rows = rows.slice(0, take);
+      return rows;
     }
   };
 

@@ -84,6 +84,44 @@ model ManualEntryTemplate {
   @@map("manual_entry_templates")
 }
 
+model OcrProviderConfig {
+  id              String    @id @default(uuid()) @db.Uuid
+  provider        String    @db.VarChar(32)
+  protocol        String    @default("openai_compatible") @db.VarChar(32)
+  baseUrl         String    @map("base_url") @db.VarChar(512)
+  model           String    @db.VarChar(128)
+  apiKeyEncrypted String?   @map("api_key_encrypted")
+  apiKeyLast4     String?   @map("api_key_last4") @db.VarChar(16)
+  status          String    @default("active") @db.VarChar(32)
+  isActive        Boolean   @default(false) @map("is_active")
+  lastTestAt      DateTime? @map("last_test_at") @db.Timestamptz(6)
+  lastTestStatus  String?   @map("last_test_status") @db.VarChar(32)
+  lastTestMessage String?   @map("last_test_message")
+  createdBy       String?   @map("created_by") @db.Uuid
+  updatedBy       String?   @map("updated_by") @db.Uuid
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  archivedAt      DateTime? @map("archived_at") @db.Timestamptz(6)
+
+  @@index([isActive, status])
+  @@index([updatedAt])
+  @@map("ocr_provider_configs")
+}
+
+model OcrProviderConfigAudit {
+  id            String   @id @default(uuid()) @db.Uuid
+  configId      String?  @map("config_id") @db.Uuid
+  actorUserId   String?  @map("actor_user_id") @db.Uuid
+  action        String   @db.VarChar(32)
+  beforeSummary Json?    @map("before_summary")
+  afterSummary  Json?    @map("after_summary")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([configId, createdAt])
+  @@index([actorUserId, createdAt])
+  @@map("ocr_provider_config_audits")
+}
+
 model ReportType {
   id                    String   @id @default(uuid()) @db.Uuid
   typeKey               String   @unique @map("type_key") @db.VarChar(128)

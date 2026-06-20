@@ -192,6 +192,18 @@ function createBackendApi(client) {
     },
     batchCreateReports(payload, config) {
       return client.post('/api/reports/batch-create', payload, config);
+    },
+    getOcrProviderConfig(config) {
+      return client.get('/api/admin/ocr-config', config);
+    },
+    testOcrProviderConfig(payload, config) {
+      return client.post('/api/admin/ocr-config/test', payload, config);
+    },
+    saveOcrProviderConfig(payload, config) {
+      return client.post('/api/admin/ocr-config', payload, config);
+    },
+    rollbackOcrProviderConfig(config) {
+      return client.post('/api/admin/ocr-config/rollback', {}, config);
     }
   };
 }
@@ -391,6 +403,18 @@ function createHybridUploadApi(options = {}) {
         ...payload,
         profileId: payload && payload.profileId ? backendProfileId(payload.profileId) : payload.profileId
       }), config));
+    },
+    getOcrProviderConfig(config) {
+      return backendApi.getOcrProviderConfig(config);
+    },
+    testOcrProviderConfig(payload, config) {
+      return backendApi.testOcrProviderConfig(payload, config);
+    },
+    saveOcrProviderConfig(payload, config) {
+      return backendApi.saveOcrProviderConfig(payload, config);
+    },
+    rollbackOcrProviderConfig(config) {
+      return backendApi.rollbackOcrProviderConfig(config);
     }
   };
 }

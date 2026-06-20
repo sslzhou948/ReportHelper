@@ -9,7 +9,7 @@
       <view class="app-mark">病</view>
       <view class="title mt-12">我的病例夹</view>
       <view class="sub mt-8">电子病例夹 · 健康数据管理</view>
-      <view class="tiny mt-16">v1.0.0</view>
+      <view class="tiny mt-16 version-tap" bindtap="tapVersion">v1.0.0</view>
     </view>
   </view>
   <view class="pad mt-12">

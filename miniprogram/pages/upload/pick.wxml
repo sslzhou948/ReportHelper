@@ -42,18 +42,17 @@
 
     <view class="upload-pad">
       <view class="photo-grid">
-        <view wx:for="{{photos}}" wx:key="id" data-id="{{item.id}}" class="photo {{item.group ? 'grouped' : ''}}" bindtap="preview">
+        <view wx:for="{{photos}}" wx:key="id" data-id="{{item.id}}" class="photo {{item.group ? 'grouped' : ''}} {{item.groupToneClass}} {{item.groupPositionClass}}" bindtap="preview">
           <image wx:if="{{item.tempFilePath}}" class="photo-thumb" src="{{item.tempFilePath}}" mode="aspectFill" />
           <view class="photo-delete" data-id="{{item.id}}" catchtap="removePhoto">
             <image class="photo-delete-icon" src="/assets/ui-refresh/upload-x-tabler.png" mode="aspectFit" />
           </view>
+          <view wx:if="{{item.group}}" class="group-badge {{item.groupToneClass}}" data-id="{{item.id}}" data-group="{{item.group}}" catchtap="openGroupActions">报告 {{item.groupReportNo}}</view>
+          <view wx:if="{{item.group}}" class="group-page-badge {{item.groupToneClass}}">第 {{item.groupPageIndex}}/{{item.groupPageCount}} 页</view>
           <view wx:if="{{item.qualityWarning}}" class="quality-badge">!</view>
           <view class="photo-index">第 {{item.id}} 张</view>
           <view class="clip" data-id="{{item.id}}" catchtap="startGrouping">
             <image class="clip-icon" src="/assets/ui-refresh/upload-paperclip-tabler.png" mode="aspectFit" />
-          </view>
-          <view wx:if="{{item.group}}" class="split" data-group="{{item.group}}" catchtap="splitGroup">
-            <image class="split-icon" src="/assets/ui-refresh/upload-split.png" mode="aspectFit" />
           </view>
         </view>
         <view class="photo add" bindtap="chooseAlbum">

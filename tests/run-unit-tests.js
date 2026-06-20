@@ -27,6 +27,11 @@ const { ApiError, DEFAULT_REQUEST_TIMEOUT_MS, createApiClient, createMemoryStora
 const { getApiErrorMessage, getApiErrorToastTitle, getValidationErrorLines, isNotFoundError } = require('../miniprogram/utils/error');
 const { createApi, createBackendApi } = require('../miniprogram/utils/api');
 const { clearAuthSession, hasAuthSession, shouldRequireLogin } = require('../miniprogram/utils/session');
+const {
+  PRODUCTION_BACKEND_BASE_URL,
+  TRIAL_BACKEND_BASE_URL,
+  getRuntimeApiOptions
+} = require('../miniprogram/utils/api-config');
 const { realcaseOcrDrafts } = require('../miniprogram/data/ocr-fixtures');
 const mock = require('../miniprogram/data/mock');
 
@@ -69,6 +74,177 @@ assert.strictEqual(isTimeoutError({ errMsg: 'request:fail' }), false);
 assert.strictEqual(isOfflineNetworkType('none'), true);
 assert.strictEqual(isOfflineNetworkType('unknown'), true);
 assert.strictEqual(isOfflineNetworkType('wifi'), false);
+
+{
+  const savedWx = global.wx;
+  const storage = {
+    healthhelperApiMode: 'mock',
+    healthhelperBackendBaseUrl: 'http://127.0.0.1:9999'
+  };
+  try {
+    global.wx = {
+      getAccountInfoSync() {
+        return { miniProgram: { envVersion: 'trial' } };
+      },
+      getStorageSync(key) {
+        return storage[key];
+      }
+    };
+    assert.deepStrictEqual(getRuntimeApiOptions({ mode: 'mock', baseUrl: 'http://override.local' }), {
+      mode: 'backend',
+      baseUrl: TRIAL_BACKEND_BASE_URL
+    });
+
+    global.wx.getAccountInfoSync = () => ({ miniProgram: { envVersion: 'release' } });
+    assert.deepStrictEqual(getRuntimeApiOptions({ mode: 'mock', baseUrl: 'http://override.local' }), {
+      mode: 'backend',
+      baseUrl: PRODUCTION_BACKEND_BASE_URL
+    });
+
+    global.wx.getAccountInfoSync = () => ({ miniProgram: { envVersion: 'develop' } });
+    assert.deepStrictEqual(getRuntimeApiOptions(), {
+      mode: 'mock',
+      baseUrl: 'http://127.0.0.1:9999'
+    });
+  } finally {
+    global.wx = savedWx;
+  }
+}
+
+{
+  const savedWx = global.wx;
+  const savedPage = global.Page;
+  const aboutPagePath = path.resolve(__dirname, '../miniprogram/pages/profile/about.js');
+  let aboutPage = null;
+  let navigatedTo = '';
+  try {
+    global.Page = (definition) => {
+      aboutPage = definition;
+    };
+    global.wx = {
+      navigateBack() {},
+      navigateTo({ url }) {
+        navigatedTo = url;
+      }
+    };
+    delete require.cache[aboutPagePath];
+    require(aboutPagePath);
+    assert.ok(aboutPage && typeof aboutPage.tapVersion === 'function', 'about page must expose the version tap handler');
+    for (let index = 0; index < 4; index += 1) aboutPage.tapVersion();
+    assert.strictEqual(navigatedTo, '', 'hidden AI config entry must stay hidden before the fifth tap');
+    aboutPage.onUnload();
+    for (let index = 0; index < 5; index += 1) aboutPage.tapVersion();
+    assert.strictEqual(navigatedTo, '/pages/profile/ai-config');
+    aboutPage.onUnload();
+  } finally {
+    delete require.cache[aboutPagePath];
+    global.wx = savedWx;
+    global.Page = savedPage;
+  }
+}
+
+sequentialChecks.push(async () => {
+  const pagePath = path.resolve(__dirname, '../miniprogram/pages/profile/ai-config.js');
+  const pageModulePath = require.resolve(pagePath);
+  const apiPath = path.resolve(__dirname, '../miniprogram/utils/api.js');
+  const apiModulePath = require.resolve(apiPath);
+  const savedApiModule = require.cache[apiModulePath];
+  const savedWx = global.wx;
+  const savedPage = global.Page;
+  let pageConfig = null;
+  const calls = [];
+  try {
+    require.cache[apiModulePath] = {
+      id: apiModulePath,
+      filename: apiModulePath,
+      loaded: true,
+      exports: {
+        api: {
+          getOcrProviderConfig(config) {
+            calls.push({ method: 'get', config });
+            return Promise.resolve({
+              config: {
+                source: 'env',
+                baseUrl: 'https://api.openai.com/v1',
+                model: 'gpt-4.1-mini',
+                keyStatus: '环境变量已配置，尾号 test',
+                lastTestStatus: 'not_tested',
+                lastTestMessage: ''
+              },
+              history: []
+            });
+          },
+          testOcrProviderConfig(payload, config) {
+            calls.push({ method: 'test', payload, config });
+            return Promise.resolve({
+              ok: true,
+              message: '测试通过',
+              checkedAt: '2026-06-18T00:00:00.000Z',
+              latencyMs: 20
+            });
+          },
+          saveOcrProviderConfig(payload, config) {
+            calls.push({ method: 'save', payload, config });
+            return Promise.resolve({
+              config: {
+                source: 'database',
+                baseUrl: payload.baseUrl,
+                model: payload.model,
+                keyStatus: '已配置，尾号 test',
+                lastTestStatus: 'ok',
+                lastTestMessage: '测试通过'
+              },
+              history: [{ active: true, protocol: 'openai_compatible', model: payload.model, updatedAt: '2026-06-18T00:00:00.000Z' }]
+            });
+          },
+          rollbackOcrProviderConfig(config) {
+            calls.push({ method: 'rollback', config });
+            return Promise.resolve({});
+          }
+        }
+      }
+    };
+    global.Page = (definition) => {
+      pageConfig = definition;
+    };
+    global.wx = {
+      showToast() {},
+      navigateBack() {},
+      showModal() {}
+    };
+    delete require.cache[pageModulePath];
+    require(pageModulePath);
+    assert.ok(pageConfig && typeof pageConfig.loadConfig === 'function', 'AI config page must expose loadConfig');
+    const page = {
+      ...pageConfig,
+      data: JSON.parse(JSON.stringify(pageConfig.data)),
+      setData(update) {
+        this.data = { ...this.data, ...update };
+      }
+    };
+    page.onAdminPasswordInput({ detail: { value: '0512' } });
+    await page.unlockAdminConfig();
+    assert.strictEqual(page.data.baseUrl, 'https://api.openai.com/v1');
+    page.onBaseUrlInput({ detail: { value: 'api.example.test' } });
+    page.onModelInput({ detail: { value: 'gpt-test' } });
+    await page.testConnection();
+    assert.strictEqual(page.data.canSave, true);
+    await page.saveConfig();
+    assert.strictEqual(page.data.activeSource, '当前使用数据库配置，环境变量作为兜底');
+    assert.deepStrictEqual(calls.map((call) => call.method), ['get', 'test', 'save']);
+    assert.strictEqual(calls[0].config.headers['X-Admin-Password'], '0512');
+    assert.strictEqual(calls[1].config.headers['X-Admin-Password'], '0512');
+    assert.strictEqual(calls[2].config.headers['X-Admin-Password'], '0512');
+    assert.strictEqual(calls[1].payload.baseUrl, 'https://api.example.test/v1');
+    assert.strictEqual(calls[2].payload.model, 'gpt-test');
+  } finally {
+    delete require.cache[pageModulePath];
+    if (savedApiModule) require.cache[apiModulePath] = savedApiModule;
+    else delete require.cache[apiModulePath];
+    global.wx = savedWx;
+    global.Page = savedPage;
+  }
+});
 
 asyncChecks.push(new Promise((resolve) => {
   const page = {
@@ -736,12 +912,16 @@ sequentialChecks.push(async () => {
   const storageState = {};
   const toasts = [];
   let pageConfig = null;
+  let nextActionSheetTapIndex = 0;
   try {
     global.wx = {
       getStorageSync: (key) => storageState[key],
       setStorageSync: (key, value) => { storageState[key] = value; },
       removeStorageSync: (key) => { delete storageState[key]; },
-      showToast: ({ title }) => { toasts.push(title); }
+      showToast: ({ title }) => { toasts.push(title); },
+      showActionSheet: ({ success }) => {
+        success({ tapIndex: nextActionSheetTapIndex });
+      }
     };
     global.Page = (config) => { pageConfig = config; };
     delete require.cache[pageModulePath];
@@ -775,6 +955,21 @@ sequentialChecks.push(async () => {
     const groupId = page.data.photos.find((photo) => photo.id === 1).group;
     assert.ok(groupId > 0);
     assert.strictEqual(page.data.photos.find((photo) => photo.id === 2).group, groupId);
+    const groupedPhotos = page.data.photos.filter((photo) => photo.group === groupId);
+    assert.deepStrictEqual(groupedPhotos.map((photo) => photo.groupReportNo), [1, 1], 'merged photos should expose the same visual report number');
+    assert.deepStrictEqual(groupedPhotos.map((photo) => photo.groupPageIndex), [1, 2], 'merged photos should expose in-report page order');
+    assert.deepStrictEqual(groupedPhotos.map((photo) => photo.groupPageCount), [2, 2], 'merged photos should expose the merged page count');
+    assert.ok(groupedPhotos.every((photo) => photo.groupToneClass), 'merged photos should expose a visible group tone class');
+    nextActionSheetTapIndex = 0;
+    page.openGroupActions({ currentTarget: { dataset: { id: 1, group: groupId } } });
+    assert.strictEqual(page.data.grouping, true, 'adjusting a merged group should enter grouping mode');
+    assert.deepStrictEqual(page.data.selected, [1, 2]);
+    page.setData({ grouping: false, selected: [] });
+    nextActionSheetTapIndex = 1;
+    page.openGroupActions({ currentTarget: { dataset: { id: 1, group: groupId } } });
+    assert.deepStrictEqual(page.data.photos.map((photo) => photo.group), [0, 0, 0], 'cancelling from the group badge should split the merged photos');
+    page.setSelected([1, 2]);
+    page.finishGrouping();
     page.splitGroup({ currentTarget: { dataset: { group: groupId } } });
     assert.deepStrictEqual(page.data.photos.map((photo) => photo.group), [0, 0, 0]);
     assert.strictEqual(page.data.reportCount, 3, 'splitting a group should restore independent report count');
@@ -4279,6 +4474,45 @@ asyncChecks.push(Promise.all([
     method: 'PATCH',
     pathname: '/api/profiles/profile_1/metrics/manual%20drug%2Flevel/pin',
     payload: { isPinned: true }
+  }]);
+}));
+
+const adminConfigCalls = [];
+const backendApiForAdminConfig = createBackendApi({
+  get(pathname, config) {
+    adminConfigCalls.push({ method: 'GET', pathname, config });
+    return Promise.resolve({});
+  },
+  post(pathname, payload, config) {
+    adminConfigCalls.push({ method: 'POST', pathname, payload, config });
+    return Promise.resolve({});
+  }
+});
+asyncChecks.push(Promise.all([
+  backendApiForAdminConfig.getOcrProviderConfig({ requestId: 'req_admin_get' }),
+  backendApiForAdminConfig.testOcrProviderConfig({ baseUrl: 'https://api.example.test/v1' }, { requestId: 'req_admin_test', headers: { 'X-Admin-Password': '0512' } }),
+  backendApiForAdminConfig.saveOcrProviderConfig({ model: 'gpt-test' }, { requestId: 'req_admin_save' }),
+  backendApiForAdminConfig.rollbackOcrProviderConfig({ requestId: 'req_admin_rollback' })
+]).then(() => {
+  assert.deepStrictEqual(adminConfigCalls, [{
+    method: 'GET',
+    pathname: '/api/admin/ocr-config',
+    config: { requestId: 'req_admin_get' }
+  }, {
+    method: 'POST',
+    pathname: '/api/admin/ocr-config/test',
+    payload: { baseUrl: 'https://api.example.test/v1' },
+    config: { requestId: 'req_admin_test', headers: { 'X-Admin-Password': '0512' } }
+  }, {
+    method: 'POST',
+    pathname: '/api/admin/ocr-config',
+    payload: { model: 'gpt-test' },
+    config: { requestId: 'req_admin_save' }
+  }, {
+    method: 'POST',
+    pathname: '/api/admin/ocr-config/rollback',
+    payload: {},
+    config: { requestId: 'req_admin_rollback' }
   }]);
 }));
 

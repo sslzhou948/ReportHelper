@@ -47,6 +47,10 @@ assert.ok(communityLipidGolden.metrics.length === 4 && communityLipidGolden.basi
 assert.ok(serumThyroidGolden.metrics.length === 3 && serumThyroidGolden.basicInfo.typeKey === 'thyroid_function', 'serum thyroid golden must preserve T3/T4/TSH metrics');
 const backendPackage = readJson(path.join(root, 'backend', 'package.json'));
 const rootPackage = readJson(path.join(root, 'package.json'));
+const dockerComposeYml = fs.readFileSync(path.join(root, 'docker-compose.yml'), 'utf8');
+const deployComposeEnvExample = fs.readFileSync(path.join(root, 'deploy', 'compose.env.example'), 'utf8');
+const backendEnvExample = fs.readFileSync(path.join(root, 'backend', '.env.example'), 'utf8');
+const selfHostedDeploymentMd = fs.readFileSync(path.join(root, 'docs', 'self-hosted-docker-deployment.md'), 'utf8');
 const gptOcrSmokeTs = fs.readFileSync(path.join(root, 'backend', 'src', 'gpt-ocr-realcase-smoke.ts'), 'utf8');
 const gptRunbookMd = fs.readFileSync(path.join(root, 'docs', 'gpt-ocr-real-upload-runbook.md'), 'utf8');
 const ocrCropExperimentJs = fs.readFileSync(path.join(root, 'scripts', 'create-ocr-table-crop-experiment.js'), 'utf8');
@@ -188,6 +192,9 @@ const profileAgreementWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages',
 const profilePrivacyWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'privacy.wxml'), 'utf8');
 const profileIndexWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'index.wxml'), 'utf8');
 const profileIndexJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'index.js'), 'utf8');
+const profileAboutJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'about.js'), 'utf8');
+const profileAboutWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'about.wxml'), 'utf8');
+const profileAiConfigJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'ai-config.js'), 'utf8');
 const profileCustomMetricsJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'custom-metrics.js'), 'utf8');
 const profileCustomMetricsWxml = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'custom-metrics.wxml'), 'utf8');
 const profileExportJs = fs.readFileSync(path.join(miniprogramRoot, 'pages', 'profile', 'export.js'), 'utf8');
@@ -207,6 +214,8 @@ const apiConfigJs = fs.readFileSync(path.join(miniprogramRoot, 'utils', 'api-con
 const apiMockJs = fs.readFileSync(path.join(miniprogramRoot, 'utils', 'api-mock.js'), 'utf8');
 const errorJs = fs.readFileSync(path.join(miniprogramRoot, 'utils', 'error.js'), 'utf8');
 const backendOcrRouteTs = fs.readFileSync(path.join(root, 'backend', 'src', 'routes', 'ocr.ts'), 'utf8');
+const backendAdminRouteTs = fs.readFileSync(path.join(root, 'backend', 'src', 'routes', 'admin.ts'), 'utf8');
+const backendOcrRuntimeConfigTs = fs.readFileSync(path.join(root, 'backend', 'src', 'services', 'ocr-runtime-config.ts'), 'utf8');
 const backendOcrProviderTs = fs.readFileSync(path.join(root, 'backend', 'src', 'services', 'ocr-provider.ts'), 'utf8');
 const backendRawOcrParserTs = fs.readFileSync(path.join(root, 'backend', 'src', 'services', 'raw-ocr-parser.ts'), 'utf8');
 const backendReportServiceTs = fs.readFileSync(path.join(root, 'backend', 'src', 'services', 'report-service.ts'), 'utf8');
@@ -263,7 +272,7 @@ assert.ok(uploadPickWxml.includes('/assets/ui-refresh/upload-paperclip-tabler.pn
 assert.ok(uploadPickWxml.includes('同一份报告跨页拍摄') && uploadPickWxml.includes('合并为 1 份报告识别') && !uploadPickWxml.includes('曲别针') && !uploadPickWxml.includes('⌘'), 'upload pick grouping copy must clearly explain multi-page report grouping');
 assert.ok(!uploadPickWxml.includes('默认每张图识别为一份报告') && !uploadPickWxml.includes('把多张图分到同一组'), 'upload pick grouping guidance must not duplicate the lower photo-grid hint');
 assert.ok(uploadPickJs.includes('wx.showModal'), 'upload pick must confirm leaving with an unfinished draft');
-assert.ok(uploadPickJs.includes('splitGroup(event)') && uploadPickWxml.includes('catchtap="splitGroup"') && uploadPickWxml.includes('/assets/ui-refresh/upload-split.png'), 'upload pick must allow cancelling an existing photo merge through a visible split action');
+assert.ok(uploadPickJs.includes('openGroupActions(event)') && uploadPickJs.includes('调整合并') && uploadPickJs.includes('取消合并') && uploadPickWxml.includes('catchtap="openGroupActions"'), 'upload pick must allow adjusting or cancelling an existing photo merge from the report group badge');
 assert.ok(uploadPickJs.includes('removePhoto(event)') && uploadPickWxml.includes('catchtap="removePhoto"'), 'upload pick must allow removing a mistakenly selected photo');
 assert.ok(!homeWxml.includes('\u6b63\u5728\u8bc6\u522b 3 \u5f20\u62a5\u544a'), 'home OCR notice must not hardcode report counts');
 assert.ok(homeIndexJs.includes('api.listOcrTasks'), 'home must refresh pending OCR state from API');
@@ -278,6 +287,14 @@ assert.ok(!homeWxml.includes('暂无识别中的报告') && !homeWxml.includes("
 assert.ok(!homeWxml.includes('···') && !homeWxss.includes('.bell'), 'home OCR status entry must not ship as an ambiguous dot or bell affordance');
 assert.ok(app.pages.includes('pages/record/new') && app.pages.includes('pages/record/manual-entry'), 'unified record entry and manual entry pages must be registered');
 assert.ok(app.pages.includes('pages/profile/custom-metrics'), 'custom metric library page must be registered');
+assert.ok(app.pages.includes('pages/profile/ai-config'), 'hidden AI config page must be registered');
+assert.ok(profileAboutJs.includes('tapVersion()') && profileAboutWxml.includes('bindtap="tapVersion"') && profileAboutJs.includes('/pages/profile/ai-config'), 'about page version tap must open the hidden AI config page');
+assert.ok(profileAiConfigJs.includes('adminPassword') && profileAiConfigJs.includes('X-Admin-Password') && profileAiConfigJs.includes('api.getOcrProviderConfig') && profileAiConfigJs.includes('api.testOcrProviderConfig') && profileAiConfigJs.includes('api.saveOcrProviderConfig') && profileAiConfigJs.includes('api.rollbackOcrProviderConfig'), 'AI config page must require an admin password and use real admin API methods');
+assert.ok(apiJs.includes('/api/admin/ocr-config/test') && apiJs.includes('/api/admin/ocr-config/rollback'), 'miniprogram API wrapper must expose OCR provider config admin routes');
+assert.ok(!backendAdminRouteTs.includes('ADMIN_WX_OPENIDS') && backendAdminRouteTs.includes('ADMIN_PASSWORD_REQUIRED') && backendAdminRouteTs.includes('x-admin-password') && backendAdminRouteTs.includes('OCR_CONFIG_TEST_FAILED'), 'backend hidden OCR config route must require admin password and keep test-before-save');
+assert.ok(backendOcrRouteTs.includes('resolveOcrRuntimeConfig') && backendOcrRuntimeConfigTs.includes('WeakMap') && backendOcrRuntimeConfigTs.includes('OPENAI_API_KEY'), 'OCR route must resolve cached runtime config with env fallback before real recognition');
+assert.ok(!dockerComposeYml.includes('ADMIN_WX_OPENIDS') && !deployComposeEnvExample.includes('ADMIN_WX_OPENIDS') && !backendEnvExample.includes('ADMIN_WX_OPENIDS'), 'deployment env templates must not require admin openid config for hidden OCR endpoint management');
+assert.ok(selfHostedDeploymentMd.includes('tap the version number 5 times') && selfHostedDeploymentMd.includes('database-backed configuration first'), 'deployment guide must document real hidden AI config verification');
 assert.ok(homeWxml.includes('拍照识别 / 手动录入') && homeIndexJs.includes('/pages/record/new'), 'home primary CTA must open unified record entry');
 assert.ok(!homeWxml.includes('新增{{profile.relation}}') && !homeWxml.includes('{{profile.relation}}距下次复查'), 'home primary cards must not repeat the archive relation in action copy');
 assert.ok(homeWxml.includes('{{greetingText}}') && homeIndexJs.includes('getGreetingText') && homeIndexJs.includes('\\u613f\\u60a8\\u65e9\\u65e5\\u5eb7\\u590d'), 'home greeting must be time-aware and use the recovery wish copy');
@@ -285,7 +302,9 @@ assert.ok(homeIndexJs.includes('reportDisplayType(report)') && homeWxml.includes
 assert.ok(homeIndexJs.includes('label.length > 4') && homeIndexJs.includes('label.slice(0, 3)'), 'home recent report labels must be capped at four visible characters including ellipsis');
 assert.ok(homeIndexJs.includes('HOME_RECENT_REPORT_LIMIT = 6') && homeIndexJs.includes('HOME_ALERT_METRIC_LIMIT = 5'), 'home must cap recent reports at six and health reminders at five');
 assert.ok(homeWxml.includes('{{alertSummaryText}}') && homeIndexJs.includes('formatAlertSummary(alertMetrics)'), 'home alert summary must be generated from the capped alert list');
-assert.ok(apiConfigJs.includes("envVersion === 'release'") && apiConfigJs.includes("PRODUCTION_API_MODE = 'backend'"), 'production miniprogram builds must force backend API mode');
+assert.ok(apiConfigJs.includes("envVersion === 'trial'") && apiConfigJs.includes("TRIAL_BACKEND_BASE_URL"), 'trial miniprogram builds must use an explicit trial backend URL');
+assert.ok(apiConfigJs.includes("envVersion === 'release'") && apiConfigJs.includes("PRODUCTION_BACKEND_BASE_URL") && apiConfigJs.includes("PRODUCTION_API_MODE = 'backend'"), 'production miniprogram builds must force backend API mode and use an explicit production URL');
+assert.ok(/const baseUrl = deployed\s*\?\s*deployedBaseUrl\s*:\s*\(overrides\.baseUrl \|\| getStoredValue\('healthhelperBackendBaseUrl'\)/.test(apiConfigJs), 'deployed miniprogram builds must ignore local backend storage overrides');
 assert.ok(homeWxml.includes('scroll-x class="metric-scroll"') && homeWxss.includes('overflow-x: hidden'), 'home pinned metrics must stay as a single-row carousel without widening the page');
 assert.ok(app.window.backgroundColorTop === '#EDEAE4' && app.window.backgroundColorBottom === '#EDEAE4', 'global window overscroll background must match the app surface instead of the default white');
 assert.ok(homeJson.backgroundColorTop === '#5A7A5A' && healthJson.backgroundColorTop === '#5A7A5A' && onboardJson.backgroundColorTop === '#5A7A5A', 'green hero pages must use page window background colors for iOS overscroll');

@@ -17,6 +17,7 @@
     "pages/profile/metric-help",
     "pages/profile/feedback",
     "pages/profile/about",
+    "pages/profile/ai-config",
     "pages/profile/agreement",
     "pages/profile/privacy",
     "pages/profile/onboard",

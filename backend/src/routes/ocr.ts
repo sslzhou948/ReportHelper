@@ -3,6 +3,7 @@ import type { FastifyInstance } from 'fastify';
 import type { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { createOcrProvider, toOcrProviderFailure, type OcrDraft } from '../services/ocr-provider.js';
+import { resolveOcrRuntimeConfig } from '../services/ocr-runtime-config.js';
 import { assessOcrImageQuality, type PhotoQualityWarning } from '../services/image-quality.js';
 import { requireSession } from '../services/dev-user.js';
 import { createUploadStorageProvider } from '../services/upload-storage.js';
@@ -393,7 +394,7 @@ function metricFromConflictCandidate(candidate: any, baseMetric: any, metricKey:
 }
 
 export async function registerOcrRoutes(app: FastifyInstance) {
-  const ocrProvider = createOcrProvider(app.env);
+  const fixtureOcrProvider = createOcrProvider(app.env);
   const storageProvider = createUploadStorageProvider(app.env);
 
   function taskDraftsInclude() {
@@ -517,6 +518,8 @@ export async function registerOcrRoutes(app: FastifyInstance) {
       if (!startResult.started) return startResult.task;
       activeRunUpdatedAt = startResult.task.updatedAt;
 
+      const runtimeConfig = await resolveOcrRuntimeConfig(app.prisma, app.env);
+      const ocrProvider = createOcrProvider(runtimeConfig.env);
       const groupResults = await runWithConcurrency(groups, app.env.OCR_GROUP_CONCURRENCY, async (group) => {
         const qualityWarnings = await collectPhotoQualityWarnings(group);
         const result = await ocrProvider.recognizePhotos({
@@ -880,7 +883,7 @@ export async function registerOcrRoutes(app: FastifyInstance) {
     }
 
     const drafts = isFixtureTask
-      ? await ocrProvider.recognizeFixture({ caseIds: parsed.data.fixtureCaseIds })
+      ? await fixtureOcrProvider.recognizeFixture({ caseIds: parsed.data.fixtureCaseIds })
       : [];
     if (isFixtureTask && !drafts.length) {
       return reply.status(400).send({

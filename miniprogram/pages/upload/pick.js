@@ -162,11 +162,42 @@ function enrichFilesWithImageInfo(files) {
 }
 
 function decoratePhotos(photos, selected) {
+  const groupCounts = {};
+  (photos || []).forEach((photo) => {
+    const group = Number(photo.group) || 0;
+    if (group) groupCounts[group] = (groupCounts[group] || 0) + 1;
+  });
+  const groupReportNumbers = {};
+  let reportNumber = 0;
+  (photos || []).forEach((photo) => {
+    const group = Number(photo.group) || 0;
+    if (group && groupCounts[group] > 1) {
+      if (!groupReportNumbers[group]) groupReportNumbers[group] = ++reportNumber;
+      return;
+    }
+    reportNumber += 1;
+  });
+  const groupSeen = {};
   return photos.map((photo) => {
     const selectedIndex = selected.indexOf(photo.id);
     const normalized = normalizePhotoQuality(photo);
+    const group = Number(normalized.group) || 0;
+    const isGrouped = !!(group && groupCounts[group] > 1);
+    const groupPageIndex = isGrouped ? ((groupSeen[group] || 0) + 1) : 0;
+    if (isGrouped) groupSeen[group] = groupPageIndex;
+    const groupPageCount = isGrouped ? groupCounts[group] : 0;
+    const groupReportNo = isGrouped ? groupReportNumbers[group] : 0;
+    const groupTone = groupReportNo ? ((groupReportNo - 1) % 4) + 1 : 0;
     return {
       ...normalized,
+      group: isGrouped ? group : 0,
+      groupReportNo,
+      groupPageIndex,
+      groupPageCount,
+      groupToneClass: groupTone ? `group-tone-${groupTone}` : '',
+      groupPositionClass: !isGrouped
+        ? ''
+        : (groupPageIndex === 1 ? 'group-start' : (groupPageIndex === groupPageCount ? 'group-end' : 'group-middle')),
       isSelected: selectedIndex >= 0,
       selectedOrder: selectedIndex + 1
     };
@@ -484,6 +515,23 @@ Page({
       grouping: true,
       selected,
       photos: decoratePhotos(this.data.photos, selected)
+    });
+  },
+  openGroupActions(event) {
+    const group = Number(event.currentTarget.dataset.group) || 0;
+    const initialId = Number(event.currentTarget.dataset.id) || 0;
+    if (!group) return;
+    wx.showActionSheet({
+      itemList: ['调整合并', '取消合并'],
+      success: (res) => {
+        if (res.tapIndex === 0) {
+          this.startGrouping({ currentTarget: { dataset: { id: initialId } } });
+          return;
+        }
+        if (res.tapIndex === 1) {
+          this.splitGroup({ currentTarget: { dataset: { group } } });
+        }
+      }
     });
   },
   toggleSelect(event) {

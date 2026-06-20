@@ -1197,6 +1197,60 @@ function createMockApi() {
           replacedReportId: report.replacedByReportId || null
         }))
       });
+    },
+
+    getOcrProviderConfig() {
+      return ok({
+        hiddenConfig: true,
+        config: {
+          source: 'mock',
+          active: true,
+          provider: 'gpt_vision',
+          protocol: 'openai_compatible',
+          baseUrl: 'https://api.ads8260.win:8260/v1',
+          model: 'gpt-5.4-mini',
+          keyStatus: 'Mock 模式不连接真实服务',
+          keyLast4: '',
+          lastTestStatus: 'not_tested',
+          lastTestMessage: '当前为页面预览配置',
+          lastTestAt: '',
+          updatedAt: ''
+        },
+        history: []
+      });
+    },
+
+    testOcrProviderConfig() {
+      return ok({
+        ok: true,
+        message: 'Mock 模式测试通过',
+        checkedAt: new Date().toISOString(),
+        latencyMs: 32
+      });
+    },
+
+    saveOcrProviderConfig(payload = {}) {
+      return ok({
+        config: {
+          source: 'mock',
+          active: true,
+          provider: payload.provider || 'gpt_vision',
+          protocol: payload.protocol || 'openai_compatible',
+          baseUrl: payload.baseUrl || 'https://api.ads8260.win:8260/v1',
+          model: payload.model || 'gpt-5.4-mini',
+          keyStatus: payload.apiKey ? `已配置，尾号 ${String(payload.apiKey).slice(-4)}` : 'Mock 模式不连接真实服务',
+          keyLast4: payload.apiKey ? String(payload.apiKey).slice(-4) : '',
+          lastTestStatus: 'ok',
+          lastTestMessage: 'Mock 模式已保存',
+          lastTestAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        },
+        history: []
+      });
+    },
+
+    rollbackOcrProviderConfig() {
+      return this.getOcrProviderConfig();
     }
   };
 }

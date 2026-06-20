@@ -127,6 +127,11 @@ function samplePhoto(id) {
     width: 1600,
     height: 2200,
     qualityWarning: '',
+    groupReportNo: 1,
+    groupPageIndex: id,
+    groupPageCount: 2,
+    groupToneClass: 'group-tone-1',
+    groupPositionClass: id === 1 ? 'group-start' : 'group-end',
     isSelected: false,
     selectedOrder: 0
   };

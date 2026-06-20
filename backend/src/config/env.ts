@@ -7,6 +7,7 @@ const envSchema = z.object({
   JWT_SECRET: z.string().min(16),
   WECHAT_APP_ID: z.string().min(1),
   WECHAT_APP_SECRET: z.string().min(1),
+  ADMIN_CONFIG_PASSWORD: z.string().min(1).default('0512'),
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(8787),
   BACKEND_PUBLIC_BASE_URL: z.string().url().default('http://127.0.0.1:8787'),

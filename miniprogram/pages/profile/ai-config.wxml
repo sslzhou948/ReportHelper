@@ -1,0 +1,135 @@
+<view class="page ai-page">
+  <view class="nav">
+    <view class="nav-side left" bindtap="goBack">‹ 返回</view>
+    <view class="nav-title">AI 识别配置</view>
+    <view class="nav-side right"></view>
+  </view>
+
+  <view wx:if="{{!adminUnlocked}}" class="pad mt-12">
+    <view class="card card-pad auth-card">
+      <view class="body strong">管理员验证</view>
+      <view class="tiny mt-8">请输入管理员密码后查看和修改大模型端点配置。</view>
+      <input class="form-input mt-12" password="{{true}}" value="{{adminPassword}}" placeholder="管理员密码" bindinput="onAdminPasswordInput" bindconfirm="unlockAdminConfig" />
+      <view class="btn compact mt-12 {{loading ? 'disabled' : ''}}" bindtap="unlockAdminConfig">{{loading ? '验证中' : '验证并进入'}}</view>
+      <view wx:if="{{authStatus}}" class="save-note warn-note">{{authStatus}}</view>
+    </view>
+  </view>
+
+  <block wx:if="{{adminUnlocked}}">
+  <view class="pad mt-12">
+    <view class="status-card">
+      <view class="status-icon">AI</view>
+      <view class="status-main">
+        <view class="title">大模型端点服务</view>
+        <view class="tiny mt-6">{{activeSource}}</view>
+      </view>
+      <view class="status-pill {{lastTestTone}}">{{lastTestStatus}}</view>
+    </view>
+  </view>
+
+  <view class="section-title">
+    <view>接口配置</view>
+    <view class="tiny">隐藏入口</view>
+  </view>
+  <view class="pad">
+    <view class="card card-pad config-card">
+      <view class="form-row">
+        <view class="label-row">
+          <view class="label">接口标准</view>
+          <view class="hint">第一版仅支持 OpenAI 兼容</view>
+        </view>
+        <picker range="{{providerLabels}}" value="{{providerIndex}}" bindchange="onProviderChange" disabled="{{true}}">
+          <view class="form-input picker-value">
+            <view>{{providerStandard}}</view>
+            <view class="lock-text">暂不切换</view>
+          </view>
+        </picker>
+      </view>
+
+      <view class="form-row">
+        <view class="label-row">
+          <view class="label">常用配置</view>
+          <view class="hint">选择后可继续编辑</view>
+        </view>
+        <picker range="{{presetLabels}}" value="{{presetIndex}}" bindchange="onPresetChange">
+          <view class="form-input picker-value">
+            <view>{{presetLabel}}</view>
+            <view class="arrow">›</view>
+          </view>
+        </picker>
+      </view>
+
+      <view class="form-row">
+        <view class="label-row">
+          <view class="label">端点地址</view>
+          <view class="mini-action" bindtap="completeBaseUrl">自动补全</view>
+        </view>
+        <input class="form-input" value="{{baseUrl}}" placeholder="例如 api.openai.com 或 https://api.example.com/v1" bindinput="onBaseUrlInput" bindblur="completeBaseUrl" />
+      </view>
+
+      <view class="preview-box">
+        <view class="preview-title">实际调用预览</view>
+        <view class="preview-line">
+          <view class="preview-label">Responses</view>
+          <view class="preview-url">{{preview.responses}}</view>
+        </view>
+        <view class="preview-line">
+          <view class="preview-label">Chat</view>
+          <view class="preview-url">{{preview.chat}}</view>
+        </view>
+      </view>
+
+      <view class="form-row">
+        <view class="label">模型名称</view>
+        <input class="form-input" value="{{model}}" placeholder="例如 gpt-4.1-mini、gpt-5.4-mini" bindinput="onModelInput" />
+      </view>
+
+      <view class="form-row">
+        <view class="label-row">
+          <view class="label">API Key</view>
+          <view class="hint">{{keyStatus}}</view>
+        </view>
+        <input class="form-input" password="{{true}}" value="{{apiKey}}" placeholder="留空表示不修改现有密钥" bindinput="onApiKeyInput" />
+      </view>
+    </view>
+  </view>
+
+  <view class="section-title">
+    <view>启用前检查</view>
+    <view class="tiny">保存前必须通过</view>
+  </view>
+  <view class="pad">
+    <view class="card card-pad check-card">
+      <view class="check-row">
+        <view>
+          <view class="body strong">测试连接</view>
+          <view class="tiny mt-6">验证鉴权、模型和响应结构，不会修改当前配置。</view>
+        </view>
+        <view class="test-badge {{lastTestTone}}">{{lastTestStatus}}</view>
+      </view>
+      <view class="action-grid">
+        <view class="btn secondary compact {{testing ? 'disabled' : ''}}" bindtap="testConnection">{{testing ? '测试中' : '测试连接'}}</view>
+        <view class="btn compact {{saving ? 'disabled' : ''}}" bindtap="saveConfig">{{saving ? '保存中' : '保存启用'}}</view>
+      </view>
+      <view class="save-note">{{saveStatus}}</view>
+    </view>
+  </view>
+
+  <view class="section-title">
+    <view>配置记录</view>
+    <view class="section-action" bindtap="rollbackConfig">恢复上一版</view>
+  </view>
+  <view class="pad">
+    <view class="card">
+      <view wx:for="{{history}}" wx:key="title" class="row history-row">
+        <view class="history-mark">{{index + 1}}</view>
+        <view class="flex">
+          <view class="body strong">{{item.title}}</view>
+          <view class="tiny mt-4">{{item.meta}}</view>
+        </view>
+        <view class="pill {{index === 0 ? 'primary' : ''}}">{{item.status}}</view>
+      </view>
+    </view>
+  </view>
+  </block>
+</view>

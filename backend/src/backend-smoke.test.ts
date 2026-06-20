@@ -6,6 +6,7 @@ import { buildApp } from './app.js';
 import { loadEnv, parseDotEnv, type Env } from './config/env.js';
 import { resolveWxLoginSession } from './routes/auth.js';
 import { createOcrProvider, toOcrProviderFailure } from './services/ocr-provider.js';
+import { resolveOcrRuntimeConfig } from './services/ocr-runtime-config.js';
 import { draftFromRawOcr } from './services/raw-ocr-parser.js';
 import { MemoryPrisma } from './testing/memory-prisma.js';
 
@@ -256,11 +257,13 @@ const parsedEnv = loadEnv({
   JWT_SECRET: 'test-secret-1234567890',
   WECHAT_APP_ID: 'test-app-id',
   WECHAT_APP_SECRET: 'test-app-secret',
+  ADMIN_CONFIG_PASSWORD: '0512',
   NODE_ENV: 'test',
   PORT: '8789'
 });
 assert.equal(parsedEnv.PORT, 8789);
 assert.equal(parsedEnv.NODE_ENV, 'test');
+assert.equal(parsedEnv.ADMIN_CONFIG_PASSWORD, '0512');
 assert.throws(() => loadEnv({
   DATABASE_URL: 'postgresql://test:test@localhost:5432/test',
   JWT_SECRET: 'replace-with-local-dev-secret',
@@ -311,6 +314,7 @@ assert.throws(() => loadEnv({
   JWT_SECRET: 'test-secret-1234567890',
   WECHAT_APP_ID: 'test-app-id',
   WECHAT_APP_SECRET: 'test-app-secret',
+  ADMIN_CONFIG_PASSWORD: '0512',
   NODE_ENV: 'test',
   PORT: '8789',
   OCR_FALLBACK_PROVIDER: 'gpt_vision',
@@ -322,6 +326,7 @@ const env: Env = {
   JWT_SECRET: 'test-secret-1234567890',
   WECHAT_APP_ID: 'test-app-id',
   WECHAT_APP_SECRET: 'test-app-secret',
+  ADMIN_CONFIG_PASSWORD: '0512',
   NODE_ENV: 'test',
   PORT: 8787,
   BACKEND_PUBLIC_BASE_URL: 'http://127.0.0.1:8787',
@@ -363,6 +368,146 @@ const missingKeyOcrResult = await missingKeyOcrProvider.recognizePhotos({
 });
 assert.equal(missingKeyOcrResult.provider, 'gpt_vision');
 assert.equal(missingKeyOcrResult.warnings?.[0].code, 'OPENAI_API_KEY_MISSING');
+
+const adminOpenAi = await startMockOpenAiServer(() => ({
+  output_text: JSON.stringify({
+    drafts: [{
+      sourcePhotoIds: [],
+      pageCount: 1,
+      basicInfo: {
+        type: '血常规',
+        originalType: '血常规',
+        typeKey: 'blood_routine',
+        canonicalTypeName: '血常规',
+        modality: 'laboratory',
+        analysisPolicy: 'metric_analysis',
+        hospital: '管理员配置测试医院',
+        reportDate: '2026-04-28',
+        reportLike: true
+      },
+      metrics: [{
+        metricKey: 'wbc',
+        metricName: 'WBC',
+        originalMetricName: 'WBC',
+        category: 'blood_routine',
+        categoryCn: '血常规',
+        mappingStatus: 'suggested',
+        valueType: 'quantitative',
+        valueNumeric: 4.3,
+        valueText: '4.3',
+        unit: '10^9/L',
+        refRangeLow: 3.5,
+        refRangeHigh: 9.5,
+        refText: '3.5-9.5',
+        tone: 'ok',
+        ocrConfidence: 0.9
+      }],
+      findings: [],
+      conflicts: [],
+      warnings: [],
+      status: 'needs_review'
+    }]
+  })
+}));
+const adminEnv: Env = {
+  ...env,
+  LOCAL_OBJECT_STORAGE_DIR: '../tmp/backend-smoke-admin-object-storage'
+};
+await fs.rm(new URL('../../tmp/backend-smoke-admin-object-storage/', import.meta.url), { recursive: true, force: true });
+const adminPrisma = new MemoryPrisma();
+const adminApp = buildApp({ env: adminEnv, prisma: adminPrisma as any });
+const adminHeaders = { 'x-admin-password': '0512' };
+
+const adminDeniedConfigResponse = await adminApp.inject({
+  method: 'GET',
+  url: '/api/admin/ocr-config'
+});
+assert.equal(adminDeniedConfigResponse.statusCode, 403);
+const adminInitialConfigResponse = await adminApp.inject({
+  method: 'GET',
+  url: '/api/admin/ocr-config',
+  headers: adminHeaders
+});
+assert.equal(adminInitialConfigResponse.statusCode, 200);
+assert.equal(adminInitialConfigResponse.json().data.config.source, 'env');
+const adminTestResponse = await adminApp.inject({
+  method: 'POST',
+  url: '/api/admin/ocr-config/test',
+  headers: adminHeaders,
+  payload: {
+    provider: 'gpt_vision',
+    protocol: 'openai_compatible',
+    baseUrl: adminOpenAi.baseUrl,
+    model: 'admin-runtime-model',
+    apiKey: 'admin-runtime-key'
+  }
+});
+assert.equal(adminTestResponse.statusCode, 200);
+assert.equal(adminTestResponse.json().data.ok, true);
+const adminSaveResponse = await adminApp.inject({
+  method: 'POST',
+  url: '/api/admin/ocr-config',
+  headers: adminHeaders,
+  payload: {
+    provider: 'gpt_vision',
+    protocol: 'openai_compatible',
+    baseUrl: adminOpenAi.baseUrl,
+    model: 'admin-runtime-model',
+    apiKey: 'admin-runtime-key'
+  }
+});
+assert.equal(adminSaveResponse.statusCode, 200);
+assert.equal(adminSaveResponse.json().data.config.source, 'database');
+assert.equal(adminSaveResponse.json().data.config.keyLast4, '-key');
+assert.equal(adminPrisma.ocrProviderConfigs.length, 1);
+assert.notEqual(adminPrisma.ocrProviderConfigs[0].apiKeyEncrypted, 'admin-runtime-key');
+assert.ok(adminPrisma.ocrProviderConfigAudits.some((item) => item.action === 'save'));
+const adminRuntimeConfig = await resolveOcrRuntimeConfig(adminPrisma, adminEnv, { useCache: false });
+assert.equal(adminRuntimeConfig.source, 'database');
+assert.equal(adminRuntimeConfig.env.OPENAI_API_BASE_URL, adminOpenAi.baseUrl);
+assert.equal(adminRuntimeConfig.env.OPENAI_OCR_MODEL, 'admin-runtime-model');
+assert.equal(adminRuntimeConfig.env.OPENAI_API_KEY, 'admin-runtime-key');
+
+const adminProfileResponse = await adminApp.inject({
+  method: 'GET',
+  url: '/api/profiles'
+});
+assert.equal(adminProfileResponse.statusCode, 200);
+const adminProfileId = adminProfileResponse.json().data[0].id;
+const adminUploaded = await uploadTestPhoto(adminApp, adminProfileId, {
+  clientFileId: 'admin_runtime_1',
+  fileName: 'admin-runtime.jpg',
+  bytes: minimalJpeg(1279, 1706)
+});
+const adminTaskResponse = await adminApp.inject({
+  method: 'POST',
+  url: '/api/ocr/tasks',
+  payload: {
+    profileId: adminProfileId,
+    photos: [{
+      photoId: adminUploaded.photoId,
+      groupId: 'admin_runtime_group',
+      sortOrder: 1
+    }]
+  }
+});
+assert.equal(adminTaskResponse.statusCode, 200);
+const adminCompletedTask = await waitForOcrTask(adminApp, adminTaskResponse.json().data.id);
+assert.equal(adminCompletedTask.status, 'needs_confirmation');
+assert.equal(adminCompletedTask.drafts[0].basicInfo.hospital, '管理员配置测试医院');
+assert.equal(adminOpenAi.requests.at(-1).body.model, 'admin-runtime-model');
+
+const adminRollbackResponse = await adminApp.inject({
+  method: 'POST',
+  url: '/api/admin/ocr-config/rollback',
+  headers: adminHeaders
+});
+assert.equal(adminRollbackResponse.statusCode, 200);
+assert.equal(adminRollbackResponse.json().data.config.source, 'env');
+const adminRollbackRuntime = await resolveOcrRuntimeConfig(adminPrisma, adminEnv, { useCache: false });
+assert.equal(adminRollbackRuntime.source, 'env');
+await adminApp.close();
+await adminOpenAi.close();
 
 const healthResponse = await app.inject({
   method: 'GET',

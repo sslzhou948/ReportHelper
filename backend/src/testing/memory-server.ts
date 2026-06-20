@@ -9,6 +9,7 @@ const env: Env = {
   JWT_SECRET: 'memory-test-secret-1234567890',
   WECHAT_APP_ID: process.env.WECHAT_APP_ID || 'memory-app-id',
   WECHAT_APP_SECRET: process.env.WECHAT_APP_SECRET || 'memory-app-secret',
+  ADMIN_CONFIG_PASSWORD: process.env.ADMIN_CONFIG_PASSWORD || '0512',
   NODE_ENV: 'test',
   PORT: port,
   BACKEND_PUBLIC_BASE_URL: process.env.BACKEND_PUBLIC_BASE_URL || `http://127.0.0.1:${port}`,

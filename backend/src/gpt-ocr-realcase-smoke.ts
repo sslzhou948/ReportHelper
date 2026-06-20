@@ -63,6 +63,7 @@ function buildSmokeEnv(): Env {
     JWT_SECRET: getEnvValue('JWT_SECRET', 'gpt-smoke-secret-1234567890'),
     WECHAT_APP_ID: getEnvValue('WECHAT_APP_ID', 'gpt-smoke-app-id'),
     WECHAT_APP_SECRET: getEnvValue('WECHAT_APP_SECRET', 'gpt-smoke-secret'),
+    ADMIN_CONFIG_PASSWORD: getEnvValue('ADMIN_CONFIG_PASSWORD', '0512'),
     NODE_ENV: 'test',
     PORT: Number(getEnvValue('PORT', '8787')),
     BACKEND_PUBLIC_BASE_URL: getEnvValue('BACKEND_PUBLIC_BASE_URL', 'http://127.0.0.1:8787'),

@@ -387,6 +387,8 @@ assert.ok(uploadPickWxml.includes('/assets/ui-refresh/upload-paperclip-tabler.pn
 assert.ok(uploadPickWxml.includes('/assets/ui-refresh/upload-x-tabler.png'), 'upload picker remove affordance must use a standard icon-library x source asset');
 assert.ok(uploadPickWxml.includes('/assets/ui-refresh/upload-plus-tabler.png'), 'upload picker add affordance must use a standard icon-library plus source asset');
 assert.ok(uploadPickWxml.includes('class="merge-helper"'), 'upload picker must keep visible multi-page merge guidance');
+assert.ok(uploadPickWxml.includes('groupReportNo') && uploadPickWxml.includes('groupPageIndex') && uploadPickWxml.includes('groupPageCount'), 'upload picker merged photos must label report number and in-report page order');
+assert.ok(uploadPickWxml.includes('groupToneClass'), 'upload picker merged photo groups must carry a visible group tone class');
 assert.ok(!uploadPickWxml.includes('<view class="upload-icon">拍'), 'upload picker must not use text glyphs as action icons');
 
 const uploadAction = getRule(uploadPickWxss, '.upload-action');
@@ -408,6 +410,15 @@ assertDecl(uploadPhotoGrid, 'grid-template-columns: repeat(3, 1fr)', 'upload pho
 const uploadPhoto = getRule(uploadPickWxss, '.photo');
 assertDecl(uploadPhoto, 'height: 224rpx', 'upload photo cards must keep the reference thumbnail rhythm');
 assertDecl(uploadPhoto, 'overflow: hidden', 'upload photo cards must clip thumbnails and overlays');
+
+const uploadGroupedPhoto = getRule(uploadPickWxss, '.photo.grouped');
+assertDecl(uploadGroupedPhoto, 'background: #FFFFFF', 'upload merged photo groups must read as deliberate report bundles');
+
+const uploadGroupBadge = getRule(uploadPickWxss, '.group-badge');
+assertDecl(uploadGroupBadge, 'font-weight: 700', 'upload merged report number badge must be visually prominent');
+
+const uploadGroupPageBadge = getRule(uploadPickWxss, '.group-page-badge');
+assertDecl(uploadGroupPageBadge, 'font-size: 20rpx', 'upload merged page-order badge must stay compact inside thumbnails');
 
 const uploadPhotoIndex = getRule(uploadPickWxss, '.photo-index');
 assertDecl(uploadPhotoIndex, 'width: 100rpx', 'upload photo index pill must match the reference label width');
